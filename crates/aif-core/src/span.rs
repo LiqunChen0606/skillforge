@@ -14,3 +14,15 @@ impl Span {
         Self { start: 0, end: 0 }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn span_creation() {
+        let s = Span::new(5, 10);
+        assert_eq!(s.start, 5);
+        assert_eq!(s.end, 10);
+    }
+}
