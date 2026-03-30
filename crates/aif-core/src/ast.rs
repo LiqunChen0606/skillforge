@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
 /// Top-level document
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 pub struct Document {
     pub metadata: BTreeMap<String, String>,
     pub blocks: Vec<Block>,
@@ -11,10 +11,7 @@ pub struct Document {
 
 impl Document {
     pub fn new() -> Self {
-        Self {
-            metadata: BTreeMap::new(),
-            blocks: Vec::new(),
-        }
+        Self::default()
     }
 }
 
