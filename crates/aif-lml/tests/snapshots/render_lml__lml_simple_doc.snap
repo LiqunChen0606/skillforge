@@ -1,0 +1,13 @@
+---
+source: crates/aif-lml/tests/render_lml.rs
+expression: lml
+---
+[DOC summary="A test" title="Test Doc"]
+[SECTION id=intro] Introduction
+Some text here.
+
+[/SECTION]
+[CLAIM id=c1]
+This is a claim.
+
+[/DOC]
