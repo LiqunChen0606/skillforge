@@ -2,11 +2,17 @@ use aif_core::ast::*;
 
 pub fn emit_lml(doc: &Document) -> String {
     let mut out = String::new();
-    emit_doc(&mut out, doc);
+    emit_doc(&mut out, doc, false);
     out
 }
 
-fn emit_doc(out: &mut String, doc: &Document) {
+pub fn emit_lml_skill_compact(doc: &Document) -> String {
+    let mut out = String::new();
+    emit_doc(&mut out, doc, true);
+    out
+}
+
+fn emit_doc(out: &mut String, doc: &Document, skill_compact: bool) {
     // Opening [DOC ...] tag with metadata
     out.push_str("[DOC");
     for (key, value) in &doc.metadata {
@@ -16,13 +22,17 @@ fn emit_doc(out: &mut String, doc: &Document) {
     out.push_str("]\n");
 
     for block in &doc.blocks {
-        emit_block(out, block, 0);
+        emit_block_inner(out, block, 0, skill_compact);
     }
 
     out.push_str("[/DOC]\n");
 }
 
-fn emit_block(out: &mut String, block: &Block, _depth: usize) {
+fn emit_block(out: &mut String, block: &Block, depth: usize) {
+    emit_block_inner(out, block, depth, false);
+}
+
+fn emit_block_inner(out: &mut String, block: &Block, _depth: usize, skill_compact: bool) {
     match &block.kind {
         BlockKind::Section {
             attrs,
@@ -151,6 +161,9 @@ fn emit_block(out: &mut String, block: &Block, _depth: usize) {
             content,
             children,
         } => {
+            if skill_compact && matches!(skill_type, SkillBlockType::Example) {
+                return;
+            }
             let tag = skill_block_tag(skill_type);
             out.push('[');
             out.push_str(tag);
@@ -166,7 +179,7 @@ fn emit_block(out: &mut String, block: &Block, _depth: usize) {
                 out.push('\n');
             }
             for child in children {
-                emit_block(out, child, _depth + 1);
+                emit_block_inner(out, child, _depth + 1, skill_compact);
             }
             if matches!(skill_type, SkillBlockType::Skill) || !children.is_empty() {
                 out.push_str("[/");
