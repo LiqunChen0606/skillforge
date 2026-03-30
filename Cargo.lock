@@ -11,6 +11,7 @@ dependencies = [
  "aif-lml",
  "aif-markdown",
  "aif-parser",
+ "aif-skill",
  "clap",
  "serde_json",
 ]

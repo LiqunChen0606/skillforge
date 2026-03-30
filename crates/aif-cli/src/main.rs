@@ -2,6 +2,8 @@ use clap::{Parser, Subcommand};
 use std::fs;
 use std::path::PathBuf;
 
+use aif_core::ast::{Block, BlockKind, SkillBlockType};
+
 #[derive(Parser)]
 #[command(name = "aif")]
 #[command(about = "AIF: AI-native Interchange Format compiler")]
@@ -37,23 +39,239 @@ enum Commands {
         /// Input .aif file
         input: PathBuf,
     },
+    /// Skill-related operations
+    Skill {
+        #[command(subcommand)]
+        action: SkillAction,
+    },
+}
+
+#[derive(Subcommand)]
+enum SkillAction {
+    /// Import a SKILL.md file to AIF IR (JSON)
+    Import {
+        input: PathBuf,
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+    },
+    /// Export an AIF skill to SKILL.md format
+    Export {
+        input: PathBuf,
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+    },
+    /// Verify integrity hash of a skill
+    Verify {
+        input: PathBuf,
+    },
+    /// Recompute and update hash for a skill
+    Rehash {
+        input: PathBuf,
+    },
+    /// Show skill metadata
+    Inspect {
+        input: PathBuf,
+    },
+}
+
+fn find_skill_block(blocks: &[Block]) -> Option<&Block> {
+    blocks.iter().find(|b| {
+        matches!(
+            &b.kind,
+            BlockKind::SkillBlock {
+                skill_type: SkillBlockType::Skill,
+                ..
+            }
+        )
+    })
+}
+
+fn write_output(content: &str, output: Option<&PathBuf>) {
+    if let Some(output_path) = output {
+        fs::write(output_path, content).unwrap_or_else(|e| {
+            eprintln!("Error writing {}: {}", output_path.display(), e);
+            std::process::exit(1);
+        });
+        eprintln!("Wrote {}", output_path.display());
+    } else {
+        print!("{}", content);
+    }
+}
+
+fn read_source(input: &PathBuf) -> String {
+    fs::read_to_string(input).unwrap_or_else(|e| {
+        eprintln!("Error reading {}: {}", input.display(), e);
+        std::process::exit(1);
+    })
+}
+
+fn parse_aif(source: &str) -> aif_core::ast::Document {
+    aif_parser::parse(source).unwrap_or_else(|errors| {
+        for e in &errors {
+            eprintln!("{}", e);
+        }
+        std::process::exit(1);
+    })
+}
+
+fn handle_skill(action: SkillAction) {
+    match action {
+        SkillAction::Import { input, output } => {
+            let source = read_source(&input);
+            let result = aif_skill::import::import_skill_md(&source);
+
+            // Print mappings to stderr
+            for mapping in &result.mappings {
+                eprintln!(
+                    "  {} -> {:?} ({:?})",
+                    mapping.heading, mapping.mapped_to, mapping.confidence
+                );
+            }
+
+            // Wrap the skill block in a Document for JSON output
+            let doc = aif_core::ast::Document {
+                metadata: std::collections::BTreeMap::new(),
+                blocks: vec![result.block],
+            };
+            let json = serde_json::to_string_pretty(&doc).unwrap();
+            write_output(&json, output.as_ref());
+        }
+        SkillAction::Export { input, output } => {
+            let source = read_source(&input);
+            let doc = parse_aif(&source);
+
+            let skill_block = find_skill_block(&doc.blocks).unwrap_or_else(|| {
+                eprintln!("No skill block found in {}", input.display());
+                std::process::exit(1);
+            });
+
+            let md = aif_skill::export::export_skill_md(skill_block);
+            write_output(&md, output.as_ref());
+        }
+        SkillAction::Verify { input } => {
+            let source = read_source(&input);
+            let doc = parse_aif(&source);
+
+            let skill_block = find_skill_block(&doc.blocks).unwrap_or_else(|| {
+                eprintln!("No skill block found in {}", input.display());
+                std::process::exit(1);
+            });
+
+            match aif_skill::hash::verify_skill_hash(skill_block) {
+                aif_skill::hash::HashVerifyResult::Valid => {
+                    println!("Valid: hash matches content.");
+                }
+                aif_skill::hash::HashVerifyResult::Mismatch { expected, actual } => {
+                    println!("Mismatch: expected {}, computed {}", expected, actual);
+                    std::process::exit(1);
+                }
+                aif_skill::hash::HashVerifyResult::NoHash => {
+                    println!("No hash attribute found on skill block.");
+                }
+                aif_skill::hash::HashVerifyResult::NotASkill => {
+                    eprintln!("Block is not a skill block.");
+                    std::process::exit(1);
+                }
+            }
+        }
+        SkillAction::Rehash { input } => {
+            let source = read_source(&input);
+            let mut doc = parse_aif(&source);
+
+            let skill_block = doc.blocks.iter_mut().find(|b| {
+                matches!(
+                    &b.kind,
+                    BlockKind::SkillBlock {
+                        skill_type: SkillBlockType::Skill,
+                        ..
+                    }
+                )
+            });
+
+            if let Some(block) = skill_block {
+                let hash = aif_skill::hash::compute_skill_hash(block);
+                if let BlockKind::SkillBlock { ref mut attrs, .. } = block.kind {
+                    attrs.pairs.insert("hash".to_string(), hash.clone());
+                }
+                // Write back as JSON (the canonical serialization)
+                let json = serde_json::to_string_pretty(&doc).unwrap();
+                fs::write(&input, &json).unwrap_or_else(|e| {
+                    eprintln!("Error writing {}: {}", input.display(), e);
+                    std::process::exit(1);
+                });
+                println!("Updated hash: {}", hash);
+            } else {
+                eprintln!("No skill block found in {}", input.display());
+                std::process::exit(1);
+            }
+        }
+        SkillAction::Inspect { input } => {
+            let source = read_source(&input);
+            let doc = parse_aif(&source);
+
+            let skill_block = find_skill_block(&doc.blocks).unwrap_or_else(|| {
+                eprintln!("No skill block found in {}", input.display());
+                std::process::exit(1);
+            });
+
+            if let BlockKind::SkillBlock {
+                attrs, children, ..
+            } = &skill_block.kind
+            {
+                println!("Skill Metadata:");
+                if let Some(name) = attrs.get("name") {
+                    println!("  name: {}", name);
+                }
+                if let Some(version) = attrs.get("version") {
+                    println!("  version: {}", version);
+                }
+                if let Some(tags) = attrs.get("tags") {
+                    println!("  tags: {}", tags);
+                }
+                if let Some(priority) = attrs.get("priority") {
+                    println!("  priority: {}", priority);
+                }
+                if let Some(hash) = attrs.get("hash") {
+                    println!("  hash: {}", hash);
+                }
+                // Print remaining attrs not already printed
+                for (key, value) in &attrs.pairs {
+                    match key.as_str() {
+                        "name" | "version" | "tags" | "priority" | "hash" => {}
+                        _ => println!("  {}: {}", key, value),
+                    }
+                }
+                println!("  children: {}", children.len());
+                for child in children {
+                    if let BlockKind::SkillBlock {
+                        skill_type,
+                        attrs: child_attrs,
+                        ..
+                    } = &child.kind
+                    {
+                        let order_info = child_attrs
+                            .get("order")
+                            .map(|o| format!(" (order={})", o))
+                            .unwrap_or_default();
+                        println!("    - {:?}{}", skill_type, order_info);
+                    }
+                }
+            }
+        }
+    }
 }
 
 fn main() {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Compile { input, format, output } => {
-            let source = fs::read_to_string(&input).unwrap_or_else(|e| {
-                eprintln!("Error reading {}: {}", input.display(), e);
-                std::process::exit(1);
-            });
-            let doc = aif_parser::parse(&source).unwrap_or_else(|errors| {
-                for e in &errors {
-                    eprintln!("{}", e);
-                }
-                std::process::exit(1);
-            });
+        Commands::Compile {
+            input,
+            format,
+            output,
+        } => {
+            let source = read_source(&input);
+            let doc = parse_aif(&source);
 
             let result = match format.as_str() {
                 "html" => aif_html::render_html(&doc),
@@ -61,52 +279,30 @@ fn main() {
                 "lml" => aif_lml::render_lml(&doc),
                 "json" => serde_json::to_string_pretty(&doc).unwrap(),
                 _ => {
-                    eprintln!("Unknown format: {}. Supported: html, markdown, lml, json", format);
+                    eprintln!(
+                        "Unknown format: {}. Supported: html, markdown, lml, json",
+                        format
+                    );
                     std::process::exit(1);
                 }
             };
 
-            if let Some(output_path) = output {
-                fs::write(&output_path, &result).unwrap_or_else(|e| {
-                    eprintln!("Error writing {}: {}", output_path.display(), e);
-                    std::process::exit(1);
-                });
-                eprintln!("Wrote {}", output_path.display());
-            } else {
-                print!("{}", result);
-            }
+            write_output(&result, output.as_ref());
         }
         Commands::Import { input, output } => {
-            let source = fs::read_to_string(&input).unwrap_or_else(|e| {
-                eprintln!("Error reading {}: {}", input.display(), e);
-                std::process::exit(1);
-            });
+            let source = read_source(&input);
             let doc = aif_markdown::import_markdown(&source);
             let json = serde_json::to_string_pretty(&doc).unwrap();
-
-            if let Some(output_path) = output {
-                fs::write(&output_path, &json).unwrap_or_else(|e| {
-                    eprintln!("Error writing {}: {}", output_path.display(), e);
-                    std::process::exit(1);
-                });
-                eprintln!("Wrote {}", output_path.display());
-            } else {
-                print!("{}", json);
-            }
+            write_output(&json, output.as_ref());
         }
         Commands::DumpIr { input } => {
-            let source = fs::read_to_string(&input).unwrap_or_else(|e| {
-                eprintln!("Error reading {}: {}", input.display(), e);
-                std::process::exit(1);
-            });
-            let doc = aif_parser::parse(&source).unwrap_or_else(|errors| {
-                for e in &errors {
-                    eprintln!("{}", e);
-                }
-                std::process::exit(1);
-            });
+            let source = read_source(&input);
+            let doc = parse_aif(&source);
             let json = serde_json::to_string_pretty(&doc).unwrap();
             println!("{}", json);
+        }
+        Commands::Skill { action } => {
+            handle_skill(action);
         }
     }
 }
