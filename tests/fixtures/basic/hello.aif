@@ -1,0 +1,18 @@
+#title: Hello World
+#summary: A simple test document
+
+@section[id=intro]: Introduction
+This is a simple document to test the AIF toolchain.
+
+@claim[id=c1]
+AIF makes documents better for both humans and machines.
+
+- Feature one
+- Feature two
+- Feature three
+
+```rust
+fn main() {
+    println!("Hello AIF!");
+}
+```
