@@ -1,0 +1,29 @@
+---
+source: crates/aif-markdown/tests/import_md.rs
+expression: doc
+---
+metadata:
+  title: Code
+blocks:
+  - kind:
+      type: Section
+      attrs:
+        id: ~
+        pairs: {}
+      title:
+        - type: Text
+          text: Code
+      children: []
+    span:
+      start: 0
+      end: 0
+  - kind:
+      type: CodeBlock
+      lang: rust
+      attrs:
+        id: ~
+        pairs: {}
+      code: "fn main() {}\n"
+    span:
+      start: 0
+      end: 0

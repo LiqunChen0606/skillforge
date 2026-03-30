@@ -1,0 +1,47 @@
+---
+source: crates/aif-markdown/tests/import_md.rs
+expression: doc
+---
+metadata:
+  title: Hello World
+blocks:
+  - kind:
+      type: Section
+      attrs:
+        id: ~
+        pairs: {}
+      title:
+        - type: Text
+          text: Hello World
+      children: []
+    span:
+      start: 0
+      end: 0
+  - kind:
+      type: Paragraph
+      content:
+        - type: Text
+          text: This is a paragraph.
+    span:
+      start: 0
+      end: 0
+  - kind:
+      type: Section
+      attrs:
+        id: ~
+        pairs: {}
+      title:
+        - type: Text
+          text: Section Two
+      children: []
+    span:
+      start: 0
+      end: 0
+  - kind:
+      type: Paragraph
+      content:
+        - type: Text
+          text: More text here.
+    span:
+      start: 0
+      end: 0

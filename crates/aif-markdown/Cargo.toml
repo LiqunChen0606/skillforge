@@ -5,6 +5,7 @@ edition.workspace = true
 
 [dependencies]
 aif-core = { workspace = true }
+pulldown-cmark = "0.12"
 
 [dev-dependencies]
 aif-parser = { path = "../aif-parser" }
