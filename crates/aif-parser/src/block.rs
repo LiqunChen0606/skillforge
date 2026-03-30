@@ -5,6 +5,22 @@ use aif_core::span::Span;
 use crate::attrs::parse_attrs;
 use crate::inline::parse_inline;
 
+fn is_skill_block_type(directive: &str) -> Option<SkillBlockType> {
+    match directive {
+        "skill" => Some(SkillBlockType::Skill),
+        "step" => Some(SkillBlockType::Step),
+        "verify" => Some(SkillBlockType::Verify),
+        "precondition" => Some(SkillBlockType::Precondition),
+        "output_contract" => Some(SkillBlockType::OutputContract),
+        "decision" => Some(SkillBlockType::Decision),
+        "tool" => Some(SkillBlockType::Tool),
+        "fallback" => Some(SkillBlockType::Fallback),
+        "red_flag" => Some(SkillBlockType::RedFlag),
+        "example" => Some(SkillBlockType::Example),
+        _ => None,
+    }
+}
+
 /// A line with its byte offset in the original input
 struct Line<'a> {
     text: &'a str,
@@ -212,6 +228,12 @@ impl<'a> BlockParser<'a> {
 
         self.pos += 1;
 
+        // Check for skill block types before collecting body lines,
+        // since skill blocks use @end termination instead of blank-line termination.
+        if let Some(skill_type) = is_skill_block_type(directive_type) {
+            return self.parse_skill_block(skill_type, attrs, title_str, start);
+        }
+
         // Collect body lines (stop at blank line, new directive, or metadata)
         let body_lines = self.collect_body_lines();
         let end = if body_lines.is_empty() {
@@ -383,6 +405,104 @@ impl<'a> BlockParser<'a> {
             self.pos += 1;
         }
         lines
+    }
+
+    fn parse_skill_block(
+        &mut self,
+        skill_type: SkillBlockType,
+        attrs: Attrs,
+        title_str: &str,
+        start: usize,
+    ) -> Option<Block> {
+        let is_container = matches!(skill_type, SkillBlockType::Skill);
+        let title = if title_str.is_empty() {
+            None
+        } else {
+            Some(parse_inline(title_str))
+        };
+
+        let mut content_lines: Vec<&str> = Vec::new();
+        let mut children: Vec<Block> = Vec::new();
+        let mut end = start;
+
+        while self.pos < self.lines.len() {
+            let line = self.lines[self.pos].text;
+
+            // @end terminates this block
+            if line.trim() == "@end" {
+                end = self.lines[self.pos].offset + line.len();
+                self.pos += 1;
+                break;
+            }
+
+            // Nested skill block directive inside a container
+            if is_container && line.trim_start().starts_with('@') {
+                let trimmed = line.trim_start();
+                let inner_rest = &trimmed[1..]; // skip '@'
+                let inner_type_end = inner_rest
+                    .find(|c: char| c == '[' || c == ':' || c.is_whitespace())
+                    .unwrap_or(inner_rest.len());
+                let inner_directive = &inner_rest[..inner_type_end];
+                let inner_after_type = &inner_rest[inner_type_end..];
+
+                if let Some(inner_skill_type) = is_skill_block_type(inner_directive) {
+                    // Parse optional [attrs]
+                    let (inner_attrs, inner_after_attrs) = if inner_after_type.starts_with('[') {
+                        if let Some(close) = inner_after_type.find(']') {
+                            let attr_str = &inner_after_type[1..close];
+                            (parse_attrs(attr_str), &inner_after_type[close + 1..])
+                        } else {
+                            (Attrs::new(), inner_after_type)
+                        }
+                    } else {
+                        (Attrs::new(), inner_after_type)
+                    };
+
+                    // Parse optional : title
+                    let inner_title_str = if let Some(rest) = inner_after_attrs.strip_prefix(':') {
+                        rest.trim()
+                    } else {
+                        inner_after_attrs.trim()
+                    };
+
+                    let inner_start = self.lines[self.pos].offset;
+                    self.pos += 1;
+
+                    if let Some(child) =
+                        self.parse_skill_block(inner_skill_type, inner_attrs, inner_title_str, inner_start)
+                    {
+                        children.push(child);
+                    }
+                    continue;
+                }
+            }
+
+            // Regular content line
+            let trimmed = line.trim();
+            if !trimmed.is_empty() {
+                content_lines.push(trimmed);
+            }
+            end = self.lines[self.pos].offset + line.len();
+            self.pos += 1;
+        }
+
+        let content_text = content_lines.join("\n");
+        let content = if content_text.is_empty() {
+            vec![]
+        } else {
+            parse_inline(&content_text)
+        };
+
+        Some(Block {
+            kind: BlockKind::SkillBlock {
+                skill_type,
+                attrs,
+                title,
+                content,
+                children,
+            },
+            span: Span::new(start, end),
+        })
     }
 
     fn parse_table_body(&self, body: &str) -> (Vec<Vec<Inline>>, Vec<Vec<Vec<Inline>>>) {
@@ -744,6 +864,85 @@ mod tests {
             assert!(title.is_some());
         } else {
             panic!("expected semantic block");
+        }
+    }
+
+    #[test]
+    fn parse_skill_container_with_end() {
+        let input = "@skill[name=debugging]\n  Some intro text.\n@end\n";
+        let mut parser = BlockParser::new(input);
+        let doc = parser.parse().unwrap();
+        assert_eq!(doc.blocks.len(), 1);
+        if let BlockKind::SkillBlock { skill_type, attrs, content, children, .. } = &doc.blocks[0].kind {
+            assert!(matches!(skill_type, SkillBlockType::Skill));
+            assert_eq!(attrs.get("name"), Some("debugging"));
+            assert!(!content.is_empty());
+            assert!(children.is_empty());
+        } else {
+            panic!("expected SkillBlock, got {:?}", doc.blocks[0].kind);
+        }
+    }
+
+    #[test]
+    fn parse_skill_with_inner_blocks() {
+        let input = "\
+@skill[name=debugging version=1.0]
+@precondition
+  User has reported a bug.
+@end
+@step[order=1]
+  Reproduce the issue.
+@end
+@verify
+  Fix resolves issue without regressions.
+@end
+@end
+";
+        let mut parser = BlockParser::new(input);
+        let doc = parser.parse().unwrap();
+        assert_eq!(doc.blocks.len(), 1);
+        if let BlockKind::SkillBlock { children, .. } = &doc.blocks[0].kind {
+            assert_eq!(children.len(), 3);
+            if let BlockKind::SkillBlock { skill_type, .. } = &children[0].kind {
+                assert!(matches!(skill_type, SkillBlockType::Precondition));
+            } else {
+                panic!("expected precondition");
+            }
+            if let BlockKind::SkillBlock { skill_type, attrs, .. } = &children[1].kind {
+                assert!(matches!(skill_type, SkillBlockType::Step));
+                assert_eq!(attrs.get("order"), Some("1"));
+            } else {
+                panic!("expected step");
+            }
+            if let BlockKind::SkillBlock { skill_type, .. } = &children[2].kind {
+                assert!(matches!(skill_type, SkillBlockType::Verify));
+            } else {
+                panic!("expected verify");
+            }
+        } else {
+            panic!("expected SkillBlock");
+        }
+    }
+
+    #[test]
+    fn parse_skill_with_free_text_and_blocks() {
+        let input = "\
+@skill[name=test]
+Some free text intro.
+
+@step[order=1]
+  Do something.
+@end
+@end
+";
+        let mut parser = BlockParser::new(input);
+        let doc = parser.parse().unwrap();
+        assert_eq!(doc.blocks.len(), 1);
+        if let BlockKind::SkillBlock { content, children, .. } = &doc.blocks[0].kind {
+            assert!(!content.is_empty());
+            assert_eq!(children.len(), 1);
+        } else {
+            panic!("expected SkillBlock");
         }
     }
 }
