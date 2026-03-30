@@ -144,6 +144,37 @@ fn emit_block(out: &mut String, block: &Block, _depth: usize) {
             }
             out.push('\n');
         }
+        BlockKind::SkillBlock {
+            skill_type,
+            attrs,
+            title,
+            content,
+            children,
+        } => {
+            let tag = skill_block_tag(skill_type);
+            out.push('[');
+            out.push_str(tag);
+            emit_attrs(out, attrs);
+            out.push(']');
+            if let Some(t) = title {
+                out.push(' ');
+                emit_inlines_plain(out, t);
+            }
+            out.push('\n');
+            if !content.is_empty() {
+                emit_inlines_plain(out, content);
+                out.push('\n');
+            }
+            for child in children {
+                emit_block(out, child, _depth + 1);
+            }
+            if matches!(skill_type, SkillBlockType::Skill) || !children.is_empty() {
+                out.push_str("[/");
+                out.push_str(tag);
+                out.push_str("]\n");
+            }
+            out.push('\n');
+        }
         BlockKind::ThematicBreak => {
             out.push_str("---\n\n");
         }
@@ -216,6 +247,21 @@ fn semantic_block_tag(bt: &SemanticBlockType) -> &'static str {
         SemanticBlockType::Conclusion => "CONCLUSION",
         SemanticBlockType::Requirement => "REQUIREMENT",
         SemanticBlockType::Recommendation => "RECOMMENDATION",
+    }
+}
+
+fn skill_block_tag(st: &SkillBlockType) -> &'static str {
+    match st {
+        SkillBlockType::Skill => "SKILL",
+        SkillBlockType::Step => "STEP",
+        SkillBlockType::Verify => "VERIFY",
+        SkillBlockType::Precondition => "PRECONDITION",
+        SkillBlockType::OutputContract => "OUTPUT_CONTRACT",
+        SkillBlockType::Decision => "DECISION",
+        SkillBlockType::Tool => "TOOL",
+        SkillBlockType::Fallback => "FALLBACK",
+        SkillBlockType::RedFlag => "RED_FLAG",
+        SkillBlockType::Example => "EXAMPLE",
     }
 }
 
