@@ -67,6 +67,13 @@ pub enum BlockKind {
         ordered: bool,
         items: Vec<ListItem>,
     },
+    SkillBlock {
+        skill_type: SkillBlockType,
+        attrs: Attrs,
+        title: Option<Vec<Inline>>,
+        content: Vec<Inline>,
+        children: Vec<Block>,
+    },
     ThematicBreak,
 }
 
@@ -95,6 +102,20 @@ pub enum CalloutType {
     Warning,
     Info,
     Tip,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub enum SkillBlockType {
+    Skill,
+    Step,
+    Verify,
+    Precondition,
+    OutputContract,
+    Decision,
+    Tool,
+    Fallback,
+    RedFlag,
+    Example,
 }
 
 /// Attributes on a block
@@ -167,5 +188,77 @@ mod tests {
         let json = serde_json::to_string(&doc).unwrap();
         assert!(json.contains("\"title\":\"Test\""));
         assert!(json.contains("\"type\":\"Paragraph\""));
+    }
+
+    #[test]
+    fn skill_block_serializes_to_json() {
+        let skill = Block {
+            kind: BlockKind::SkillBlock {
+                skill_type: SkillBlockType::Skill,
+                attrs: Attrs::new(),
+                title: None,
+                content: vec![Inline::Text { text: "Debug process".into() }],
+                children: vec![],
+            },
+            span: Span::new(0, 20),
+        };
+        let json = serde_json::to_string(&skill).unwrap();
+        assert!(json.contains("\"type\":\"SkillBlock\""));
+        assert!(json.contains("\"Skill\""));
+    }
+
+    #[test]
+    fn skill_step_with_order_attr() {
+        let mut attrs = Attrs::new();
+        attrs.pairs.insert("order".into(), "1".into());
+        let step = Block {
+            kind: BlockKind::SkillBlock {
+                skill_type: SkillBlockType::Step,
+                attrs,
+                title: None,
+                content: vec![Inline::Text { text: "Reproduce the bug".into() }],
+                children: vec![],
+            },
+            span: Span::new(0, 30),
+        };
+        if let BlockKind::SkillBlock { attrs, .. } = &step.kind {
+            assert_eq!(attrs.get("order"), Some("1"));
+        } else {
+            panic!("expected SkillBlock");
+        }
+    }
+
+    #[test]
+    fn skill_block_with_children() {
+        let step = Block {
+            kind: BlockKind::SkillBlock {
+                skill_type: SkillBlockType::Step,
+                attrs: Attrs::new(),
+                title: None,
+                content: vec![Inline::Text { text: "Step 1".into() }],
+                children: vec![],
+            },
+            span: Span::new(10, 30),
+        };
+        let skill = Block {
+            kind: BlockKind::SkillBlock {
+                skill_type: SkillBlockType::Skill,
+                attrs: {
+                    let mut a = Attrs::new();
+                    a.pairs.insert("name".into(), "debugging".into());
+                    a
+                },
+                title: None,
+                content: vec![],
+                children: vec![step],
+            },
+            span: Span::new(0, 50),
+        };
+        if let BlockKind::SkillBlock { children, attrs, .. } = &skill.kind {
+            assert_eq!(children.len(), 1);
+            assert_eq!(attrs.get("name"), Some("debugging"));
+        } else {
+            panic!("expected SkillBlock");
+        }
     }
 }
