@@ -1,0 +1,12 @@
+[package]
+name = "aif-parser"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+aif-core = { workspace = true }
+logos = "0.14"
+
+[dev-dependencies]
+insta = { version = "1", features = ["yaml"] }
+pretty_assertions = "1"

@@ -1,0 +1,12 @@
+[package]
+name = "aif-html"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+aif-core = { workspace = true }
+
+[dev-dependencies]
+aif-parser = { path = "../aif-parser" }
+insta = { version = "1", features = ["yaml"] }
+pretty_assertions = "1"
