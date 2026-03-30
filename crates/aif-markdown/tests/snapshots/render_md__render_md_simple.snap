@@ -1,0 +1,7 @@
+---
+source: crates/aif-markdown/tests/render_md.rs
+expression: md
+---
+# Test Doc
+
+Hello **world**.

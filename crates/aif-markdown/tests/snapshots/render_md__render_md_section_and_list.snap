@@ -1,0 +1,10 @@
+---
+source: crates/aif-markdown/tests/render_md.rs
+expression: md
+---
+## Introduction
+
+Some text.
+
+- item 1
+- item 2
