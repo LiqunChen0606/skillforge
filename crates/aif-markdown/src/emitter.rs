@@ -160,9 +160,107 @@ fn emit_block(out: &mut String, block: &Block, heading_level: usize) {
         BlockKind::List { ordered, items } => {
             emit_list(out, items, *ordered, 0);
         }
+        BlockKind::SkillBlock {
+            skill_type,
+            attrs,
+            title,
+            content,
+            children,
+        } => {
+            match skill_type {
+                SkillBlockType::Skill => {
+                    // Emit skill name as heading
+                    let name = title
+                        .as_ref()
+                        .map(|t| inlines_to_text(t))
+                        .or_else(|| attrs.get("name").map(|s| s.to_string()))
+                        .unwrap_or_else(|| "Skill".to_string());
+                    let hashes = "#".repeat(heading_level);
+                    out.push_str(&format!("{} {}\n", hashes, name));
+
+                    // Emit content if present
+                    if !content.is_empty() {
+                        out.push('\n');
+                        out.push_str(&inlines_to_text(content));
+                        out.push('\n');
+                    }
+
+                    // Group Step children under "## Steps" as numbered list
+                    let steps: Vec<&Block> = children
+                        .iter()
+                        .filter(|c| matches!(&c.kind, BlockKind::SkillBlock { skill_type: SkillBlockType::Step, .. }))
+                        .collect();
+                    let non_steps: Vec<&Block> = children
+                        .iter()
+                        .filter(|c| !matches!(&c.kind, BlockKind::SkillBlock { skill_type: SkillBlockType::Step, .. }))
+                        .collect();
+
+                    if !steps.is_empty() {
+                        let step_hashes = "#".repeat(heading_level + 1);
+                        out.push_str(&format!("\n{} Steps\n\n", step_hashes));
+                        for step in &steps {
+                            if let BlockKind::SkillBlock { attrs: step_attrs, content: step_content, .. } = &step.kind {
+                                let order = step_attrs
+                                    .get("order")
+                                    .unwrap_or("1");
+                                out.push_str(&format!("{}. {}\n", order, inlines_to_text(step_content)));
+                            }
+                        }
+                    }
+
+                    // Render other child types with appropriate headings
+                    for child in &non_steps {
+                        if !out.ends_with("\n\n") {
+                            if out.ends_with('\n') {
+                                out.push('\n');
+                            } else {
+                                out.push_str("\n\n");
+                            }
+                        }
+                        emit_block(out, child, heading_level + 1);
+                    }
+                }
+                _ => {
+                    // Non-Skill types: emit heading and content
+                    let heading = skill_type_heading(skill_type);
+                    let hashes = "#".repeat(heading_level);
+                    out.push_str(&format!("{} {}\n", hashes, heading));
+                    if !content.is_empty() {
+                        out.push('\n');
+                        out.push_str(&inlines_to_text(content));
+                        out.push('\n');
+                    }
+                    for child in children {
+                        if !out.ends_with("\n\n") {
+                            if out.ends_with('\n') {
+                                out.push('\n');
+                            } else {
+                                out.push_str("\n\n");
+                            }
+                        }
+                        emit_block(out, child, heading_level + 1);
+                    }
+                }
+            }
+        }
         BlockKind::ThematicBreak => {
             out.push_str("---\n");
         }
+    }
+}
+
+fn skill_type_heading(st: &SkillBlockType) -> &'static str {
+    match st {
+        SkillBlockType::Skill => "Skill",
+        SkillBlockType::Step => "Steps",
+        SkillBlockType::Verify => "Verification",
+        SkillBlockType::Precondition => "Prerequisites",
+        SkillBlockType::OutputContract => "Expected Output",
+        SkillBlockType::Decision => "Decision",
+        SkillBlockType::Tool => "Tools",
+        SkillBlockType::Fallback => "Fallback",
+        SkillBlockType::RedFlag => "Anti-patterns",
+        SkillBlockType::Example => "Examples",
     }
 }
 
