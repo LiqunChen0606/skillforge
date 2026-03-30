@@ -1,0 +1,16 @@
+---
+source: crates/aif-parser/tests/parse_basic.rs
+expression: doc
+---
+metadata:
+  summary: A test document
+  title: Hello World
+blocks:
+  - kind:
+      type: Paragraph
+      content:
+        - type: Text
+          text: This is a paragraph.
+    span:
+      start: 47
+      end: 67

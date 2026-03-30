@@ -1,0 +1,26 @@
+---
+source: crates/aif-parser/tests/parse_basic.rs
+expression: doc
+---
+metadata: {}
+blocks:
+  - kind:
+      type: Section
+      attrs:
+        id: intro
+        pairs: {}
+      title:
+        - type: Text
+          text: Introduction
+      children:
+        - kind:
+            type: Paragraph
+            content:
+              - type: Text
+                text: This is the intro paragraph.
+          span:
+            start: 0
+            end: 28
+    span:
+      start: 0
+      end: 61
