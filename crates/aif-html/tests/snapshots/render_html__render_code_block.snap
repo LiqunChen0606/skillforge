@@ -1,0 +1,14 @@
+---
+source: crates/aif-html/tests/render_html.rs
+expression: html
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title></title>
+</head>
+<body>
+<pre><code class="language-rust">fn main() {}</code></pre>
+</body>
+</html>

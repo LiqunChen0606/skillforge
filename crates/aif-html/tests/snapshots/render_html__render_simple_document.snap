@@ -1,0 +1,15 @@
+---
+source: crates/aif-html/tests/render_html.rs
+expression: html
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Test Doc</title>
+  <meta name="description" content="A test">
+</head>
+<body>
+<p>Hello <strong>world</strong>.</p>
+</body>
+</html>

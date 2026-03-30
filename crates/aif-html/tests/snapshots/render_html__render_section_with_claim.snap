@@ -1,0 +1,16 @@
+---
+source: crates/aif-html/tests/render_html.rs
+expression: html
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title></title>
+</head>
+<body>
+<section id="intro"><h2>Introduction</h2><p>Some text here.</p>
+</section>
+<div class="aif-claim" id="c1"><p>This is a claim.</p></div>
+</body>
+</html>
