@@ -8,6 +8,7 @@ aif-core = { workspace = true }
 pulldown-cmark = "0.12"
 
 [dev-dependencies]
+aif-core = { workspace = true }
 aif-parser = { path = "../aif-parser" }
 insta = { version = "1", features = ["yaml"] }
 pretty_assertions = "1"

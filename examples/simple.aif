@@ -1,0 +1,33 @@
+#title: Getting Started with AIF
+#summary: A quick introduction to the AI-native Interchange Format
+
+@section[id=what-is-aif]: What is AIF?
+
+AIF is a **semantic document format** designed for both humans and machines. Unlike Markdown, AIF natively supports structured blocks like claims, evidence, and definitions.
+
+@claim[id=c1]
+AIF preserves document *meaning*, not just appearance.
+
+@section[id=features]: Key Features
+
+- Human-readable surface syntax
+- Semantic block types for structured content
+- Multiple output targets: HTML, Markdown, LML, JSON
+- Lossless round-trip through the IR
+
+@callout[type=tip]
+You can import existing Markdown documents using `aif import`.
+
+@section[id=example]: Example Usage
+
+Compile an AIF file to HTML:
+
+```bash
+aif compile document.aif --format html --output document.html
+```
+
+Or import a Markdown file:
+
+```bash
+aif import README.md --output readme.json
+```

@@ -1,0 +1,68 @@
+#title: All Block Types
+#summary: Document exercising every block type
+#author: Test Suite
+
+@section[id=main]: Main Section
+
+A simple paragraph with **bold**, *italic*, and `code` text.
+
+@claim[id=c1]: Important Claim
+This is a claim with a title.
+
+@evidence[id=e1]
+Supporting evidence for the claim.
+
+@definition[id=d1]
+A formal definition of a term.
+
+@theorem[id=t1]
+A mathematical theorem statement.
+
+@assumption[id=a1]
+An underlying assumption.
+
+@result[id=r1]
+An experimental or analytical result.
+
+@conclusion[id=con1]
+The conclusion drawn from the evidence.
+
+@requirement[id=req1]
+A system requirement.
+
+@recommendation[id=rec1]
+A recommended course of action.
+
+@callout[type=note]
+This is a note callout.
+
+@callout[type=warning]
+This is a warning callout.
+
+@callout[type=info]
+This is an info callout.
+
+@callout[type=tip]
+This is a tip callout.
+
+- Unordered item one
+- Unordered item two
+- Unordered item three
+
+1. Ordered item one
+2. Ordered item two
+3. Ordered item three
+
+```python
+def hello():
+    print("Hello, AIF!")
+```
+
+@table[id=tbl1]: Sample Table
+| Name | Value |
+| Alpha | 1 |
+| Beta | 2 |
+
+@figure[id=fig1, src=diagram.svg]: Architecture diagram
+
+A paragraph with a [link](https://example.com) and a @ref[c1] reference.

@@ -1,0 +1,15 @@
+#title: Inline Formatting Test
+
+This has **bold text** in it.
+
+This has *italic text* in it.
+
+This has `inline code` in it.
+
+This has **bold with *nested italic* inside** it.
+
+This has a [link to example](https://example.com) in it.
+
+This has a @ref[some-id] reference.
+
+This has a ~footnote content~ in it.

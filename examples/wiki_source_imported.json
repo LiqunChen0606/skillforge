@@ -1,0 +1,542 @@
+{
+  "metadata": {
+    "title": "Photosynthesis"
+  },
+  "blocks": [
+    {
+      "kind": {
+        "type": "Section",
+        "attrs": {
+          "id": null,
+          "pairs": {}
+        },
+        "title": [
+          {
+            "type": "Text",
+            "text": "Photosynthesis"
+          }
+        ],
+        "children": []
+      },
+      "span": {
+        "start": 0,
+        "end": 0
+      }
+    },
+    {
+      "kind": {
+        "type": "Paragraph",
+        "content": [
+          {
+            "type": "Text",
+            "text": "Photosynthesis is a biological process used by most plants, algae, and some bacteria to convert "
+          },
+          {
+            "type": "Strong",
+            "content": [
+              {
+                "type": "Text",
+                "text": "light energy"
+              }
+            ]
+          },
+          {
+            "type": "Text",
+            "text": " into "
+          },
+          {
+            "type": "Emphasis",
+            "content": [
+              {
+                "type": "Text",
+                "text": "chemical energy"
+              }
+            ]
+          },
+          {
+            "type": "Text",
+            "text": " stored in glucose."
+          }
+        ]
+      },
+      "span": {
+        "start": 0,
+        "end": 0
+      }
+    },
+    {
+      "kind": {
+        "type": "Section",
+        "attrs": {
+          "id": null,
+          "pairs": {}
+        },
+        "title": [
+          {
+            "type": "Text",
+            "text": "Overview"
+          }
+        ],
+        "children": []
+      },
+      "span": {
+        "start": 0,
+        "end": 0
+      }
+    },
+    {
+      "kind": {
+        "type": "Paragraph",
+        "content": [
+          {
+            "type": "Text",
+            "text": "It is fundamental to life on Earth, producing the oxygen we breathe and forming the base of most food chains."
+          }
+        ]
+      },
+      "span": {
+        "start": 0,
+        "end": 0
+      }
+    },
+    {
+      "kind": {
+        "type": "Section",
+        "attrs": {
+          "id": null,
+          "pairs": {}
+        },
+        "title": [
+          {
+            "type": "Text",
+            "text": "Chemical Equation"
+          }
+        ],
+        "children": []
+      },
+      "span": {
+        "start": 0,
+        "end": 0
+      }
+    },
+    {
+      "kind": {
+        "type": "Paragraph",
+        "content": [
+          {
+            "type": "Text",
+            "text": "The overall chemical equation for photosynthesis is:"
+          }
+        ]
+      },
+      "span": {
+        "start": 0,
+        "end": 0
+      }
+    },
+    {
+      "kind": {
+        "type": "CodeBlock",
+        "lang": null,
+        "attrs": {
+          "id": null,
+          "pairs": {}
+        },
+        "code": "6CO₂ + 6H₂O + light energy → C₆H₁₂O₆ + 6O₂\n"
+      },
+      "span": {
+        "start": 0,
+        "end": 0
+      }
+    },
+    {
+      "kind": {
+        "type": "Section",
+        "attrs": {
+          "id": null,
+          "pairs": {}
+        },
+        "title": [
+          {
+            "type": "Text",
+            "text": "Stages"
+          }
+        ],
+        "children": []
+      },
+      "span": {
+        "start": 0,
+        "end": 0
+      }
+    },
+    {
+      "kind": {
+        "type": "Paragraph",
+        "content": [
+          {
+            "type": "Text",
+            "text": "Photosynthesis occurs in two main stages:"
+          }
+        ]
+      },
+      "span": {
+        "start": 0,
+        "end": 0
+      }
+    },
+    {
+      "kind": {
+        "type": "List",
+        "ordered": true,
+        "items": [
+          {
+            "content": [
+              {
+                "type": "Text",
+                "text": "Light-dependent reactions"
+              }
+            ],
+            "children": []
+          },
+          {
+            "content": [
+              {
+                "type": "Text",
+                "text": "Light-independent reactions (Calvin cycle)"
+              }
+            ],
+            "children": []
+          }
+        ]
+      },
+      "span": {
+        "start": 0,
+        "end": 0
+      }
+    },
+    {
+      "kind": {
+        "type": "Section",
+        "attrs": {
+          "id": null,
+          "pairs": {}
+        },
+        "title": [
+          {
+            "type": "Text",
+            "text": "Light-Dependent Reactions"
+          }
+        ],
+        "children": []
+      },
+      "span": {
+        "start": 0,
+        "end": 0
+      }
+    },
+    {
+      "kind": {
+        "type": "Paragraph",
+        "content": [
+          {
+            "type": "Text",
+            "text": "The light-dependent reactions occur in the "
+          },
+          {
+            "type": "Strong",
+            "content": [
+              {
+                "type": "Text",
+                "text": "thylakoid membranes"
+              }
+            ]
+          },
+          {
+            "type": "Text",
+            "text": " of the chloroplast. These reactions capture light energy and convert it to chemical energy in the form of "
+          },
+          {
+            "type": "InlineCode",
+            "code": "ATP"
+          },
+          {
+            "type": "Text",
+            "text": " and "
+          },
+          {
+            "type": "InlineCode",
+            "code": "NADPH"
+          },
+          {
+            "type": "Text",
+            "text": "."
+          }
+        ]
+      },
+      "span": {
+        "start": 0,
+        "end": 0
+      }
+    },
+    {
+      "kind": {
+        "type": "Section",
+        "attrs": {
+          "id": null,
+          "pairs": {}
+        },
+        "title": [
+          {
+            "type": "Text",
+            "text": "Calvin Cycle"
+          }
+        ],
+        "children": []
+      },
+      "span": {
+        "start": 0,
+        "end": 0
+      }
+    },
+    {
+      "kind": {
+        "type": "Paragraph",
+        "content": [
+          {
+            "type": "Text",
+            "text": "The Calvin cycle takes place in the "
+          },
+          {
+            "type": "Strong",
+            "content": [
+              {
+                "type": "Text",
+                "text": "stroma"
+              }
+            ]
+          },
+          {
+            "type": "Text",
+            "text": " of the chloroplast."
+          }
+        ]
+      },
+      "span": {
+        "start": 0,
+        "end": 0
+      }
+    },
+    {
+      "kind": {
+        "type": "List",
+        "ordered": false,
+        "items": [
+          {
+            "content": [
+              {
+                "type": "Text",
+                "text": "Carbon fixation by "
+              },
+              {
+                "type": "Link",
+                "text": [
+                  {
+                    "type": "Text",
+                    "text": "RuBisCO"
+                  }
+                ],
+                "url": "https://en.wikipedia.org/wiki/RuBisCO"
+              }
+            ],
+            "children": []
+          },
+          {
+            "content": [
+              {
+                "type": "Text",
+                "text": "Reduction of 3-PGA to G3P"
+              }
+            ],
+            "children": []
+          },
+          {
+            "content": [
+              {
+                "type": "Text",
+                "text": "Regeneration of RuBP"
+              }
+            ],
+            "children": []
+          }
+        ]
+      },
+      "span": {
+        "start": 0,
+        "end": 0
+      }
+    },
+    {
+      "kind": {
+        "type": "Section",
+        "attrs": {
+          "id": null,
+          "pairs": {}
+        },
+        "title": [
+          {
+            "type": "Text",
+            "text": "Factors Affecting Photosynthesis"
+          }
+        ],
+        "children": []
+      },
+      "span": {
+        "start": 0,
+        "end": 0
+      }
+    },
+    {
+      "kind": {
+        "type": "Paragraph",
+        "content": [
+          {
+            "type": "Text",
+            "text": "| Factor | Effect | Optimal Range |"
+          },
+          {
+            "type": "SoftBreak"
+          },
+          {
+            "type": "Text",
+            "text": "| --- | --- | --- |"
+          },
+          {
+            "type": "SoftBreak"
+          },
+          {
+            "type": "Text",
+            "text": "| Light intensity | Increases rate up to saturation point | 10,000-12,000 lux |"
+          },
+          {
+            "type": "SoftBreak"
+          },
+          {
+            "type": "Text",
+            "text": "| Temperature | Enzyme activity peaks then declines | 25-35°C |"
+          },
+          {
+            "type": "SoftBreak"
+          },
+          {
+            "type": "Text",
+            "text": "| CO₂ concentration | Rate increases with concentration | 0.04-0.4% |"
+          }
+        ]
+      },
+      "span": {
+        "start": 0,
+        "end": 0
+      }
+    },
+    {
+      "kind": {
+        "type": "Section",
+        "attrs": {
+          "id": null,
+          "pairs": {}
+        },
+        "title": [
+          {
+            "type": "Text",
+            "text": "Ecological Importance"
+          }
+        ],
+        "children": []
+      },
+      "span": {
+        "start": 0,
+        "end": 0
+      }
+    },
+    {
+      "kind": {
+        "type": "Paragraph",
+        "content": [
+          {
+            "type": "Text",
+            "text": "Photosynthesis is arguably the most important biochemical process on Earth, responsible for producing virtually all atmospheric oxygen."
+          }
+        ]
+      },
+      "span": {
+        "start": 0,
+        "end": 0
+      }
+    },
+    {
+      "kind": {
+        "type": "BlockQuote",
+        "content": [
+          {
+            "kind": {
+              "type": "Paragraph",
+              "content": [
+                {
+                  "type": "Text",
+                  "text": "\"The oxygen you're breathing right now was produced by photosynthesis.\""
+                }
+              ]
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          }
+        ]
+      },
+      "span": {
+        "start": 0,
+        "end": 0
+      }
+    },
+    {
+      "kind": {
+        "type": "ThematicBreak"
+      },
+      "span": {
+        "start": 0,
+        "end": 0
+      }
+    },
+    {
+      "kind": {
+        "type": "Paragraph",
+        "content": [
+          {
+            "type": "Emphasis",
+            "content": [
+              {
+                "type": "Text",
+                "text": "See also: "
+              },
+              {
+                "type": "Link",
+                "text": [
+                  {
+                    "type": "Text",
+                    "text": "Cellular Respiration"
+                  }
+                ],
+                "url": "https://en.wikipedia.org/wiki/Cellular_respiration"
+              }
+            ]
+          }
+        ]
+      },
+      "span": {
+        "start": 0,
+        "end": 0
+      }
+    }
+  ]
+}
