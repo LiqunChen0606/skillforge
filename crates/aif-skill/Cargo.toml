@@ -1,0 +1,14 @@
+[package]
+name = "aif-skill"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+aif-core = { workspace = true }
+sha2 = "0.10"
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+[dev-dependencies]
+aif-core = { workspace = true }
+aif-parser = { path = "../aif-parser" }

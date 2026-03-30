@@ -7,6 +7,7 @@ members = [
     "crates/aif-markdown",
     "crates/aif-lml",
     "crates/aif-cli",
+    "crates/aif-skill",
 ]
 
 [workspace.package]
@@ -20,5 +21,6 @@ aif-parser = { path = "crates/aif-parser" }
 aif-html = { path = "crates/aif-html" }
 aif-markdown = { path = "crates/aif-markdown" }
 aif-lml = { path = "crates/aif-lml" }
+aif-skill = { path = "crates/aif-skill" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
