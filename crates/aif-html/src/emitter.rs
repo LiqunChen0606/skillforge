@@ -186,6 +186,38 @@ fn emit_block(out: &mut String, block: &Block, heading_level: u8) {
             out.push_str(&format!("</{}>", tag));
             out.push('\n');
         }
+        BlockKind::SkillBlock {
+            skill_type,
+            attrs,
+            title,
+            content,
+            children,
+        } => {
+            let class = skill_block_class(skill_type);
+            if let Some(id) = &attrs.id {
+                out.push_str(&format!(
+                    "<div class=\"{}\" id=\"{}\">",
+                    class,
+                    escape_html(id)
+                ));
+            } else {
+                out.push_str(&format!("<div class=\"{}\">", class));
+            }
+            if let Some(title_inlines) = title {
+                out.push_str("<h3>");
+                emit_inlines(out, title_inlines);
+                out.push_str("</h3>");
+            }
+            if !content.is_empty() {
+                out.push_str("<p>");
+                emit_inlines(out, content);
+                out.push_str("</p>");
+            }
+            for child in children {
+                emit_block(out, child, heading_level);
+            }
+            out.push_str("</div>\n");
+        }
         BlockKind::ThematicBreak => {
             out.push_str("<hr>\n");
         }
@@ -241,6 +273,21 @@ fn emit_inline(out: &mut String, inline: &Inline) {
         Inline::HardBreak => {
             out.push_str("<br>\n");
         }
+    }
+}
+
+fn skill_block_class(st: &SkillBlockType) -> &'static str {
+    match st {
+        SkillBlockType::Skill => "aif-skill",
+        SkillBlockType::Step => "aif-step",
+        SkillBlockType::Verify => "aif-verify",
+        SkillBlockType::Precondition => "aif-precondition",
+        SkillBlockType::OutputContract => "aif-output-contract",
+        SkillBlockType::Decision => "aif-decision",
+        SkillBlockType::Tool => "aif-tool",
+        SkillBlockType::Fallback => "aif-fallback",
+        SkillBlockType::RedFlag => "aif-red-flag",
+        SkillBlockType::Example => "aif-example",
     }
 }
 
