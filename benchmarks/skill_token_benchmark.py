@@ -109,6 +109,24 @@ TAG_PATTERNS = {
         "precondition": r"@pre",
         "skill": r"@skill",
     },
+    "html": {
+        "step": r'class="aif-step"',
+        "verify": r'class="aif-verify"',
+        "precondition": r'class="aif-precondition"',
+        "skill": r'class="aif-skill"',
+    },
+    "markdown": {
+        "step": r'\*\*Step\b',
+        "verify": r'\*\*Verify\b|\*\*Verification\b',
+        "precondition": r'\*\*Precondition\b|\*\*Prerequisites?\b',
+        "skill": r'^# ',
+    },
+    "json": {
+        "step": r'"Step"',
+        "verify": r'"Verify"',
+        "precondition": r'"Precondition"',
+        "skill": r'"Skill"',
+    },
 }
 
 
