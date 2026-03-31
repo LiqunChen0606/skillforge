@@ -1,0 +1,17 @@
+---
+source: crates/aif-lml/tests/prose_modes.rs
+assertion_line: 58
+expression: out
+---
+# Tags: SK=Skill ST=Step VER=Verify PRE=Precondition OC=OutputContract DEC=Decision TL=Tool FB=Fallback RF=RedFlag EX=Example CL=Claim EV=Evidence DEF=Definition THM=Theorem ASM=Assumption RES=Result CON=Conclusion REQ=Requirement REC=Recommendation N=Note W=Warning I=Info T=Tip
+[SK name=""test-skill"" version=""1.0""]
+[PRE]
+When debugging fails.
+
+[ST order=1]
+Read the error message carefully.
+
+[VER]
+Confirm root cause found.
+
+[/SK]

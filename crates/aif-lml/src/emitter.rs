@@ -60,18 +60,33 @@ fn emit_doc(out: &mut String, doc: &Document, mode: LmlMode) {
         out.push_str("# Tags: SK=Skill ST=Step VER=Verify PRE=Precondition OC=OutputContract DEC=Decision TL=Tool FB=Fallback RF=RedFlag EX=Example CL=Claim EV=Evidence DEF=Definition THM=Theorem ASM=Assumption RES=Result CON=Conclusion REQ=Requirement REC=Recommendation N=Note W=Warning I=Info T=Tip\n");
     }
 
-    out.push_str("[DOC");
-    for (key, value) in &doc.metadata {
-        out.push(' ');
-        emit_attr_pair(out, key, value);
+    let use_doc_wrapper = !matches!(mode, LmlMode::Moderate | LmlMode::Aggressive);
+
+    if use_doc_wrapper {
+        out.push_str("[DOC");
+        for (key, value) in &doc.metadata {
+            out.push(' ');
+            emit_attr_pair(out, key, value);
+        }
+        out.push_str("]\n");
+    } else {
+        // Emit metadata as #key: value lines
+        for (key, value) in &doc.metadata {
+            out.push('#');
+            out.push_str(key);
+            out.push_str(": ");
+            out.push_str(value);
+            out.push('\n');
+        }
     }
-    out.push_str("]\n");
 
     for block in &doc.blocks {
         emit_block_mode(out, block, 0, mode);
     }
 
-    out.push_str("[/DOC]\n");
+    if use_doc_wrapper {
+        out.push_str("[/DOC]\n");
+    }
 }
 
 // ── Block emitter ────────────────────────────────────────────────────
@@ -237,7 +252,14 @@ fn emit_block_mode(out: &mut String, block: &Block, depth: usize, mode: LmlMode)
             for child in children {
                 emit_block_mode(out, child, depth + 1, mode);
             }
-            if matches!(skill_type, SkillBlockType::Skill) || !children.is_empty() {
+            let needs_closing = if matches!(mode, LmlMode::Moderate | LmlMode::Aggressive) {
+                // Only close blocks that have children
+                !children.is_empty()
+            } else {
+                // Standard/Conservative: close Skill blocks and blocks with children
+                matches!(skill_type, SkillBlockType::Skill) || !children.is_empty()
+            };
+            if needs_closing {
                 out.push_str("[/");
                 out.push_str(tag);
                 out.push_str("]\n");
