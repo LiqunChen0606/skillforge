@@ -12,14 +12,14 @@ AIF is a semantic document format and toolchain for humans and LLMs. Concise lik
 
 | Crate | Purpose |
 |-------|---------|
-| `aif-core` | AST types, spans, errors — shared IR |
+| `aif-core` | AST types, spans, errors, JSON Schema generation — shared IR |
 | `aif-parser` | Logos-based lexer + block/inline parser (`.aif` → AST) |
 | `aif-html` | HTML compiler (AST → HTML) |
 | `aif-markdown` | Markdown compiler + pulldown-cmark importer |
-| `aif-lml` | LML compiler — LLM-optimized tagged format (Standard, Compact, Conservative, Moderate, Aggressive modes) |
-| `aif-binary` | Binary serialization — wire (postcard) and token-optimized formats |
-| `aif-skill` | Skill profiles — validation, SHA-256 hashing, SKILL.md import/export, manifest, versioning, diff |
-| `aif-cli` | CLI tool: `compile`, `import`, `dump-ir`, `skill` subcommands |
+| `aif-lml` | LML compiler — 5 prose modes, bidirectional parser, hybrid LML+binary, semantic compression |
+| `aif-binary` | Binary serialization — wire (postcard) and token-optimized formats with full encode/decode roundtrip |
+| `aif-skill` | Skill profiles — validation, hashing, versioning, diff, registry, delta transport, format recommender |
+| `aif-cli` | CLI tool: `compile`, `import`, `dump-ir`, `skill`, `schema` subcommands |
 
 ### Key Types
 
@@ -96,6 +96,7 @@ cargo run -p aif-cli -- --help # CLI usage
 aif compile input.aif -f html|markdown|lml|lml-compact|lml-conservative|lml-moderate|lml-aggressive|json|binary-wire|binary-token [-o output]
 aif import input.md [-o output]
 aif dump-ir input.aif
+aif schema                     # Generate JSON Schema for AIF Document type
 
 # Skill operations
 aif skill import input.md [-f json|html|markdown|lml|lml-compact|lml-conservative|lml-moderate|lml-aggressive|binary-wire|binary-token] [-o output]
@@ -109,6 +110,35 @@ aif skill bump input.aif [--dry-run]
 # Benchmarks
 python benchmarks/skill_token_benchmark.py  # Requires ANTHROPIC_API_KEY
 ```
+
+## Phase 2 Features
+
+### Token-Optimized Binary Roundtrip (Task 1)
+Full `encode` + `decode` for the custom binary format. All block/inline types roundtrip correctly.
+
+### LML+Binary Hybrid (Task 2)
+`crates/aif-lml/src/hybrid.rs` — LML text with base64-encoded binary content blocks for mixed human/machine consumption.
+
+### Bidirectional LML Parser (Task 3)
+`crates/aif-lml/src/parser.rs` — Parses LML aggressive-mode back into the AST. Enables full LML roundtrip: AST → LML → AST.
+
+### JSON Schema / Cross-Language SDK (Task 4)
+`crates/aif-core/src/schema.rs` — Generates JSON Schema from AST types via `schemars`. CLI: `aif schema`.
+
+### Incremental Diff Transport (Task 5)
+`crates/aif-skill/src/delta.rs` — Binary delta encoding for skill updates. Encodes only changed blocks for efficient wire transport.
+
+### Skill Registry (Task 6)
+`crates/aif-skill/src/registry.rs` — Local file-based registry for skill lookup by name, version, or content hash.
+
+### Compliance Benchmarks (Task 7)
+Extended `benchmarks/skill_token_benchmark.py` with HTML, Markdown, and JSON compliance patterns.
+
+### Format Recommender (Task 8)
+`crates/aif-skill/src/recommend.rs` — Analyzes document structure to recommend optimal output format.
+
+### Semantic Compression (Task 9)
+`crates/aif-lml/src/compress.rs` — Text deduplication dictionary for repeated content across blocks.
 
 ## Benchmark Results (2026-03-31, claude-opus-4-6, 10 skills)
 
