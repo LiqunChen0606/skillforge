@@ -56,7 +56,7 @@ pub fn emit_lml_mode(doc: &Document, mode: LmlMode) -> String {
 // ── Document wrapper ─────────────────────────────────────────────────
 
 fn emit_doc(out: &mut String, doc: &Document, mode: LmlMode) {
-    if mode.uses_short_tags() {
+    if matches!(mode, LmlMode::Conservative | LmlMode::Moderate) {
         out.push_str("# Tags: SK=Skill ST=Step VER=Verify PRE=Precondition OC=OutputContract DEC=Decision TL=Tool FB=Fallback RF=RedFlag EX=Example CL=Claim EV=Evidence DEF=Definition THM=Theorem ASM=Assumption RES=Result CON=Conclusion REQ=Requirement REC=Recommendation N=Note W=Warning I=Info T=Tip\n");
     }
 
@@ -92,6 +92,10 @@ fn emit_doc(out: &mut String, doc: &Document, mode: LmlMode) {
 // ── Block emitter ────────────────────────────────────────────────────
 
 fn emit_block_mode(out: &mut String, block: &Block, depth: usize, mode: LmlMode) {
+    if mode == LmlMode::Aggressive {
+        emit_block_aggressive(out, block, depth);
+        return;
+    }
     match &block.kind {
         BlockKind::Section {
             attrs,
@@ -269,6 +273,195 @@ fn emit_block_mode(out: &mut String, block: &Block, depth: usize, mode: LmlMode)
         BlockKind::ThematicBreak => {
             out.push_str("---\n\n");
         }
+    }
+}
+
+// ── Aggressive mode emitter ──────────────────────────────────────────
+
+fn emit_block_aggressive(out: &mut String, block: &Block, depth: usize) {
+    match &block.kind {
+        BlockKind::Section { attrs: _, title, children } => {
+            // Use # depth-based headings like Markdown
+            let hashes = "#".repeat(depth + 1);
+            out.push_str(&hashes);
+            out.push(' ');
+            emit_inlines_plain(out, title);
+            out.push('\n');
+            for child in children {
+                emit_block_aggressive(out, child, depth + 1);
+            }
+        }
+        BlockKind::Paragraph { content } => {
+            emit_inlines_plain(out, content);
+            out.push_str("\n\n");
+        }
+        BlockKind::SemanticBlock { block_type, attrs: _, title, content } => {
+            out.push('@');
+            out.push_str(semantic_block_name_aggressive(block_type));
+            out.push_str(": ");
+            if let Some(t) = title {
+                emit_inlines_plain(out, t);
+                out.push_str(" — ");
+            }
+            emit_inlines_plain(out, content);
+            out.push_str("\n\n");
+        }
+        BlockKind::Callout { callout_type, attrs: _, content } => {
+            out.push_str("> [");
+            out.push_str(callout_tag(callout_type));
+            out.push_str("] ");
+            emit_inlines_plain(out, content);
+            out.push_str("\n\n");
+        }
+        BlockKind::CodeBlock { lang, attrs: _, code } => {
+            out.push_str("```");
+            if let Some(lang) = lang {
+                out.push_str(lang);
+            }
+            out.push('\n');
+            out.push_str(code);
+            if !code.ends_with('\n') {
+                out.push('\n');
+            }
+            out.push_str("```\n\n");
+        }
+        BlockKind::BlockQuote { content } => {
+            for child in content {
+                out.push_str("> ");
+                // Emit inline content for paragraphs directly after "> "
+                if let BlockKind::Paragraph { content: para_content } = &child.kind {
+                    emit_inlines_plain(out, para_content);
+                    out.push_str("\n\n");
+                } else {
+                    emit_block_aggressive(out, child, depth + 1);
+                }
+            }
+        }
+        BlockKind::Table { attrs, caption, headers: _, rows: _ } => {
+            out.push_str("[TABLE");
+            emit_attrs(out, attrs);
+            out.push(']');
+            if let Some(cap) = caption {
+                out.push(' ');
+                emit_inlines_plain(out, cap);
+            }
+            out.push_str("\n\n");
+        }
+        BlockKind::Figure { attrs, caption, src } => {
+            out.push_str("[FIGURE");
+            emit_attrs(out, attrs);
+            out.push(' ');
+            emit_attr_pair(out, "src", src);
+            out.push(']');
+            if let Some(cap) = caption {
+                out.push(' ');
+                emit_inlines_plain(out, cap);
+            }
+            out.push_str("\n\n");
+        }
+        BlockKind::List { ordered, items } => {
+            for (i, item) in items.iter().enumerate() {
+                if *ordered {
+                    out.push_str(&format!("{}. ", i + 1));
+                } else {
+                    out.push_str("- ");
+                }
+                emit_inlines_plain(out, &item.content);
+                out.push('\n');
+                for child in &item.children {
+                    emit_block_aggressive(out, child, depth + 1);
+                }
+            }
+            out.push('\n');
+        }
+        BlockKind::SkillBlock { skill_type, attrs, title, content, children } => {
+            let prefix = skill_block_prefix_aggressive(skill_type);
+            out.push_str(prefix);
+            emit_attrs_aggressive(out, attrs);
+            if let Some(t) = title {
+                out.push_str(": ");
+                emit_inlines_plain(out, t);
+            } else if !content.is_empty() || !children.is_empty() {
+                out.push(':');
+            }
+            if !content.is_empty() {
+                if title.is_some() || children.is_empty() {
+                    // Leaf with content: put on same line
+                    out.push(' ');
+                    emit_inlines_plain(out, content);
+                    out.push('\n');
+                } else {
+                    // Container with content (unusual but handle it)
+                    out.push('\n');
+                    emit_inlines_plain(out, content);
+                    out.push('\n');
+                }
+            } else {
+                out.push('\n');
+            }
+            for child in children {
+                emit_block_aggressive(out, child, depth + 1);
+            }
+            if !children.is_empty() {
+                // Blank line after container's children
+            }
+        }
+        BlockKind::ThematicBreak => {
+            out.push_str("---\n\n");
+        }
+    }
+}
+
+fn emit_attrs_aggressive(out: &mut String, attrs: &Attrs) {
+    let has_content = attrs.id.is_some() || !attrs.pairs.is_empty();
+    if !has_content {
+        return;
+    }
+    out.push('(');
+    let mut first = true;
+    if let Some(id) = &attrs.id {
+        out.push_str("id=");
+        out.push_str(id);
+        first = false;
+    }
+    for (k, v) in &attrs.pairs {
+        if !first {
+            out.push_str(", ");
+        }
+        out.push_str(k);
+        out.push('=');
+        out.push_str(v);
+        first = false;
+    }
+    out.push(')');
+}
+
+fn skill_block_prefix_aggressive(st: &SkillBlockType) -> &'static str {
+    match st {
+        SkillBlockType::Skill => "@skill",
+        SkillBlockType::Step => "@step",
+        SkillBlockType::Verify => "@verify",
+        SkillBlockType::Precondition => "@pre",
+        SkillBlockType::OutputContract => "@output",
+        SkillBlockType::Decision => "@decision",
+        SkillBlockType::Tool => "@tool",
+        SkillBlockType::Fallback => "@fallback",
+        SkillBlockType::RedFlag => "@redflag",
+        SkillBlockType::Example => "@example",
+    }
+}
+
+fn semantic_block_name_aggressive(bt: &SemanticBlockType) -> &'static str {
+    match bt {
+        SemanticBlockType::Claim => "claim",
+        SemanticBlockType::Evidence => "evidence",
+        SemanticBlockType::Definition => "definition",
+        SemanticBlockType::Theorem => "theorem",
+        SemanticBlockType::Assumption => "assumption",
+        SemanticBlockType::Result => "result",
+        SemanticBlockType::Conclusion => "conclusion",
+        SemanticBlockType::Requirement => "requirement",
+        SemanticBlockType::Recommendation => "recommendation",
     }
 }
 
