@@ -1,8 +1,13 @@
 mod emitter;
+mod parser;
 
 use aif_core::ast::Document;
 
 pub use emitter::LmlMode;
+
+pub fn parse_lml(input: &str) -> Result<Document, String> {
+    parser::parse_lml(input)
+}
 
 pub fn render_lml(doc: &Document) -> String {
     emitter::emit_lml(doc)
