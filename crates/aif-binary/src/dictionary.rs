@@ -54,3 +54,33 @@ pub fn encode_str(s: &str, out: &mut Vec<u8>) {
     encode_varint(s.len(), out);
     out.extend_from_slice(s.as_bytes());
 }
+
+/// Decode a varint (LEB128) from the given byte slice.
+/// Returns (value, bytes_consumed).
+pub fn decode_varint(data: &[u8]) -> Result<(usize, usize), &'static str> {
+    let mut result: usize = 0;
+    let mut shift = 0;
+    for (i, &byte) in data.iter().enumerate() {
+        result |= ((byte & 0x7F) as usize) << shift;
+        if byte & 0x80 == 0 {
+            return Ok((result, i + 1));
+        }
+        shift += 7;
+        if shift >= 64 {
+            return Err("varint overflow");
+        }
+    }
+    Err("unexpected end of varint")
+}
+
+/// Decode a length-prefixed UTF-8 string from the given byte slice.
+/// Returns (string, bytes_consumed).
+pub fn decode_str(data: &[u8]) -> Result<(String, usize), &'static str> {
+    let (len, consumed) = decode_varint(data)?;
+    let end = consumed + len;
+    if data.len() < end {
+        return Err("unexpected end of string");
+    }
+    let s = std::str::from_utf8(&data[consumed..end]).map_err(|_| "invalid utf-8")?;
+    Ok((s.to_string(), end))
+}

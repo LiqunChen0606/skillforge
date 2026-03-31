@@ -1,4 +1,6 @@
 use aif_core::ast::*;
+use aif_core::span::Span;
+use std::collections::BTreeMap;
 
 use crate::dictionary::*;
 
@@ -236,5 +238,380 @@ fn skill_type_id(st: &SkillBlockType) -> u8 {
         SkillBlockType::Fallback => SK_FALLBACK,
         SkillBlockType::RedFlag => SK_RED_FLAG,
         SkillBlockType::Example => SK_EXAMPLE,
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Decode
+// ---------------------------------------------------------------------------
+
+/// Decode a Document from token-optimized binary format.
+pub fn decode(data: &[u8]) -> Result<Document, &'static str> {
+    if data.len() < 3 {
+        return Err("data too short");
+    }
+    if &data[0..2] != b"AT" {
+        return Err("invalid magic bytes");
+    }
+    if data[2] != 0x01 {
+        return Err("unsupported version");
+    }
+    let mut pos = 3;
+
+    // Metadata
+    let (meta_count, n) = decode_varint(&data[pos..])?;
+    pos += n;
+    let mut metadata = BTreeMap::new();
+    for _ in 0..meta_count {
+        let (k, n) = decode_str(&data[pos..])?;
+        pos += n;
+        let (v, n) = decode_str(&data[pos..])?;
+        pos += n;
+        metadata.insert(k, v);
+    }
+
+    // Blocks
+    let (block_count, n) = decode_varint(&data[pos..])?;
+    pos += n;
+    let mut blocks = Vec::with_capacity(block_count);
+    for _ in 0..block_count {
+        let (block, n) = decode_block(&data[pos..])?;
+        pos += n;
+        blocks.push(block);
+    }
+
+    Ok(Document { metadata, blocks })
+}
+
+fn decode_block(data: &[u8]) -> Result<(Block, usize), &'static str> {
+    if data.is_empty() {
+        return Err("unexpected end of block data");
+    }
+    let type_id = data[0];
+    let mut pos = 1;
+
+    let kind = match type_id {
+        PARAGRAPH => {
+            let (content, n) = decode_inlines(&data[pos..])?;
+            pos += n;
+            BlockKind::Paragraph { content }
+        }
+        SECTION => {
+            let (attrs, n) = decode_attrs(&data[pos..])?;
+            pos += n;
+            let (title, n) = decode_inlines(&data[pos..])?;
+            pos += n;
+            let (child_count, n) = decode_varint(&data[pos..])?;
+            pos += n;
+            let mut children = Vec::with_capacity(child_count);
+            for _ in 0..child_count {
+                let (child, n) = decode_block(&data[pos..])?;
+                pos += n;
+                children.push(child);
+            }
+            BlockKind::Section {
+                attrs,
+                title,
+                children,
+            }
+        }
+        SKILL_BLOCK => {
+            if pos >= data.len() {
+                return Err("unexpected end of skill block");
+            }
+            let skill_type = decode_skill_type(data[pos]);
+            pos += 1;
+            let (attrs, n) = decode_attrs(&data[pos..])?;
+            pos += n;
+            // Optional title
+            if pos >= data.len() {
+                return Err("unexpected end of skill block title flag");
+            }
+            let title = if data[pos] == 1 {
+                pos += 1;
+                let (t, n) = decode_inlines(&data[pos..])?;
+                pos += n;
+                Some(t)
+            } else {
+                pos += 1;
+                None
+            };
+            let (content, n) = decode_inlines(&data[pos..])?;
+            pos += n;
+            let (child_count, n) = decode_varint(&data[pos..])?;
+            pos += n;
+            let mut children = Vec::with_capacity(child_count);
+            for _ in 0..child_count {
+                let (child, n) = decode_block(&data[pos..])?;
+                pos += n;
+                children.push(child);
+            }
+            BlockKind::SkillBlock {
+                skill_type,
+                attrs,
+                title,
+                content,
+                children,
+            }
+        }
+        SEMANTIC_BLOCK => {
+            let (attrs, n) = decode_attrs(&data[pos..])?;
+            pos += n;
+            let title = if pos < data.len() && data[pos] == 1 {
+                pos += 1;
+                let (t, n) = decode_inlines(&data[pos..])?;
+                pos += n;
+                Some(t)
+            } else {
+                pos += 1;
+                None
+            };
+            let (content, n) = decode_inlines(&data[pos..])?;
+            pos += n;
+            BlockKind::SemanticBlock {
+                block_type: SemanticBlockType::Claim, // not stored in binary
+                attrs,
+                title,
+                content,
+            }
+        }
+        CALLOUT => {
+            let (attrs, n) = decode_attrs(&data[pos..])?;
+            pos += n;
+            let (content, n) = decode_inlines(&data[pos..])?;
+            pos += n;
+            BlockKind::Callout {
+                callout_type: CalloutType::Note, // not stored in binary
+                attrs,
+                content,
+            }
+        }
+        CODE_BLOCK => {
+            let (lang_str, n) = decode_str(&data[pos..])?;
+            pos += n;
+            let lang = if lang_str.is_empty() {
+                None
+            } else {
+                Some(lang_str)
+            };
+            let (attrs, n) = decode_attrs(&data[pos..])?;
+            pos += n;
+            let (code, n) = decode_str(&data[pos..])?;
+            pos += n;
+            BlockKind::CodeBlock { lang, attrs, code }
+        }
+        BLOCK_QUOTE => {
+            let (child_count, n) = decode_varint(&data[pos..])?;
+            pos += n;
+            let mut content = Vec::with_capacity(child_count);
+            for _ in 0..child_count {
+                let (child, n) = decode_block(&data[pos..])?;
+                pos += n;
+                content.push(child);
+            }
+            BlockKind::BlockQuote { content }
+        }
+        LIST => {
+            if pos >= data.len() {
+                return Err("unexpected end of list");
+            }
+            let ordered = data[pos] == 1;
+            pos += 1;
+            let (item_count, n) = decode_varint(&data[pos..])?;
+            pos += n;
+            let mut items = Vec::with_capacity(item_count);
+            for _ in 0..item_count {
+                let (content, n) = decode_inlines(&data[pos..])?;
+                pos += n;
+                let (child_count, n) = decode_varint(&data[pos..])?;
+                pos += n;
+                let mut children = Vec::with_capacity(child_count);
+                for _ in 0..child_count {
+                    let (child, n) = decode_block(&data[pos..])?;
+                    pos += n;
+                    children.push(child);
+                }
+                items.push(ListItem { content, children });
+            }
+            BlockKind::List { ordered, items }
+        }
+        TABLE => {
+            let (attrs, n) = decode_attrs(&data[pos..])?;
+            pos += n;
+            let caption = if pos < data.len() && data[pos] == 1 {
+                pos += 1;
+                let (cap, n) = decode_inlines(&data[pos..])?;
+                pos += n;
+                Some(cap)
+            } else {
+                pos += 1;
+                None
+            };
+            let (header_count, n) = decode_varint(&data[pos..])?;
+            pos += n;
+            let mut headers = Vec::with_capacity(header_count);
+            for _ in 0..header_count {
+                let (h, n) = decode_inlines(&data[pos..])?;
+                pos += n;
+                headers.push(h);
+            }
+            let (row_count, n) = decode_varint(&data[pos..])?;
+            pos += n;
+            let mut rows = Vec::with_capacity(row_count);
+            for _ in 0..row_count {
+                let (cell_count, n) = decode_varint(&data[pos..])?;
+                pos += n;
+                let mut row = Vec::with_capacity(cell_count);
+                for _ in 0..cell_count {
+                    let (cell, n) = decode_inlines(&data[pos..])?;
+                    pos += n;
+                    row.push(cell);
+                }
+                rows.push(row);
+            }
+            BlockKind::Table {
+                attrs,
+                caption,
+                headers,
+                rows,
+            }
+        }
+        FIGURE => {
+            let (attrs, n) = decode_attrs(&data[pos..])?;
+            pos += n;
+            let caption = if pos < data.len() && data[pos] == 1 {
+                pos += 1;
+                let (cap, n) = decode_inlines(&data[pos..])?;
+                pos += n;
+                Some(cap)
+            } else {
+                pos += 1;
+                None
+            };
+            let (src, n) = decode_str(&data[pos..])?;
+            pos += n;
+            BlockKind::Figure {
+                attrs,
+                caption,
+                src,
+            }
+        }
+        THEMATIC_BREAK => BlockKind::ThematicBreak,
+        _ => return Err("unknown block type ID"),
+    };
+
+    Ok((
+        Block {
+            kind,
+            span: Span::new(0, 0),
+        },
+        pos,
+    ))
+}
+
+fn decode_inlines(data: &[u8]) -> Result<(Vec<Inline>, usize), &'static str> {
+    let (count, mut pos) = decode_varint(data)?;
+    let mut inlines = Vec::with_capacity(count);
+    for _ in 0..count {
+        let (inline, n) = decode_inline(&data[pos..])?;
+        pos += n;
+        inlines.push(inline);
+    }
+    Ok((inlines, pos))
+}
+
+fn decode_inline(data: &[u8]) -> Result<(Inline, usize), &'static str> {
+    if data.is_empty() {
+        return Err("unexpected end of inline data");
+    }
+    let type_id = data[0];
+    let mut pos = 1;
+
+    let inline = match type_id {
+        TEXT => {
+            let (text, n) = decode_str(&data[pos..])?;
+            pos += n;
+            Inline::Text { text }
+        }
+        EMPHASIS => {
+            let (content, n) = decode_inlines(&data[pos..])?;
+            pos += n;
+            Inline::Emphasis { content }
+        }
+        STRONG => {
+            let (content, n) = decode_inlines(&data[pos..])?;
+            pos += n;
+            Inline::Strong { content }
+        }
+        INLINE_CODE => {
+            let (code, n) = decode_str(&data[pos..])?;
+            pos += n;
+            Inline::InlineCode { code }
+        }
+        LINK => {
+            let (text, n) = decode_inlines(&data[pos..])?;
+            pos += n;
+            let (url, n) = decode_str(&data[pos..])?;
+            pos += n;
+            Inline::Link { text, url }
+        }
+        REFERENCE => {
+            let (target, n) = decode_str(&data[pos..])?;
+            pos += n;
+            Inline::Reference { target }
+        }
+        FOOTNOTE => {
+            let (content, n) = decode_inlines(&data[pos..])?;
+            pos += n;
+            Inline::Footnote { content }
+        }
+        SOFT_BREAK => Inline::SoftBreak,
+        HARD_BREAK => Inline::HardBreak,
+        _ => return Err("unknown inline type ID"),
+    };
+
+    Ok((inline, pos))
+}
+
+fn decode_attrs(data: &[u8]) -> Result<(Attrs, usize), &'static str> {
+    if data.is_empty() {
+        return Err("unexpected end of attrs");
+    }
+    let mut pos = 0;
+    let id = if data[pos] == 1 {
+        pos += 1;
+        let (id_str, n) = decode_str(&data[pos..])?;
+        pos += n;
+        Some(id_str)
+    } else {
+        pos += 1;
+        None
+    };
+    let (pair_count, n) = decode_varint(&data[pos..])?;
+    pos += n;
+    let mut pairs = BTreeMap::new();
+    for _ in 0..pair_count {
+        let (k, n) = decode_str(&data[pos..])?;
+        pos += n;
+        let (v, n) = decode_str(&data[pos..])?;
+        pos += n;
+        pairs.insert(k, v);
+    }
+    Ok((Attrs { id, pairs }, pos))
+}
+
+fn decode_skill_type(byte: u8) -> SkillBlockType {
+    match byte {
+        SK_SKILL => SkillBlockType::Skill,
+        SK_STEP => SkillBlockType::Step,
+        SK_VERIFY => SkillBlockType::Verify,
+        SK_PRECONDITION => SkillBlockType::Precondition,
+        SK_OUTPUT_CONTRACT => SkillBlockType::OutputContract,
+        SK_DECISION => SkillBlockType::Decision,
+        SK_TOOL => SkillBlockType::Tool,
+        SK_FALLBACK => SkillBlockType::Fallback,
+        SK_RED_FLAG => SkillBlockType::RedFlag,
+        SK_EXAMPLE => SkillBlockType::Example,
+        _ => SkillBlockType::Skill, // fallback
     }
 }
