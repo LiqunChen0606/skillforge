@@ -44,6 +44,8 @@ enum Commands {
         #[command(subcommand)]
         action: SkillAction,
     },
+    /// Print JSON Schema for the AIF Document type
+    Schema {},
 }
 
 #[derive(Subcommand)]
@@ -468,6 +470,9 @@ fn main() {
         }
         Commands::Skill { action } => {
             handle_skill(action);
+        }
+        Commands::Schema {} => {
+            println!("{}", aif_core::schema::generate_schema());
         }
     }
 }

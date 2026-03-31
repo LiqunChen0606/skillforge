@@ -1,9 +1,10 @@
 use crate::span::Span;
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
 /// Top-level document
-#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, JsonSchema)]
 pub struct Document {
     pub metadata: BTreeMap<String, String>,
     pub blocks: Vec<Block>,
@@ -16,13 +17,13 @@ impl Document {
 }
 
 /// A block-level element
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, JsonSchema)]
 pub struct Block {
     pub kind: BlockKind,
     pub span: Span,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, JsonSchema)]
 #[serde(tag = "type")]
 pub enum BlockKind {
     Section {
@@ -77,13 +78,13 @@ pub enum BlockKind {
     ThematicBreak,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, JsonSchema)]
 pub struct ListItem {
     pub content: Vec<Inline>,
     pub children: Vec<Block>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, JsonSchema)]
 pub enum SemanticBlockType {
     Claim,
     Evidence,
@@ -96,7 +97,7 @@ pub enum SemanticBlockType {
     Recommendation,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, JsonSchema)]
 pub enum CalloutType {
     Note,
     Warning,
@@ -104,7 +105,7 @@ pub enum CalloutType {
     Tip,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, JsonSchema)]
 pub enum SkillBlockType {
     Skill,
     Step,
@@ -119,7 +120,7 @@ pub enum SkillBlockType {
 }
 
 /// Attributes on a block
-#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, JsonSchema)]
 pub struct Attrs {
     pub id: Option<String>,
     pub pairs: BTreeMap<String, String>,
@@ -140,7 +141,7 @@ impl Attrs {
 }
 
 /// Inline-level element
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, JsonSchema)]
 #[serde(tag = "type")]
 pub enum Inline {
     Text { text: String },
