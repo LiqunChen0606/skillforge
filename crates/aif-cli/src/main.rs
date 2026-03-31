@@ -19,7 +19,7 @@ enum Commands {
     Compile {
         /// Input .aif file
         input: PathBuf,
-        /// Output format: html, markdown, lml, lml-compact, lml-conservative, lml-moderate, lml-aggressive, json
+        /// Output format: html, markdown, lml, lml-compact, lml-conservative, lml-moderate, lml-aggressive, json, binary-wire, binary-token
         #[arg(short, long, default_value = "html")]
         format: String,
         /// Output file (defaults to stdout)
@@ -53,7 +53,7 @@ enum SkillAction {
         input: PathBuf,
         #[arg(short, long)]
         output: Option<PathBuf>,
-        /// Output format: json, html, markdown, lml, lml-compact, lml-conservative, lml-moderate, lml-aggressive
+        /// Output format: json, html, markdown, lml, lml-compact, lml-conservative, lml-moderate, lml-aggressive, binary-wire, binary-token
         #[arg(short, long, default_value = "json")]
         format: String,
     },
@@ -137,6 +137,29 @@ fn handle_skill(action: SkillAction) {
                 blocks: vec![result.block],
             };
 
+            // Binary formats need raw byte output, not text
+            match format.as_str() {
+                "binary-wire" | "binary-token" => {
+                    let bytes = if format == "binary-wire" {
+                        aif_binary::render_wire(&doc)
+                    } else {
+                        aif_binary::render_token_optimized(&doc)
+                    };
+                    if let Some(output_path) = output.as_ref() {
+                        std::fs::write(output_path, &bytes).unwrap_or_else(|e| {
+                            eprintln!("Error writing {}: {}", output_path.display(), e);
+                            std::process::exit(1);
+                        });
+                        eprintln!("Wrote {} ({} bytes)", output_path.display(), bytes.len());
+                    } else {
+                        use std::io::Write;
+                        std::io::stdout().write_all(&bytes).unwrap();
+                    }
+                    return;
+                }
+                _ => {}
+            }
+
             let output_text = match format.as_str() {
                 "json" => serde_json::to_string_pretty(&doc).unwrap(),
                 "html" => aif_html::render_html(&doc),
@@ -148,7 +171,7 @@ fn handle_skill(action: SkillAction) {
                 "lml-aggressive" => aif_lml::render_lml_aggressive(&doc),
                 _ => {
                     eprintln!(
-                        "Unknown format: {}. Supported: json, html, markdown, lml, lml-compact, lml-conservative, lml-moderate, lml-aggressive",
+                        "Unknown format: {}. Supported: json, html, markdown, lml, lml-compact, lml-conservative, lml-moderate, lml-aggressive, binary-wire, binary-token",
                         format
                     );
                     std::process::exit(1);
@@ -293,6 +316,29 @@ fn main() {
             let source = read_source(&input);
             let doc = parse_aif(&source);
 
+            // Binary formats need raw byte output, not text
+            match format.as_str() {
+                "binary-wire" | "binary-token" => {
+                    let bytes = if format == "binary-wire" {
+                        aif_binary::render_wire(&doc)
+                    } else {
+                        aif_binary::render_token_optimized(&doc)
+                    };
+                    if let Some(output_path) = output.as_ref() {
+                        std::fs::write(output_path, &bytes).unwrap_or_else(|e| {
+                            eprintln!("Error writing {}: {}", output_path.display(), e);
+                            std::process::exit(1);
+                        });
+                        eprintln!("Wrote {} ({} bytes)", output_path.display(), bytes.len());
+                    } else {
+                        use std::io::Write;
+                        std::io::stdout().write_all(&bytes).unwrap();
+                    }
+                    return;
+                }
+                _ => {}
+            }
+
             let result = match format.as_str() {
                 "html" => aif_html::render_html(&doc),
                 "markdown" | "md" => aif_markdown::render_markdown(&doc),
@@ -304,7 +350,7 @@ fn main() {
                 "json" => serde_json::to_string_pretty(&doc).unwrap(),
                 _ => {
                     eprintln!(
-                        "Unknown format: {}. Supported: html, markdown, lml, lml-compact, lml-conservative, lml-moderate, lml-aggressive, json",
+                        "Unknown format: {}. Supported: html, markdown, lml, lml-compact, lml-conservative, lml-moderate, lml-aggressive, json, binary-wire, binary-token",
                         format
                     );
                     std::process::exit(1);
