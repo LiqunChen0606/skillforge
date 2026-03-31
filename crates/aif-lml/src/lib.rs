@@ -1,4 +1,6 @@
+mod compress;
 mod emitter;
+mod hybrid;
 mod parser;
 
 use aif_core::ast::Document;
@@ -31,4 +33,12 @@ pub fn render_lml_aggressive(doc: &Document) -> String {
 
 pub fn render_lml_with_mode(doc: &Document, mode: LmlMode) -> String {
     emitter::emit_lml_mode(doc, mode)
+}
+
+pub fn render_lml_hybrid(doc: &Document) -> String {
+    hybrid::emit_lml_hybrid(doc)
+}
+
+pub fn render_lml_compressed(doc: &Document) -> String {
+    compress::render_compressed(doc)
 }

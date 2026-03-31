@@ -436,7 +436,7 @@ fn emit_attrs_aggressive(out: &mut String, attrs: &Attrs) {
     out.push(')');
 }
 
-fn skill_block_prefix_aggressive(st: &SkillBlockType) -> &'static str {
+pub fn skill_block_prefix_aggressive(st: &SkillBlockType) -> &'static str {
     match st {
         SkillBlockType::Skill => "@skill",
         SkillBlockType::Step => "@step",
