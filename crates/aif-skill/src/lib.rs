@@ -7,3 +7,4 @@ pub mod version;
 pub mod diff;
 pub mod classify;
 pub mod registry;
+pub mod recommend;
