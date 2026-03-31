@@ -8,3 +8,4 @@ pub mod diff;
 pub mod classify;
 pub mod registry;
 pub mod recommend;
+pub mod delta;
