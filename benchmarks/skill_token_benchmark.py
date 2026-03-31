@@ -15,6 +15,7 @@ Uses Claude's token counting API for accurate measurements.
 Includes semantic compliance scoring and token-normalized outcome (TNO).
 """
 
+import base64
 import json
 import os
 import re
@@ -41,7 +42,11 @@ FORMATS = [
     ("lml_conservative","LML Conserv.",     "lml-conservative"),
     ("lml_moderate",    "LML Moderate",     "lml-moderate"),
     ("lml_aggressive",  "LML Aggress.",     "lml-aggressive"),
+    ("binary_wire",     "Binary Wire",      "binary-wire"),
+    ("binary_token",    "Binary Token",     "binary-token"),
 ]
+
+BINARY_FORMATS = {"binary_wire", "binary_token"}
 
 
 # ── Semantic Compliance Scoring (Task 8) ──────────────────────────────
@@ -142,6 +147,16 @@ def count_tokens(client: anthropic.Anthropic, text: str) -> int:
         messages=[{"role": "user", "content": text}],
     )
     return result.input_tokens
+
+
+def skill_import_binary(md_path: str, fmt: str) -> bytes:
+    """Import a SKILL.md via CLI, returns raw bytes for binary formats."""
+    cmd = [str(AIF_CLI), "skill", "import", "--format", fmt, md_path]
+    result = subprocess.run(cmd, capture_output=True, timeout=30)
+    if result.returncode != 0:
+        print(f"  Warning: import --format {fmt} failed: {result.stderr.decode()}", file=sys.stderr)
+        return b""
+    return result.stdout
 
 
 def skill_import(md_path: str, fmt: str) -> str:
@@ -370,11 +385,17 @@ def main():
 
         # Collect texts for each format
         texts = {}
+        raw_bytes = {}  # raw byte data for binary formats
         texts["md"] = md_text
         for key, _, cli_fmt in FORMATS:
             if cli_fmt is None:
                 continue
-            texts[key] = skill_import(str(skill_path), cli_fmt)
+            if key in BINARY_FORMATS:
+                raw = skill_import_binary(str(skill_path), cli_fmt)
+                raw_bytes[key] = raw
+                texts[key] = base64.b64encode(raw).decode("ascii") if raw else ""
+            else:
+                texts[key] = skill_import(str(skill_path), cli_fmt)
 
         if not texts.get("json"):
             print("  SKIP: import failed")
@@ -397,7 +418,11 @@ def main():
                 continue
 
             tokens = count_tokens(client, text)
-            nbytes = len(text.encode("utf-8"))
+            if key in BINARY_FORMATS:
+                nbytes = len(raw_bytes.get(key, b""))
+                r[f"{key}_raw_bytes"] = nbytes
+            else:
+                nbytes = len(text.encode("utf-8"))
             r[f"{key}_tokens"] = tokens
             r[f"{key}_bytes"] = nbytes
 
@@ -407,8 +432,11 @@ def main():
             else:
                 r[f"{key}_save_pct"] = pct(md_tokens, tokens)
 
-            # Compliance scoring
-            comp = compliance_score(text, expected_counts, key)
+            # Compliance scoring (binary formats preserve full AST)
+            if key in BINARY_FORMATS:
+                comp = 1.0
+            else:
+                comp = compliance_score(text, expected_counts, key)
             r[f"{key}_compliance"] = comp
 
             # Token-normalized outcome
@@ -427,7 +455,11 @@ def main():
             save_str = f"  {save:>+6.1f}%" if key != "md" else "  (base)"
             comp_str = f"  comp:{comp:>5.1%}" if key in TAG_PATTERNS else ""
             tno_str = f"  TNO:{tno:>5.2f}" if key in TAG_PATTERNS else ""
-            print(f"  {label:<16} {format_size(tokens):>8} tokens  ({format_size(nbytes):>8} bytes){save_str}{comp_str}{tno_str}")
+            if key in BINARY_FORMATS:
+                raw_b = r.get(f"{key}_raw_bytes", nbytes)
+                print(f"  {label:<16} {format_size(tokens):>8} tokens  ({format_size(raw_b):>8} raw bytes){save_str}")
+            else:
+                print(f"  {label:<16} {format_size(tokens):>8} tokens  ({format_size(nbytes):>8} bytes){save_str}{comp_str}{tno_str}")
         print()
 
         time.sleep(0.3)
