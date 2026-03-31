@@ -109,3 +109,22 @@ aif skill bump input.aif [--dry-run]
 # Benchmarks
 python benchmarks/skill_token_benchmark.py  # Requires ANTHROPIC_API_KEY
 ```
+
+## Benchmark Results (2026-03-31, claude-opus-4-6, 10 skills)
+
+| Format | Total Tokens | vs SKILL.md | Compliance | TNO |
+|--------|-------------|-------------|------------|-----|
+| SKILL.md (baseline) | 39.5K | — | — | — |
+| Markdown (roundtrip) | 38.8K | +1.9% saved | — | — |
+| LML Aggressive | 39.5K | ~0% | 100% | 0.99 |
+| LML Compact | 40.6K | -2.7% | 100% | 0.98 |
+| LML Standard | 40.8K | -3.3% | 100% | 0.94 |
+| HTML | 44.4K | -12.5% | — | — |
+| JSON IR | 71.6K | -81.3% | — | — |
+| Binary Wire | 179.3K | -353.9%* | 100% | — |
+| Binary Token | 179.3K | -353.8%* | 100% | — |
+
+\* Binary formats are compact in bytes (~82% smaller than JSON) but inflate when base64-encoded for token counting. Use binary for wire transport, not LLM context.
+
+Full HTML report: `benchmarks/skill_benchmark_report.html`
+Raw data: `benchmarks/skill_results.json`

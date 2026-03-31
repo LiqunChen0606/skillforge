@@ -16,6 +16,7 @@ dependencies = [
 name = "aif-cli"
 version = "0.1.0"
 dependencies = [
+ "aif-binary",
  "aif-core",
  "aif-html",
  "aif-lml",

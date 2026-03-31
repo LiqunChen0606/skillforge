@@ -75,6 +75,23 @@ enum SkillAction {
     Inspect {
         input: PathBuf,
     },
+    /// Compare two skill versions and show changes
+    Diff {
+        /// Old version .aif file
+        old: PathBuf,
+        /// New version .aif file
+        new: PathBuf,
+        /// Output format: text (default) or json
+        #[arg(long, default_value = "text")]
+        format: String,
+    },
+    /// Auto-bump version based on semantic changes
+    Bump {
+        input: PathBuf,
+        /// Show what would change without modifying
+        #[arg(long)]
+        dry_run: bool,
+    },
 }
 
 fn find_skill_block(blocks: &[Block]) -> Option<&Block> {
@@ -243,6 +260,84 @@ fn handle_skill(action: SkillAction) {
                     std::process::exit(1);
                 });
                 println!("Updated hash: {}", hash);
+            } else {
+                eprintln!("No skill block found in {}", input.display());
+                std::process::exit(1);
+            }
+        }
+        SkillAction::Diff { old, new, format: _format } => {
+            let old_source = read_source(&old);
+            let old_doc = parse_aif(&old_source);
+            let new_source = read_source(&new);
+            let new_doc = parse_aif(&new_source);
+
+            let old_block = find_skill_block(&old_doc.blocks).unwrap_or_else(|| {
+                eprintln!("No skill block found in {}", old.display());
+                std::process::exit(1);
+            });
+            let new_block = find_skill_block(&new_doc.blocks).unwrap_or_else(|| {
+                eprintln!("No skill block found in {}", new.display());
+                std::process::exit(1);
+            });
+
+            let changes = aif_skill::diff::diff_skills(old_block, new_block);
+            if changes.is_empty() {
+                println!("No changes detected.");
+                return;
+            }
+
+            let bump = aif_skill::classify::highest_bump(&changes);
+            for change in &changes {
+                let class = aif_skill::classify::classify_change(change);
+                println!("  [{:?}] {:?}: {}", class, change.kind, change.description);
+            }
+            println!("\nRecommended bump: {:?}", bump);
+        }
+        SkillAction::Bump { input, dry_run } => {
+            let source = read_source(&input);
+            let mut doc = parse_aif(&source);
+
+            let skill_block = doc.blocks.iter_mut().find(|b| {
+                matches!(
+                    &b.kind,
+                    BlockKind::SkillBlock {
+                        skill_type: SkillBlockType::Skill,
+                        ..
+                    }
+                )
+            });
+
+            if let Some(block) = skill_block {
+                let current = if let BlockKind::SkillBlock { ref attrs, .. } = block.kind {
+                    attrs
+                        .get("version")
+                        .and_then(|v| aif_skill::version::Semver::parse(v))
+                        .unwrap_or_default()
+                } else {
+                    aif_skill::version::Semver::default()
+                };
+
+                // For bump without a diff target, just do patch bump
+                let new_version = current.bump(aif_skill::version::BumpLevel::Patch);
+
+                if dry_run {
+                    println!("Current: {}", current);
+                    println!("Would bump to: {}", new_version);
+                } else {
+                    if let BlockKind::SkillBlock { ref mut attrs, .. } = block.kind {
+                        attrs.pairs.insert("version".to_string(), new_version.to_string());
+                    }
+                    let hash = aif_skill::hash::compute_skill_hash(block);
+                    if let BlockKind::SkillBlock { ref mut attrs, .. } = block.kind {
+                        attrs.pairs.insert("hash".to_string(), hash.clone());
+                    }
+                    let json = serde_json::to_string_pretty(&doc).unwrap();
+                    fs::write(&input, &json).unwrap_or_else(|e| {
+                        eprintln!("Error writing {}: {}", input.display(), e);
+                        std::process::exit(1);
+                    });
+                    println!("Bumped {} -> {} (hash: {})", current, new_version, hash);
+                }
             } else {
                 eprintln!("No skill block found in {}", input.display());
                 std::process::exit(1);

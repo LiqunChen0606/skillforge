@@ -1,6 +1,6 @@
 {
   "model": "claude-opus-4-6",
-  "timestamp": "2026-03-31T03:32:03Z",
+  "timestamp": "2026-03-31T15:25:38Z",
   "formats": [
     "SKILL.md",
     "JSON IR",
@@ -10,7 +10,9 @@
     "LML Compact",
     "LML Conserv.",
     "LML Moderate",
-    "LML Aggress."
+    "LML Aggress.",
+    "Binary Wire",
+    "Binary Token"
   ],
   "skills": [
     {
@@ -59,7 +61,19 @@
       "lml_aggressive_bytes": 941,
       "lml_aggressive_save_pct": -8.675799086757996,
       "lml_aggressive_compliance": 1.0,
-      "lml_aggressive_tno": 0.9201680672268907
+      "lml_aggressive_tno": 0.9201680672268907,
+      "binary_wire_raw_bytes": 970,
+      "binary_wire_tokens": 1131,
+      "binary_wire_bytes": 970,
+      "binary_wire_save_pct": -416.43835616438355,
+      "binary_wire_compliance": 1.0,
+      "binary_wire_tno": 0.19363395225464192,
+      "binary_token_raw_bytes": 951,
+      "binary_token_tokens": 1136,
+      "binary_token_bytes": 951,
+      "binary_token_save_pct": -418.7214611872146,
+      "binary_token_compliance": 1.0,
+      "binary_token_tno": 0.1927816901408451
     },
     {
       "skill": "figma-code-connect",
@@ -107,7 +121,19 @@
       "lml_aggressive_bytes": 17739,
       "lml_aggressive_save_pct": 0.07860090391039742,
       "lml_aggressive_compliance": 1.0,
-      "lml_aggressive_tno": 1.0007866273352999
+      "lml_aggressive_tno": 1.0007866273352999,
+      "binary_wire_raw_bytes": 17857,
+      "binary_wire_tokens": 20831,
+      "binary_wire_bytes": 17857,
+      "binary_wire_save_pct": -309.3338573393594,
+      "binary_wire_compliance": 1.0,
+      "binary_wire_tno": 0.2442993615284912,
+      "binary_token_raw_bytes": 17812,
+      "binary_token_tokens": 20776,
+      "binary_token_bytes": 17812,
+      "binary_token_save_pct": -308.25309491059147,
+      "binary_token_compliance": 1.0,
+      "binary_token_tno": 0.24494609164420483
     },
     {
       "skill": "figma-design-system-rules",
@@ -155,7 +181,19 @@
       "lml_aggressive_bytes": 18228,
       "lml_aggressive_save_pct": 0.08758484782133147,
       "lml_aggressive_compliance": 1.0,
-      "lml_aggressive_tno": 1.0008766162612317
+      "lml_aggressive_tno": 1.0008766162612317,
+      "binary_wire_raw_bytes": 18490,
+      "binary_wire_tokens": 21876,
+      "binary_wire_bytes": 18490,
+      "binary_wire_save_pct": -379.0015327348368,
+      "binary_wire_compliance": 1.0,
+      "binary_wire_tno": 0.20876759919546536,
+      "binary_token_raw_bytes": 18387,
+      "binary_token_tokens": 21862,
+      "binary_token_bytes": 18387,
+      "binary_token_save_pct": -378.6949857674622,
+      "binary_token_compliance": 1.0,
+      "binary_token_tno": 0.2089012899094319
     },
     {
       "skill": "figma-generate-design",
@@ -203,7 +241,19 @@
       "lml_aggressive_bytes": 20171,
       "lml_aggressive_save_pct": 0.22226338210780128,
       "lml_aggressive_compliance": 1.0,
-      "lml_aggressive_tno": 1.0022275849266753
+      "lml_aggressive_tno": 1.0022275849266753,
+      "binary_wire_raw_bytes": 20243,
+      "binary_wire_tokens": 23870,
+      "binary_wire_bytes": 20243,
+      "binary_wire_save_pct": -342.11891090942765,
+      "binary_wire_compliance": 1.0,
+      "binary_wire_tno": 0.2261834939254294,
+      "binary_token_raw_bytes": 20218,
+      "binary_token_tokens": 23940,
+      "binary_token_bytes": 20218,
+      "binary_token_save_pct": -343.41544730505655,
+      "binary_token_compliance": 1.0,
+      "binary_token_tno": 0.2255221386800334
     },
     {
       "skill": "figma-generate-library",
@@ -251,7 +301,19 @@
       "lml_aggressive_bytes": 18057,
       "lml_aggressive_save_pct": 0.10072522159548791,
       "lml_aggressive_compliance": 1.0,
-      "lml_aggressive_tno": 1.0010082677959267
+      "lml_aggressive_tno": 1.0010082677959267,
+      "binary_wire_raw_bytes": 18172,
+      "binary_wire_tokens": 21270,
+      "binary_wire_bytes": 18172,
+      "binary_wire_save_pct": -328.48509266720384,
+      "binary_wire_compliance": 1.0,
+      "binary_wire_tno": 0.23338034790785145,
+      "binary_token_raw_bytes": 18129,
+      "binary_token_tokens": 21256,
+      "binary_token_bytes": 18129,
+      "binary_token_save_pct": -328.20306204673653,
+      "binary_token_compliance": 1.0,
+      "binary_token_tno": 0.23353406097101995
     },
     {
       "skill": "skill-creator",
@@ -299,7 +361,19 @@
       "lml_aggressive_bytes": 32360,
       "lml_aggressive_save_pct": 0.05131494547786497,
       "lml_aggressive_compliance": 1.0,
-      "lml_aggressive_tno": 1.0005134129123348
+      "lml_aggressive_tno": 1.0005134129123348,
+      "binary_wire_raw_bytes": 32495,
+      "binary_wire_tokens": 38460,
+      "binary_wire_bytes": 32495,
+      "binary_wire_save_pct": -393.39320076972416,
+      "binary_wire_compliance": 1.0,
+      "binary_wire_tno": 0.202678107124285,
+      "binary_token_raw_bytes": 32444,
+      "binary_token_tokens": 38467,
+      "binary_token_bytes": 32444,
+      "binary_token_save_pct": -393.4830019243105,
+      "binary_token_compliance": 1.0,
+      "binary_token_tno": 0.20264122494605766
     },
     {
       "skill": "systematic-debugging",
@@ -347,7 +421,19 @@
       "lml_aggressive_bytes": 9870,
       "lml_aggressive_save_pct": 0.07770007770008247,
       "lml_aggressive_compliance": 1.0,
-      "lml_aggressive_tno": 1.000777604976672
+      "lml_aggressive_tno": 1.000777604976672,
+      "binary_wire_raw_bytes": 9982,
+      "binary_wire_tokens": 11614,
+      "binary_wire_bytes": 9982,
+      "binary_wire_save_pct": -351.20435120435116,
+      "binary_wire_compliance": 1.0,
+      "binary_wire_tno": 0.22162906836576546,
+      "binary_token_raw_bytes": 9939,
+      "binary_token_tokens": 11622,
+      "binary_token_bytes": 9939,
+      "binary_token_save_pct": -351.51515151515156,
+      "binary_token_compliance": 1.0,
+      "binary_token_tno": 0.22147651006711408
     },
     {
       "skill": "tdd",
@@ -395,7 +481,19 @@
       "lml_aggressive_bytes": 1362,
       "lml_aggressive_save_pct": -5.607476635514019,
       "lml_aggressive_compliance": 1.0,
-      "lml_aggressive_tno": 0.9469026548672567
+      "lml_aggressive_tno": 0.9469026548672567,
+      "binary_wire_raw_bytes": 1394,
+      "binary_wire_tokens": 1635,
+      "binary_wire_bytes": 1394,
+      "binary_wire_save_pct": -409.3457943925234,
+      "binary_wire_compliance": 1.0,
+      "binary_wire_tno": 0.19633027522935778,
+      "binary_token_raw_bytes": 1375,
+      "binary_token_tokens": 1646,
+      "binary_token_bytes": 1375,
+      "binary_token_save_pct": -412.7725856697819,
+      "binary_token_compliance": 1.0,
+      "binary_token_tno": 0.19501822600243013
     },
     {
       "skill": "test-driven-development",
@@ -443,7 +541,19 @@
       "lml_aggressive_bytes": 9850,
       "lml_aggressive_save_pct": 0.07145409074669207,
       "lml_aggressive_compliance": 1.0,
-      "lml_aggressive_tno": 1.0007150518412584
+      "lml_aggressive_tno": 1.0007150518412584,
+      "binary_wire_raw_bytes": 9993,
+      "binary_wire_tokens": 11738,
+      "binary_wire_bytes": 9993,
+      "binary_wire_save_pct": -319.36405859235435,
+      "binary_wire_compliance": 1.0,
+      "binary_wire_tno": 0.23845629579144662,
+      "binary_token_raw_bytes": 9938,
+      "binary_token_tokens": 11702,
+      "binary_token_bytes": 9938,
+      "binary_token_save_pct": -318.07788495891384,
+      "binary_token_compliance": 1.0,
+      "binary_token_tno": 0.2391898820714408
     },
     {
       "skill": "writing-skills",
@@ -491,7 +601,19 @@
       "lml_aggressive_bytes": 22610,
       "lml_aggressive_save_pct": -0.06921612735768523,
       "lml_aggressive_compliance": 1.0,
-      "lml_aggressive_tno": 0.9993083174822756
+      "lml_aggressive_tno": 0.9993083174822756,
+      "binary_wire_raw_bytes": 22882,
+      "binary_wire_tokens": 26901,
+      "binary_wire_bytes": 22882,
+      "binary_wire_save_pct": -365.4957605121994,
+      "binary_wire_compliance": 1.0,
+      "binary_wire_tno": 0.21482472770528974,
+      "binary_token_raw_bytes": 22771,
+      "binary_token_tokens": 26872,
+      "binary_token_bytes": 22771,
+      "binary_token_save_pct": -364.99394358885627,
+      "binary_token_compliance": 1.0,
+      "binary_token_tno": 0.21505656445370644
     }
   ],
   "totals": {
@@ -530,6 +652,12 @@
     "lml_aggressive_bytes": 151188,
     "savings_lml_aggressive_pct": -0.020250088594142568,
     "avg_compliance_lml_aggressive": 1.0,
-    "avg_tno_lml_aggressive": 0.9873284205625822
+    "avg_tno_lml_aggressive": 0.9873284205625822,
+    "binary_wire_tokens": 179326,
+    "binary_wire_bytes": 152478,
+    "savings_binary_wire_pct": -353.9209234040399,
+    "binary_token_tokens": 179279,
+    "binary_token_bytes": 151964,
+    "savings_binary_token_pct": -353.8019541335493
   }
 }
