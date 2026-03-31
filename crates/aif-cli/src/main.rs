@@ -19,7 +19,7 @@ enum Commands {
     Compile {
         /// Input .aif file
         input: PathBuf,
-        /// Output format: html, markdown, lml, json
+        /// Output format: html, markdown, lml, lml-compact, lml-conservative, lml-moderate, lml-aggressive, json
         #[arg(short, long, default_value = "html")]
         format: String,
         /// Output file (defaults to stdout)
@@ -53,6 +53,9 @@ enum SkillAction {
         input: PathBuf,
         #[arg(short, long)]
         output: Option<PathBuf>,
+        /// Output format: json, html, markdown, lml, lml-compact, lml-conservative, lml-moderate, lml-aggressive
+        #[arg(short, long, default_value = "json")]
+        format: String,
     },
     /// Export an AIF skill to SKILL.md format
     Export {
@@ -116,7 +119,7 @@ fn parse_aif(source: &str) -> aif_core::ast::Document {
 
 fn handle_skill(action: SkillAction) {
     match action {
-        SkillAction::Import { input, output } => {
+        SkillAction::Import { input, output, format } => {
             let source = read_source(&input);
             let result = aif_skill::import::import_skill_md(&source);
 
@@ -128,13 +131,30 @@ fn handle_skill(action: SkillAction) {
                 );
             }
 
-            // Wrap the skill block in a Document for JSON output
+            // Wrap the skill block in a Document
             let doc = aif_core::ast::Document {
                 metadata: std::collections::BTreeMap::new(),
                 blocks: vec![result.block],
             };
-            let json = serde_json::to_string_pretty(&doc).unwrap();
-            write_output(&json, output.as_ref());
+
+            let output_text = match format.as_str() {
+                "json" => serde_json::to_string_pretty(&doc).unwrap(),
+                "html" => aif_html::render_html(&doc),
+                "markdown" | "md" => aif_markdown::render_markdown(&doc),
+                "lml" => aif_lml::render_lml(&doc),
+                "lml-compact" => aif_lml::render_lml_skill_compact(&doc),
+                "lml-conservative" => aif_lml::render_lml_conservative(&doc),
+                "lml-moderate" => aif_lml::render_lml_moderate(&doc),
+                "lml-aggressive" => aif_lml::render_lml_aggressive(&doc),
+                _ => {
+                    eprintln!(
+                        "Unknown format: {}. Supported: json, html, markdown, lml, lml-compact, lml-conservative, lml-moderate, lml-aggressive",
+                        format
+                    );
+                    std::process::exit(1);
+                }
+            };
+            write_output(&output_text, output.as_ref());
         }
         SkillAction::Export { input, output } => {
             let source = read_source(&input);
@@ -277,10 +297,14 @@ fn main() {
                 "html" => aif_html::render_html(&doc),
                 "markdown" | "md" => aif_markdown::render_markdown(&doc),
                 "lml" => aif_lml::render_lml(&doc),
+                "lml-compact" => aif_lml::render_lml_skill_compact(&doc),
+                "lml-conservative" => aif_lml::render_lml_conservative(&doc),
+                "lml-moderate" => aif_lml::render_lml_moderate(&doc),
+                "lml-aggressive" => aif_lml::render_lml_aggressive(&doc),
                 "json" => serde_json::to_string_pretty(&doc).unwrap(),
                 _ => {
                     eprintln!(
-                        "Unknown format: {}. Supported: html, markdown, lml, json",
+                        "Unknown format: {}. Supported: html, markdown, lml, lml-compact, lml-conservative, lml-moderate, lml-aggressive, json",
                         format
                     );
                     std::process::exit(1);

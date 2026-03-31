@@ -91,6 +91,26 @@ Skills are imported from SKILL.md (Markdown with YAML frontmatter), mapped to se
 - Roundtrip: SKILL.md → AST → SKILL.md
 - Manifest generation for skill registries
 
+## Benchmark Results (2026-03-30)
+
+Tested across 10 real-world skill fixtures using Claude's token counting API:
+
+| Format | Total Tokens | Savings | Avg Compliance | Avg TNO |
+|--------|-------------|---------|---------------|---------|
+| SKILL.md | 39,500 | baseline | n/a | n/a |
+| Markdown (RT) | 38,800 | +1.9% | n/a | n/a |
+| **LML Aggressive** | **39,500** | **-0.0%** | **100%** | **0.99** |
+| LML Compact | 40,600 | -2.7% | 100% | 0.98 |
+| LML Standard | 40,800 | -3.3% | 100% | 0.94 |
+| LML Moderate | 41,700 | -5.5% | 100% | 0.89 |
+| LML Conservative | 41,800 | -5.8% | 100% | 0.89 |
+| HTML | 44,400 | -12.5% | n/a | n/a |
+| JSON IR | 71,600 | -81.3% | n/a | n/a |
+
+**Winner: LML Aggressive** — near-zero token overhead vs raw Markdown with 100% semantic compliance.
+
+Full report: `benchmarks/skill_benchmark_report.html`
+
 ## Roadmap (Future Work)
 
 - **PDF support** — Phase 2: PDF import via layout analysis

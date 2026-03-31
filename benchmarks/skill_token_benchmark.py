@@ -166,6 +166,166 @@ def pct(base: int, val: int) -> float:
     return (1 - val / base) * 100
 
 
+def generate_html_report(results, totals, skill_count, output_path):
+    """Generate a self-contained HTML comparison report."""
+    import html as html_mod
+
+    fmt_keys = [key for key, _, _ in FORMATS]
+    fmt_labels = [label for _, label, _ in FORMATS]
+    md_total = totals["md_tokens"]
+
+    # Per-format totals for summary
+    summary_rows = []
+    for key, label, _ in FORMATS:
+        t = totals[f"{key}_tokens"]
+        b = totals[f"{key}_bytes"]
+        save = pct(md_total, t) if key != "md" else 0.0
+        comp = totals.get(f"{key}_compliance_sum", 0.0) / skill_count if skill_count and key in TAG_PATTERNS else None
+        tno = totals.get(f"{key}_tno_sum", 0.0) / skill_count if skill_count and key in TAG_PATTERNS else None
+        summary_rows.append((label, t, b, save, comp, tno))
+
+    # Find best format (highest TNO among LML formats)
+    best_tno_label = ""
+    best_tno_val = -1
+    for label, t, b, save, comp, tno in summary_rows:
+        if tno is not None and tno > best_tno_val:
+            best_tno_val = tno
+            best_tno_label = label
+
+    # Build skill detail rows
+    skill_rows_html = ""
+    for r in results:
+        skill_rows_html += f"<tr><td class='skill-name'>{html_mod.escape(r['skill'])}</td>"
+        for key, _, _ in FORMATS:
+            tokens = r[f"{key}_tokens"]
+            save = r[f"{key}_save_pct"]
+            comp = r.get(f"{key}_compliance", None)
+            tno = r.get(f"{key}_tno", None)
+            cls = ""
+            if key != "md" and save > 0:
+                cls = " class='positive'"
+            elif key != "md" and save < -5:
+                cls = " class='negative'"
+            save_str = f"{save:+.1f}%" if key != "md" else "base"
+            comp_str = f"<br><small>{comp:.0%}</small>" if key in TAG_PATTERNS else ""
+            tno_str = f"<br><small>TNO:{tno:.2f}</small>" if key in TAG_PATTERNS else ""
+            skill_rows_html += f"<td{cls}>{tokens:,}{comp_str}{tno_str}<br><small>{save_str}</small></td>"
+        skill_rows_html += "</tr>\n"
+
+    # Summary row
+    summary_row_html = "<tr class='total-row'><td class='skill-name'><strong>TOTAL</strong></td>"
+    for key, label, _ in FORMATS:
+        t = totals[f"{key}_tokens"]
+        save = pct(md_total, t) if key != "md" else 0.0
+        save_str = f"{save:+.1f}%" if key != "md" else "base"
+        comp = totals.get(f"{key}_compliance_sum", 0.0) / skill_count if skill_count and key in TAG_PATTERNS else None
+        tno = totals.get(f"{key}_tno_sum", 0.0) / skill_count if skill_count and key in TAG_PATTERNS else None
+        comp_str = f"<br><small>{comp:.0%}</small>" if comp is not None else ""
+        tno_str = f"<br><small>TNO:{tno:.2f}</small>" if tno is not None else ""
+        cls = ""
+        if key != "md" and save > 0:
+            cls = " class='positive'"
+        summary_row_html += f"<td{cls}>{t:,}{comp_str}{tno_str}<br><small>{save_str}</small></td>"
+    summary_row_html += "</tr>"
+
+    # Header columns
+    header_html = "<th>Skill</th>" + "".join(f"<th>{html_mod.escape(l)}</th>" for l in fmt_labels)
+
+    # Bar chart data (token savings %)
+    bar_labels = [l for _, l, _ in FORMATS if _ is not None]
+    bar_values = [pct(md_total, totals[f"{k}_tokens"]) for k, _, c in FORMATS if c is not None]
+
+    html_content = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>AIF Skill Token Benchmark Report</title>
+<style>
+  body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 1400px; margin: 2rem auto; padding: 0 1rem; background: #f8f9fa; color: #1a1a2e; }}
+  h1 {{ color: #16213e; border-bottom: 3px solid #0f3460; padding-bottom: 0.5rem; }}
+  h2 {{ color: #16213e; margin-top: 2rem; }}
+  .meta {{ color: #666; font-size: 0.9rem; margin-bottom: 2rem; }}
+  .winner {{ background: linear-gradient(135deg, #d4edda, #c3e6cb); border: 1px solid #28a745; border-radius: 8px; padding: 1rem 1.5rem; margin: 1rem 0; font-size: 1.1rem; }}
+  .winner strong {{ color: #155724; }}
+  table {{ border-collapse: collapse; width: 100%; margin: 1rem 0; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }}
+  th {{ background: #16213e; color: white; padding: 10px 8px; font-size: 0.85rem; text-align: center; }}
+  td {{ padding: 8px; text-align: center; border-bottom: 1px solid #eee; font-size: 0.85rem; }}
+  td.skill-name {{ text-align: left; font-weight: 600; white-space: nowrap; }}
+  .positive {{ background: #d4edda; }}
+  .negative {{ background: #f8d7da; }}
+  .total-row td {{ background: #e8eaf6; font-weight: bold; border-top: 2px solid #16213e; }}
+  .bar-chart {{ display: flex; align-items: flex-end; gap: 8px; height: 220px; margin: 1rem 0; padding: 1rem; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }}
+  .bar-wrapper {{ display: flex; flex-direction: column; align-items: center; flex: 1; }}
+  .bar {{ width: 100%; border-radius: 4px 4px 0 0; transition: height 0.3s; min-height: 2px; }}
+  .bar-label {{ font-size: 0.7rem; margin-top: 4px; text-align: center; word-break: break-all; }}
+  .bar-value {{ font-size: 0.75rem; font-weight: bold; margin-bottom: 2px; }}
+  .bar-pos {{ background: linear-gradient(180deg, #28a745, #20c997); }}
+  .bar-neg {{ background: linear-gradient(180deg, #dc3545, #e74c6c); }}
+  .legend {{ display: flex; gap: 2rem; margin: 1rem 0; font-size: 0.85rem; }}
+  .legend-item {{ display: flex; align-items: center; gap: 0.4rem; }}
+  .legend-swatch {{ width: 16px; height: 16px; border-radius: 3px; }}
+  small {{ color: #666; }}
+  .timestamp {{ text-align: right; color: #999; font-size: 0.8rem; margin-top: 2rem; }}
+</style>
+</head>
+<body>
+<h1>AIF Skill Token Benchmark Report</h1>
+<p class="meta">Model: {MODEL} &bull; Skills: {skill_count} &bull; Formats: {len(FORMATS)}</p>
+
+<div class="winner">
+  <strong>Winner: {html_mod.escape(best_tno_label)}</strong> &mdash; highest token-normalized outcome (TNO: {best_tno_val:.2f}) with 100% semantic compliance
+</div>
+
+<h2>Token Savings vs SKILL.md Baseline</h2>
+<div class="legend">
+  <div class="legend-item"><div class="legend-swatch" style="background:#28a745"></div> Savings (fewer tokens)</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#dc3545"></div> Overhead (more tokens)</div>
+</div>
+<div class="bar-chart">
+"""
+    max_abs = max(abs(v) for v in bar_values) if bar_values else 1
+    for label, val in zip(bar_labels, bar_values):
+        h = max(2, abs(val) / max_abs * 180)
+        cls = "bar-pos" if val >= 0 else "bar-neg"
+        html_content += f"""  <div class="bar-wrapper">
+    <div class="bar-value">{val:+.1f}%</div>
+    <div class="bar {cls}" style="height:{h:.0f}px"></div>
+    <div class="bar-label">{html_mod.escape(label)}</div>
+  </div>
+"""
+    html_content += f"""</div>
+
+<h2>Per-Skill Comparison</h2>
+<table>
+<thead><tr>{header_html}</tr></thead>
+<tbody>
+{skill_rows_html}
+{summary_row_html}
+</tbody>
+</table>
+
+<h2>Summary</h2>
+<table>
+<thead><tr><th>Format</th><th>Total Tokens</th><th>Total Bytes</th><th>Token Savings</th><th>Avg Compliance</th><th>Avg TNO</th></tr></thead>
+<tbody>
+"""
+    for label, t, b, save, comp, tno in summary_rows:
+        save_str = f"{save:+.1f}%" if save != 0 else "baseline"
+        comp_str = f"{comp:.0%}" if comp is not None else "n/a"
+        tno_str = f"{tno:.2f}" if tno is not None else "n/a"
+        html_content += f"<tr><td style='text-align:left'>{html_mod.escape(label)}</td><td>{t:,}</td><td>{b:,}</td><td>{save_str}</td><td>{comp_str}</td><td>{tno_str}</td></tr>\n"
+
+    html_content += f"""</tbody>
+</table>
+
+<p class="timestamp">Generated: {time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime())}</p>
+</body>
+</html>"""
+
+    with open(output_path, "w") as f:
+        f.write(html_content)
+
+
 def main():
     if not AIF_CLI.exists():
         print(f"Error: AIF CLI not found at {AIF_CLI}")
@@ -361,6 +521,12 @@ def main():
         else:
             save = pct(totals["md_bytes"], total_b)
             print(f"  {label:<16} {total_b:>10,} bytes  ({save:>+.1f}%)")
+    print()
+
+    # ── Generate HTML Report ──
+    html_path = PROJECT_ROOT / "benchmarks" / "skill_benchmark_report.html"
+    generate_html_report(results, totals, skill_count, html_path)
+    print(f"HTML report saved to {html_path}")
     print()
 
     # Save results

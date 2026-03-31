@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>AIF Skill Token Benchmark Report</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 1400px; margin: 2rem auto; padding: 0 1rem; background: #f8f9fa; color: #1a1a2e; }
+  h1 { color: #16213e; border-bottom: 3px solid #0f3460; padding-bottom: 0.5rem; }
+  h2 { color: #16213e; margin-top: 2rem; }
+  .meta { color: #666; font-size: 0.9rem; margin-bottom: 2rem; }
+  .winner { background: linear-gradient(135deg, #d4edda, #c3e6cb); border: 1px solid #28a745; border-radius: 8px; padding: 1rem 1.5rem; margin: 1rem 0; font-size: 1.1rem; }
+  .winner strong { color: #155724; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  th { background: #16213e; color: white; padding: 10px 8px; font-size: 0.85rem; text-align: center; }
+  td { padding: 8px; text-align: center; border-bottom: 1px solid #eee; font-size: 0.85rem; }
+  td.skill-name { text-align: left; font-weight: 600; white-space: nowrap; }
+  .positive { background: #d4edda; }
+  .negative { background: #f8d7da; }
+  .total-row td { background: #e8eaf6; font-weight: bold; border-top: 2px solid #16213e; }
+  .bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 220px; margin: 1rem 0; padding: 1rem; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  .bar-wrapper { display: flex; flex-direction: column; align-items: center; flex: 1; }
+  .bar { width: 100%; border-radius: 4px 4px 0 0; transition: height 0.3s; min-height: 2px; }
+  .bar-label { font-size: 0.7rem; margin-top: 4px; text-align: center; word-break: break-all; }
+  .bar-value { font-size: 0.75rem; font-weight: bold; margin-bottom: 2px; }
+  .bar-pos { background: linear-gradient(180deg, #28a745, #20c997); }
+  .bar-neg { background: linear-gradient(180deg, #dc3545, #e74c6c); }
+  .legend { display: flex; gap: 2rem; margin: 1rem 0; font-size: 0.85rem; }
+  .legend-item { display: flex; align-items: center; gap: 0.4rem; }
+  .legend-swatch { width: 16px; height: 16px; border-radius: 3px; }
+  small { color: #666; }
+  .timestamp { text-align: right; color: #999; font-size: 0.8rem; margin-top: 2rem; }
+</style>
+</head>
+<body>
+<h1>AIF Skill Token Benchmark Report</h1>
+<p class="meta">Model: claude-opus-4-6 &bull; Skills: 10 &bull; Formats: 9</p>
+
+<div class="winner">
+  <strong>Winner: LML Aggress.</strong> &mdash; highest token-normalized outcome (TNO: 0.99) with 100% semantic compliance
+</div>
+
+<h2>Token Savings vs SKILL.md Baseline</h2>
+<div class="legend">
+  <div class="legend-item"><div class="legend-swatch" style="background:#28a745"></div> Savings (fewer tokens)</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#dc3545"></div> Overhead (more tokens)</div>
+</div>
+<div class="bar-chart">
+  <div class="bar-wrapper">
+    <div class="bar-value">-81.3%</div>
+    <div class="bar bar-neg" style="height:180px"></div>
+    <div class="bar-label">JSON IR</div>
+  </div>
+  <div class="bar-wrapper">
+    <div class="bar-value">-12.5%</div>
+    <div class="bar bar-neg" style="height:28px"></div>
+    <div class="bar-label">HTML</div>
+  </div>
+  <div class="bar-wrapper">
+    <div class="bar-value">+1.9%</div>
+    <div class="bar bar-pos" style="height:4px"></div>
+    <div class="bar-label">Markdown (RT)</div>
+  </div>
+  <div class="bar-wrapper">
+    <div class="bar-value">-3.3%</div>
+    <div class="bar bar-neg" style="height:7px"></div>
+    <div class="bar-label">LML</div>
+  </div>
+  <div class="bar-wrapper">
+    <div class="bar-value">-2.7%</div>
+    <div class="bar bar-neg" style="height:6px"></div>
+    <div class="bar-label">LML Compact</div>
+  </div>
+  <div class="bar-wrapper">
+    <div class="bar-value">-5.8%</div>
+    <div class="bar bar-neg" style="height:13px"></div>
+    <div class="bar-label">LML Conserv.</div>
+  </div>
+  <div class="bar-wrapper">
+    <div class="bar-value">-5.5%</div>
+    <div class="bar bar-neg" style="height:12px"></div>
+    <div class="bar-label">LML Moderate</div>
+  </div>
+  <div class="bar-wrapper">
+    <div class="bar-value">-0.0%</div>
+    <div class="bar bar-neg" style="height:2px"></div>
+    <div class="bar-label">LML Aggress.</div>
+  </div>
+</div>
+
+<h2>Per-Skill Comparison</h2>
+<table>
+<thead><tr><th>Skill</th><th>SKILL.md</th><th>JSON IR</th><th>HTML</th><th>Markdown (RT)</th><th>LML</th><th>LML Compact</th><th>LML Conserv.</th><th>LML Moderate</th><th>LML Aggress.</th></tr></thead>
+<tbody>
+<tr><td class='skill-name'>debugging</td><td>219<br><small>base</small></td><td class='negative'>1,820<br><small>-731.1%</small></td><td class='negative'>435<br><small>-98.6%</small></td><td class='positive'>187<br><small>+14.6%</small></td><td class='negative'>272<br><small>100%</small><br><small>TNO:0.81</small><br><small>-24.2%</small></td><td>228<br><small>100%</small><br><small>TNO:0.96</small><br><small>-4.1%</small></td><td class='negative'>363<br><small>100%</small><br><small>TNO:0.60</small><br><small>-65.8%</small></td><td class='negative'>352<br><small>100%</small><br><small>TNO:0.62</small><br><small>-60.7%</small></td><td class='negative'>238<br><small>100%</small><br><small>TNO:0.92</small><br><small>-8.7%</small></td></tr>
+<tr><td class='skill-name'>figma-code-connect</td><td>5,089<br><small>base</small></td><td class='negative'>7,963<br><small>-56.5%</small></td><td class='negative'>5,440<br><small>-6.9%</small></td><td class='positive'>5,013<br><small>+1.5%</small></td><td>5,204<br><small>100%</small><br><small>TNO:0.98</small><br><small>-2.3%</small></td><td>5,204<br><small>100%</small><br><small>TNO:0.98</small><br><small>-2.3%</small></td><td>5,304<br><small>100%</small><br><small>TNO:0.96</small><br><small>-4.2%</small></td><td>5,293<br><small>100%</small><br><small>TNO:0.96</small><br><small>-4.0%</small></td><td class='positive'>5,085<br><small>100%</small><br><small>TNO:1.00</small><br><small>+0.1%</small></td></tr>
+<tr><td class='skill-name'>figma-design-system-rules</td><td>4,567<br><small>base</small></td><td class='negative'>10,480<br><small>-129.5%</small></td><td class='negative'>5,154<br><small>-12.9%</small></td><td class='positive'>4,464<br><small>+2.3%</small></td><td class='negative'>4,810<br><small>100%</small><br><small>TNO:0.95</small><br><small>-5.3%</small></td><td>4,719<br><small>100%</small><br><small>TNO:0.97</small><br><small>-3.3%</small></td><td class='negative'>4,910<br><small>100%</small><br><small>TNO:0.93</small><br><small>-7.5%</small></td><td class='negative'>4,899<br><small>100%</small><br><small>TNO:0.93</small><br><small>-7.3%</small></td><td class='positive'>4,563<br><small>100%</small><br><small>TNO:1.00</small><br><small>+0.1%</small></td></tr>
+<tr><td class='skill-name'>figma-generate-design</td><td>5,399<br><small>base</small></td><td class='negative'>7,345<br><small>-36.0%</small></td><td class='negative'>5,940<br><small>-10.0%</small></td><td class='positive'>5,187<br><small>+3.9%</small></td><td>5,463<br><small>100%</small><br><small>TNO:0.99</small><br><small>-1.2%</small></td><td>5,463<br><small>100%</small><br><small>TNO:0.99</small><br><small>-1.2%</small></td><td>5,563<br><small>100%</small><br><small>TNO:0.97</small><br><small>-3.0%</small></td><td>5,552<br><small>100%</small><br><small>TNO:0.97</small><br><small>-2.8%</small></td><td class='positive'>5,387<br><small>100%</small><br><small>TNO:1.00</small><br><small>+0.2%</small></td></tr>
+<tr><td class='skill-name'>figma-generate-library</td><td>4,964<br><small>base</small></td><td class='negative'>7,601<br><small>-53.1%</small></td><td class='negative'>5,356<br><small>-7.9%</small></td><td class='positive'>4,839<br><small>+2.5%</small></td><td>5,076<br><small>100%</small><br><small>TNO:0.98</small><br><small>-2.3%</small></td><td>5,076<br><small>100%</small><br><small>TNO:0.98</small><br><small>-2.3%</small></td><td>5,178<br><small>100%</small><br><small>TNO:0.96</small><br><small>-4.3%</small></td><td>5,167<br><small>100%</small><br><small>TNO:0.96</small><br><small>-4.1%</small></td><td class='positive'>4,959<br><small>100%</small><br><small>TNO:1.00</small><br><small>+0.1%</small></td></tr>
+<tr><td class='skill-name'>skill-creator</td><td>7,795<br><small>base</small></td><td class='negative'>11,087<br><small>-42.2%</small></td><td class='negative'>8,557<br><small>-9.8%</small></td><td class='positive'>7,722<br><small>+0.9%</small></td><td>7,935<br><small>100%</small><br><small>TNO:0.98</small><br><small>-1.8%</small></td><td>7,935<br><small>100%</small><br><small>TNO:0.98</small><br><small>-1.8%</small></td><td>8,037<br><small>100%</small><br><small>TNO:0.97</small><br><small>-3.1%</small></td><td>8,026<br><small>100%</small><br><small>TNO:0.97</small><br><small>-3.0%</small></td><td class='positive'>7,791<br><small>100%</small><br><small>TNO:1.00</small><br><small>+0.1%</small></td></tr>
+<tr><td class='skill-name'>systematic-debugging</td><td>2,574<br><small>base</small></td><td class='negative'>5,168<br><small>-100.8%</small></td><td class='negative'>2,951<br><small>-14.6%</small></td><td class='positive'>2,543<br><small>+1.2%</small></td><td>2,688<br><small>100%</small><br><small>TNO:0.96</small><br><small>-4.4%</small></td><td>2,688<br><small>100%</small><br><small>TNO:0.96</small><br><small>-4.4%</small></td><td class='negative'>2,790<br><small>100%</small><br><small>TNO:0.92</small><br><small>-8.4%</small></td><td class='negative'>2,779<br><small>100%</small><br><small>TNO:0.93</small><br><small>-8.0%</small></td><td class='positive'>2,572<br><small>100%</small><br><small>TNO:1.00</small><br><small>+0.1%</small></td></tr>
+<tr><td class='skill-name'>tdd</td><td>321<br><small>base</small></td><td class='negative'>1,912<br><small>-495.6%</small></td><td class='negative'>526<br><small>-63.9%</small></td><td class='positive'>281<br><small>+12.5%</small></td><td class='negative'>372<br><small>100%</small><br><small>TNO:0.86</small><br><small>-15.9%</small></td><td class='positive'>288<br><small>100%</small><br><small>TNO:1.11</small><br><small>+10.3%</small></td><td class='negative'>464<br><small>100%</small><br><small>TNO:0.69</small><br><small>-44.5%</small></td><td class='negative'>453<br><small>100%</small><br><small>TNO:0.71</small><br><small>-41.1%</small></td><td class='negative'>339<br><small>100%</small><br><small>TNO:0.95</small><br><small>-5.6%</small></td></tr>
+<tr><td class='skill-name'>test-driven-development</td><td>2,799<br><small>base</small></td><td class='negative'>6,064<br><small>-116.6%</small></td><td class='negative'>3,425<br><small>-22.4%</small></td><td class='positive'>2,771<br><small>+1.0%</small></td><td class='negative'>2,940<br><small>100%</small><br><small>TNO:0.95</small><br><small>-5.0%</small></td><td class='negative'>2,940<br><small>100%</small><br><small>TNO:0.95</small><br><small>-5.0%</small></td><td class='negative'>3,042<br><small>100%</small><br><small>TNO:0.92</small><br><small>-8.7%</small></td><td class='negative'>3,031<br><small>100%</small><br><small>TNO:0.92</small><br><small>-8.3%</small></td><td class='positive'>2,797<br><small>100%</small><br><small>TNO:1.00</small><br><small>+0.1%</small></td></tr>
+<tr><td class='skill-name'>writing-skills</td><td>5,779<br><small>base</small></td><td class='negative'>12,200<br><small>-111.1%</small></td><td class='negative'>6,643<br><small>-15.0%</small></td><td class='positive'>5,748<br><small>+0.5%</small></td><td>6,045<br><small>100%</small><br><small>TNO:0.96</small><br><small>-4.6%</small></td><td>6,045<br><small>100%</small><br><small>TNO:0.96</small><br><small>-4.6%</small></td><td class='negative'>6,143<br><small>100%</small><br><small>TNO:0.94</small><br><small>-6.3%</small></td><td class='negative'>6,132<br><small>100%</small><br><small>TNO:0.94</small><br><small>-6.1%</small></td><td>5,783<br><small>100%</small><br><small>TNO:1.00</small><br><small>-0.1%</small></td></tr>
+
+<tr class='total-row'><td class='skill-name'><strong>TOTAL</strong></td><td>39,506<br><small>base</small></td><td>71,640<br><small>-81.3%</small></td><td>44,427<br><small>-12.5%</small></td><td class='positive'>38,755<br><small>+1.9%</small></td><td>40,805<br><small>100%</small><br><small>TNO:0.94</small><br><small>-3.3%</small></td><td>40,586<br><small>100%</small><br><small>TNO:0.98</small><br><small>-2.7%</small></td><td>41,794<br><small>100%</small><br><small>TNO:0.89</small><br><small>-5.8%</small></td><td>41,684<br><small>100%</small><br><small>TNO:0.89</small><br><small>-5.5%</small></td><td>39,514<br><small>100%</small><br><small>TNO:0.99</small><br><small>-0.0%</small></td></tr>
+</tbody>
+</table>
+
+<h2>Summary</h2>
+<table>
+<thead><tr><th>Format</th><th>Total Tokens</th><th>Total Bytes</th><th>Token Savings</th><th>Avg Compliance</th><th>Avg TNO</th></tr></thead>
+<tbody>
+<tr><td style='text-align:left'>SKILL.md</td><td>39,506</td><td>151,217</td><td>baseline</td><td>n/a</td><td>n/a</td></tr>
+<tr><td style='text-align:left'>JSON IR</td><td>71,640</td><td>278,142</td><td>-81.3%</td><td>n/a</td><td>n/a</td></tr>
+<tr><td style='text-align:left'>HTML</td><td>44,427</td><td>159,281</td><td>-12.5%</td><td>n/a</td><td>n/a</td></tr>
+<tr><td style='text-align:left'>Markdown (RT)</td><td>38,755</td><td>148,283</td><td>+1.9%</td><td>n/a</td><td>n/a</td></tr>
+<tr><td style='text-align:left'>LML</td><td>40,805</td><td>153,620</td><td>-3.3%</td><td>100%</td><td>0.94</td></tr>
+<tr><td style='text-align:left'>LML Compact</td><td>40,586</td><td>152,774</td><td>-2.7%</td><td>100%</td><td>0.98</td></tr>
+<tr><td style='text-align:left'>LML Conserv.</td><td>41,794</td><td>156,242</td><td>-5.8%</td><td>100%</td><td>0.89</td></tr>
+<tr><td style='text-align:left'>LML Moderate</td><td>41,684</td><td>156,112</td><td>-5.5%</td><td>100%</td><td>0.89</td></tr>
+<tr><td style='text-align:left'>LML Aggress.</td><td>39,514</td><td>151,188</td><td>-0.0%</td><td>100%</td><td>0.99</td></tr>
+</tbody>
+</table>
+
+<p class="timestamp">Generated: 2026-03-31 03:32:03 UTC</p>
+</body>
+</html>
