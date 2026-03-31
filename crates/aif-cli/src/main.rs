@@ -19,7 +19,7 @@ enum Commands {
     Compile {
         /// Input .aif file
         input: PathBuf,
-        /// Output format: html, markdown, lml, lml-compact, lml-conservative, lml-moderate, lml-aggressive, json, binary-wire, binary-token
+        /// Output format: html, markdown, lml, lml-compact, lml-conservative, lml-moderate, lml-aggressive, lml-hybrid, json, binary-wire, binary-token
         #[arg(short, long, default_value = "html")]
         format: String,
         /// Output file (defaults to stdout)
@@ -55,7 +55,7 @@ enum SkillAction {
         input: PathBuf,
         #[arg(short, long)]
         output: Option<PathBuf>,
-        /// Output format: json, html, markdown, lml, lml-compact, lml-conservative, lml-moderate, lml-aggressive, binary-wire, binary-token
+        /// Output format: json, html, markdown, lml, lml-compact, lml-conservative, lml-moderate, lml-aggressive, lml-hybrid, binary-wire, binary-token
         #[arg(short, long, default_value = "json")]
         format: String,
     },
@@ -188,9 +188,10 @@ fn handle_skill(action: SkillAction) {
                 "lml-conservative" => aif_lml::render_lml_conservative(&doc),
                 "lml-moderate" => aif_lml::render_lml_moderate(&doc),
                 "lml-aggressive" => aif_lml::render_lml_aggressive(&doc),
+                "lml-hybrid" => aif_lml::render_lml_hybrid(&doc),
                 _ => {
                     eprintln!(
-                        "Unknown format: {}. Supported: json, html, markdown, lml, lml-compact, lml-conservative, lml-moderate, lml-aggressive, binary-wire, binary-token",
+                        "Unknown format: {}. Supported: json, html, markdown, lml, lml-compact, lml-conservative, lml-moderate, lml-aggressive, lml-hybrid, binary-wire, binary-token",
                         format
                     );
                     std::process::exit(1);
@@ -444,10 +445,11 @@ fn main() {
                 "lml-conservative" => aif_lml::render_lml_conservative(&doc),
                 "lml-moderate" => aif_lml::render_lml_moderate(&doc),
                 "lml-aggressive" => aif_lml::render_lml_aggressive(&doc),
+                "lml-hybrid" => aif_lml::render_lml_hybrid(&doc),
                 "json" => serde_json::to_string_pretty(&doc).unwrap(),
                 _ => {
                     eprintln!(
-                        "Unknown format: {}. Supported: html, markdown, lml, lml-compact, lml-conservative, lml-moderate, lml-aggressive, json, binary-wire, binary-token",
+                        "Unknown format: {}. Supported: html, markdown, lml, lml-compact, lml-conservative, lml-moderate, lml-aggressive, lml-hybrid, json, binary-wire, binary-token",
                         format
                     );
                     std::process::exit(1);

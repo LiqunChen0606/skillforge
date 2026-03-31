@@ -5,6 +5,7 @@ edition.workspace = true
 
 [dependencies]
 aif-core = { workspace = true }
+base64 = "0.22"
 
 [dev-dependencies]
 aif-parser = { path = "../aif-parser" }
