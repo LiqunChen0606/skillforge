@@ -12,3 +12,4 @@ serde_json = { workspace = true }
 [dev-dependencies]
 aif-core = { workspace = true }
 aif-parser = { path = "../aif-parser" }
+tempfile = "3"

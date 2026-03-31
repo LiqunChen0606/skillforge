@@ -6,3 +6,4 @@ pub mod manifest;
 pub mod version;
 pub mod diff;
 pub mod classify;
+pub mod registry;
