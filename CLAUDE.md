@@ -17,7 +17,8 @@ AIF is a semantic document format and toolchain for humans and LLMs. Concise lik
 | `aif-html` | HTML compiler (AST → HTML) |
 | `aif-markdown` | Markdown compiler + pulldown-cmark importer |
 | `aif-lml` | LML compiler — LLM-optimized tagged format (Standard, Compact, Conservative, Moderate, Aggressive modes) |
-| `aif-skill` | Skill profiles — validation, SHA-256 hashing, SKILL.md import/export, manifest |
+| `aif-binary` | Binary serialization — wire (postcard) and token-optimized formats |
+| `aif-skill` | Skill profiles — validation, SHA-256 hashing, SKILL.md import/export, manifest, versioning, diff |
 | `aif-cli` | CLI tool: `compile`, `import`, `dump-ir`, `skill` subcommands |
 
 ### Key Types
@@ -92,16 +93,18 @@ cargo run -p aif-cli -- --help # CLI usage
 
 ```bash
 # Document compilation
-aif compile input.aif -f html|markdown|lml|lml-compact|lml-conservative|lml-moderate|lml-aggressive|json [-o output]
+aif compile input.aif -f html|markdown|lml|lml-compact|lml-conservative|lml-moderate|lml-aggressive|json|binary-wire|binary-token [-o output]
 aif import input.md [-o output]
 aif dump-ir input.aif
 
 # Skill operations
-aif skill import input.md [-f json|html|markdown|lml|lml-compact|lml-conservative|lml-moderate|lml-aggressive] [-o output]
+aif skill import input.md [-f json|html|markdown|lml|lml-compact|lml-conservative|lml-moderate|lml-aggressive|binary-wire|binary-token] [-o output]
 aif skill export input.aif [-o output.md]
 aif skill verify input.aif
 aif skill rehash input.aif
 aif skill inspect input.aif
+aif skill diff old.aif new.aif [--format text|json]
+aif skill bump input.aif [--dry-run]
 
 # Benchmarks
 python benchmarks/skill_token_benchmark.py  # Requires ANTHROPIC_API_KEY
