@@ -94,6 +94,42 @@ enum SkillAction {
         #[arg(long)]
         dry_run: bool,
     },
+    /// Show dependency tree of a skill
+    Deps {
+        input: PathBuf,
+    },
+    /// Resolve and display execution chain for a skill
+    Chain {
+        input: PathBuf,
+    },
+    /// Compose a dependency chain into a single document
+    Compose {
+        input: PathBuf,
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+    },
+    /// Search remote registry for skills
+    Search {
+        query: String,
+        #[arg(long)]
+        tags: Option<String>,
+    },
+    /// Publish a skill to the remote registry
+    Publish {
+        input: PathBuf,
+    },
+    /// Install a skill from the remote registry
+    Install {
+        name: String,
+        #[arg(long)]
+        version: Option<String>,
+    },
+    /// Show remote skill metadata
+    Info {
+        name: String,
+        #[arg(long)]
+        version: Option<String>,
+    },
 }
 
 fn find_skill_block(blocks: &[Block]) -> Option<&Block> {
@@ -396,6 +432,204 @@ fn handle_skill(action: SkillAction) {
                             .unwrap_or_default();
                         println!("    - {:?}{}", skill_type, order_info);
                     }
+                }
+            }
+        }
+        SkillAction::Deps { input } => {
+            let source = read_source(&input);
+            let doc = parse_aif(&source);
+
+            let skill_block = find_skill_block(&doc.blocks).unwrap_or_else(|| {
+                eprintln!("No skill block found in {}", input.display());
+                std::process::exit(1);
+            });
+
+            if let BlockKind::SkillBlock { attrs, .. } = &skill_block.kind {
+                let name = attrs.get("name").unwrap_or("(unnamed)");
+                let deps = aif_skill::chain::parse_requires(attrs);
+                println!("Skill: {}", name);
+                if deps.is_empty() {
+                    println!("  No dependencies.");
+                } else {
+                    println!("  Dependencies:");
+                    for dep in &deps {
+                        println!("    - {}: {}", dep.name, dep.constraint);
+                    }
+                }
+            }
+        }
+        SkillAction::Chain { input } => {
+            let source = read_source(&input);
+            let doc = parse_aif(&source);
+
+            let skill_block = find_skill_block(&doc.blocks).unwrap_or_else(|| {
+                eprintln!("No skill block found in {}", input.display());
+                std::process::exit(1);
+            });
+
+            let (name, deps) = aif_skill::chain::extract_skill_info(skill_block)
+                .unwrap_or_else(|| {
+                    eprintln!("Invalid skill block (missing name)");
+                    std::process::exit(1);
+                });
+
+            if deps.is_empty() {
+                println!("Skill '{}' has no dependencies. Execution order: [{}]", name, name);
+            } else {
+                println!("Skill '{}' depends on:", name);
+                for dep in &deps {
+                    println!("  - {}: {}", dep.name, dep.constraint);
+                }
+                println!("\nNote: Full chain resolution requires skills to be registered.");
+                println!("Use `aif skill register` to add dependencies to the local registry.");
+            }
+        }
+        SkillAction::Compose { input, output } => {
+            let source = read_source(&input);
+            let doc = parse_aif(&source);
+
+            let skill_block = find_skill_block(&doc.blocks).unwrap_or_else(|| {
+                eprintln!("No skill block found in {}", input.display());
+                std::process::exit(1);
+            });
+
+            let (name, _deps) = aif_skill::chain::extract_skill_info(skill_block)
+                .unwrap_or_else(|| {
+                    eprintln!("Invalid skill block (missing name)");
+                    std::process::exit(1);
+                });
+
+            // For now, compose just outputs the single skill as a document
+            // Full composition requires registry with all dependencies registered
+            let composed = aif_core::ast::Document {
+                metadata: {
+                    let mut m = std::collections::BTreeMap::new();
+                    m.insert("chain_root".to_string(), name);
+                    m
+                },
+                blocks: doc.blocks,
+            };
+            let json = serde_json::to_string_pretty(&composed).unwrap();
+            write_output(&json, output.as_ref());
+        }
+        SkillAction::Search { query, tags } => {
+            let config = aif_skill::remote::RemoteConfig::from_env();
+            let remote = aif_skill::remote::RemoteRegistry::new(config);
+            let tag_list: Vec<&str> = tags
+                .as_deref()
+                .map(|t| t.split(',').collect())
+                .unwrap_or_default();
+
+            match remote.search(&query, &tag_list) {
+                Ok(response) => {
+                    println!("Found {} results (page {}):", response.total, response.page);
+                    for entry in &response.results {
+                        println!(
+                            "  {} v{} — {}",
+                            entry.name,
+                            entry.version,
+                            entry.description.as_deref().unwrap_or("(no description)")
+                        );
+                    }
+                }
+                Err(e) => {
+                    eprintln!("Search failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        SkillAction::Publish { input } => {
+            let source = read_source(&input);
+            let doc = parse_aif(&source);
+
+            let skill_block = find_skill_block(&doc.blocks).unwrap_or_else(|| {
+                eprintln!("No skill block found in {}", input.display());
+                std::process::exit(1);
+            });
+
+            let (name, _deps) = aif_skill::chain::extract_skill_info(skill_block)
+                .unwrap_or_else(|| {
+                    eprintln!("Invalid skill block (missing name)");
+                    std::process::exit(1);
+                });
+
+            let version = if let BlockKind::SkillBlock { attrs, .. } = &skill_block.kind {
+                attrs.get("version").unwrap_or("0.1.0").to_string()
+            } else {
+                "0.1.0".to_string()
+            };
+
+            let config = aif_skill::remote::RemoteConfig::from_env();
+            let remote = aif_skill::remote::RemoteRegistry::new(config);
+            let data = fs::read(&input).unwrap_or_else(|e| {
+                eprintln!("Error reading {}: {}", input.display(), e);
+                std::process::exit(1);
+            });
+
+            match remote.publish(&name, &version, &data) {
+                Ok(()) => println!("Published {} v{}", name, version),
+                Err(e) => {
+                    eprintln!("Publish failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        SkillAction::Install { name, version } => {
+            let config = aif_skill::remote::RemoteConfig::from_env();
+            let remote = aif_skill::remote::RemoteRegistry::new(config);
+            let ver = version.as_deref().unwrap_or("latest");
+
+            match remote.download(&name, ver) {
+                Ok(data) => {
+                    let cache_dir = std::env::var("HOME")
+                        .map(|h| std::path::PathBuf::from(h).join(".aif/cache/skills").join(&name))
+                        .unwrap_or_else(|_| std::path::PathBuf::from("/tmp/aif/cache/skills").join(&name));
+
+                    fs::create_dir_all(&cache_dir).unwrap_or_else(|e| {
+                        eprintln!("Error creating cache dir: {}", e);
+                        std::process::exit(1);
+                    });
+                    let file_path = cache_dir.join(format!("{}.aif", ver));
+                    fs::write(&file_path, &data).unwrap_or_else(|e| {
+                        eprintln!("Error writing cache: {}", e);
+                        std::process::exit(1);
+                    });
+                    println!("Installed {} v{} to {}", name, ver, file_path.display());
+                }
+                Err(e) => {
+                    eprintln!("Install failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        SkillAction::Info { name, version } => {
+            let config = aif_skill::remote::RemoteConfig::from_env();
+            let remote = aif_skill::remote::RemoteRegistry::new(config);
+
+            match remote.fetch_metadata(&name, version.as_deref()) {
+                Ok(entry) => {
+                    println!("Name: {}", entry.name);
+                    println!("Version: {}", entry.version);
+                    println!("Hash: {}", entry.hash);
+                    if let Some(desc) = &entry.description {
+                        println!("Description: {}", desc);
+                    }
+                    if !entry.tags.is_empty() {
+                        println!("Tags: {}", entry.tags.join(", "));
+                    }
+                    if !entry.requires.is_empty() {
+                        println!("Requires: {}", entry.requires.join(", "));
+                    }
+                    if let Some(author) = &entry.author {
+                        println!("Author: {}", author);
+                    }
+                    if let Some(ts) = &entry.published_at {
+                        println!("Published: {}", ts);
+                    }
+                }
+                Err(e) => {
+                    eprintln!("Info failed: {}", e);
+                    std::process::exit(1);
                 }
             }
         }

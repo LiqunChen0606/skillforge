@@ -9,3 +9,6 @@ pub mod classify;
 pub mod registry;
 pub mod recommend;
 pub mod delta;
+pub mod chain;
+pub mod remote;
+pub mod resolver;
