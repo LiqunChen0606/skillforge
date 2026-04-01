@@ -18,8 +18,9 @@ AIF is a semantic document format and toolchain for humans and LLMs. Concise lik
 | `aif-markdown` | Markdown compiler + pulldown-cmark importer |
 | `aif-lml` | LML compiler — 5 prose modes, bidirectional parser, hybrid LML+binary, semantic compression |
 | `aif-binary` | Binary serialization — wire (postcard) and token-optimized formats with full encode/decode roundtrip |
-| `aif-skill` | Skill profiles — validation, hashing, versioning, diff, registry, delta transport, format recommender |
-| `aif-cli` | CLI tool: `compile`, `import`, `dump-ir`, `skill`, `schema` subcommands |
+| `aif-skill` | Skill profiles — validation, hashing, versioning, diff, registry, delta transport, format recommender, chaining, marketplace |
+| `aif-pdf` | PDF export (krilla) + import (pdf_oxide) + document chunking (4 strategies) + chunk graphs |
+| `aif-cli` | CLI tool: `compile`, `import`, `dump-ir`, `skill`, `schema`, `chunk` subcommands |
 
 ### Key Types
 
@@ -28,6 +29,7 @@ AIF is a semantic document format and toolchain for humans and LLMs. Concise lik
 - `Inline` — text, emphasis, strong, code, links, references, footnotes
 - `SkillBlockType` — step, verify, precondition, output_contract, decision, tool, fallback, red_flag, example
 - `Attrs` — id + key-value pairs on any block
+- `ChunkGraph` / `Chunk` / `ChunkId` — sub-document addressing and cross-document linking
 
 ## Build & Test
 
@@ -93,8 +95,8 @@ cargo run -p aif-cli -- --help # CLI usage
 
 ```bash
 # Document compilation
-aif compile input.aif -f html|markdown|lml|lml-compact|lml-conservative|lml-moderate|lml-aggressive|json|binary-wire|binary-token [-o output]
-aif import input.md [-o output]
+aif compile input.aif -f html|markdown|lml|lml-compact|lml-conservative|lml-moderate|lml-aggressive|json|binary-wire|binary-token|pdf [-o output]
+aif import input.md|input.pdf [-o output]
 aif dump-ir input.aif
 aif schema                     # Generate JSON Schema for AIF Document type
 
@@ -106,6 +108,19 @@ aif skill rehash input.aif
 aif skill inspect input.aif
 aif skill diff old.aif new.aif [--format text|json]
 aif skill bump input.aif [--dry-run]
+
+# Skill chaining & marketplace
+aif skill deps input.aif                    # Show skill dependencies
+aif skill chain input.aif                   # Resolve execution order
+aif skill compose input.aif [-o output]     # Compose dependency chain
+aif skill search "query" [--tags t1,t2]     # Search remote registry
+aif skill publish input.aif                 # Publish to remote registry
+aif skill install name [--version v]        # Install from remote
+aif skill info name [--version v]           # Show remote metadata
+
+# Document chunking
+aif chunk split input.aif --strategy section|token-budget|semantic|fixed-blocks [--max-tokens N] [-o dir]
+aif chunk graph input1.aif input2.aif [-o graph.json]
 
 # Benchmarks
 python benchmarks/skill_token_benchmark.py  # Requires ANTHROPIC_API_KEY
@@ -139,6 +154,25 @@ Extended `benchmarks/skill_token_benchmark.py` with HTML, Markdown, and JSON com
 
 ### Semantic Compression (Task 9)
 `crates/aif-lml/src/compress.rs` — Text deduplication dictionary for repeated content across blocks.
+
+## Phase 3 Features
+
+### PDF Support
+`crates/aif-pdf/` — PDF export via krilla (text rendering, word-wrap, pagination) and import via pdf_oxide (text extraction, paragraph splitting, heading/code classification). Confidence scores are documented constants: HEADING=0.65, CODE=0.55, PARAGRAPH=0.80. Feature-flagged: `import`, `export`.
+
+### Document Chunking
+`crates/aif-pdf/src/chunk/` — 4 chunking strategies (Section, TokenBudget, Semantic, FixedBlocks) with deterministic content-addressable ChunkIds. Cross-document chunk graphs with typed edges (Evidence, Dependency, Continuation, CrossReference, Refutation). Token estimation uses BPE_TOKENS_PER_WORD constant (1.3x multiplier).
+
+### Skill Chaining
+`crates/aif-skill/src/chain.rs` — Dependency declaration via `requires` attribute with semver version constraints. Kahn's algorithm for topological sort with cycle detection and version conflict reporting. `resolve_chain()` loads skill files from registry to extract transitive dependencies. CLI `chain` and `compose` commands resolve against local registry (~/.aif/registry.json).
+
+### Skill Marketplace
+`crates/aif-skill/src/remote.rs` + `resolver.rs` — Remote registry client with REST API protocol (stub). Unified resolver: local → cache → remote with version-aware matching. Download validation ensures fetched skills are valid AIF documents before caching. Version parsing errors are surfaced (not silently defaulted).
+
+### Cross-Language SDKs
+`sdks/python/` — Pydantic v2 models with Literal discriminators and StrEnum for tagged unions.
+`sdks/typescript/` — TypeScript interfaces + Zod schemas (z.discriminatedUnion, z.lazy for recursive types).
+`scripts/generate_sdks.py` — Codegen from JSON Schema with `--check` mode for CI validation.
 
 ## Benchmark Results (2026-03-31, claude-opus-4-6, 10 skills)
 

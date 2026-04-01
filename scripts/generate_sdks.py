@@ -513,7 +513,7 @@ def generate_ts_types(schema: dict) -> str:
         for pname, pdef in props.items():
             if pname == "type":
                 continue
-            lines.append(f"  {pname}: {_prop_to_zod(pdef, schema, pname in required)},")
+            lines.append(f"  {pname}: {_prop_to_zod(pdef, schema)},")
         lines.append("});")
         lines.append("")
 
@@ -543,7 +543,7 @@ def generate_ts_types(schema: dict) -> str:
         for pname, pdef in props.items():
             if pname == "type":
                 continue
-            lines.append(f"  {pname}: {_prop_to_zod(pdef, schema, pname in required)},")
+            lines.append(f"  {pname}: {_prop_to_zod(pdef, schema)},")
         lines.append("});")
         lines.append("")
 
@@ -568,7 +568,7 @@ def generate_ts_types(schema: dict) -> str:
     return "\n".join(lines)
 
 
-def _prop_to_zod(prop: dict, schema: dict, required: bool) -> str:
+def _prop_to_zod(prop: dict, schema: dict) -> str:
     """Convert a JSON Schema property to a zod schema expression."""
     if "$ref" in prop:
         name, _ = resolve_ref(schema, prop["$ref"])
@@ -590,7 +590,7 @@ def _prop_to_zod(prop: dict, schema: dict, required: bool) -> str:
         non_null = [x for x in t if x != "null"]
         if len(non_null) == 1:
             inner = dict(prop, type=non_null[0])
-            inner_zod = _prop_to_zod(inner, schema, True)
+            inner_zod = _prop_to_zod(inner, schema)
             return f"{inner_zod}.nullable().optional()"
         return "z.unknown()"
 
@@ -602,12 +602,12 @@ def _prop_to_zod(prop: dict, schema: dict, required: bool) -> str:
         return "z.boolean()"
     if t == "object":
         if "additionalProperties" in prop:
-            val_zod = _prop_to_zod(prop["additionalProperties"], schema, True)
+            val_zod = _prop_to_zod(prop["additionalProperties"], schema)
             return f"z.record(z.string(), {val_zod})"
         return "z.record(z.string(), z.unknown())"
     if t == "array":
         items = prop.get("items", {})
-        item_zod = _prop_to_zod(items, schema, True)
+        item_zod = _prop_to_zod(items, schema)
         return f"z.array({item_zod})"
 
     return "z.unknown()"

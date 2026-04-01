@@ -206,6 +206,27 @@ fn parse_aif(source: &str) -> aif_core::ast::Document {
     })
 }
 
+/// Load the local skill registry from the default path (~/.aif/registry.json).
+fn load_local_registry() -> aif_skill::registry::Registry {
+    let registry_path = dirs_or_default().join("registry.json");
+    if registry_path.exists() {
+        aif_skill::registry::Registry::load(&registry_path).unwrap_or_else(|e| {
+            eprintln!("Warning: failed to load registry at {}: {}", registry_path.display(), e);
+            aif_skill::registry::Registry::new(registry_path)
+        })
+    } else {
+        aif_skill::registry::Registry::new(registry_path)
+    }
+}
+
+fn dirs_or_default() -> PathBuf {
+    std::env::var("HOME")
+        .or_else(|_| std::env::var("USERPROFILE"))
+        .ok()
+        .map(|h| PathBuf::from(h).join(".aif"))
+        .unwrap_or_else(|| PathBuf::from("/tmp/aif"))
+}
+
 fn handle_skill(action: SkillAction) {
     match action {
         SkillAction::Import { input, output, format } => {
@@ -384,7 +405,7 @@ fn handle_skill(action: SkillAction) {
                 let current = if let BlockKind::SkillBlock { ref attrs, .. } = block.kind {
                     attrs
                         .get("version")
-                        .and_then(|v| aif_skill::version::Semver::parse(v))
+                        .and_then(aif_skill::version::Semver::parse)
                         .unwrap_or_default()
                 } else {
                     aif_skill::version::Semver::default()
@@ -510,12 +531,27 @@ fn handle_skill(action: SkillAction) {
             if deps.is_empty() {
                 println!("Skill '{}' has no dependencies. Execution order: [{}]", name, name);
             } else {
-                println!("Skill '{}' depends on:", name);
-                for dep in &deps {
-                    println!("  - {}: {}", dep.name, dep.constraint);
+                let registry = load_local_registry();
+                match aif_skill::chain::resolve_chain(&name, &registry) {
+                    Ok(result) => {
+                        println!("Execution order for '{}':", name);
+                        for (i, skill_name) in result.order.iter().enumerate() {
+                            let version = result.resolved.get(skill_name)
+                                .map(|v| format!(" v{}", v))
+                                .unwrap_or_default();
+                            println!("  {}. {}{}", i + 1, skill_name, version);
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("Chain resolution failed: {}", e);
+                        eprintln!("\nDirect dependencies:");
+                        for dep in &deps {
+                            println!("  - {}: {}", dep.name, dep.constraint);
+                        }
+                        eprintln!("\nEnsure all dependencies are registered with `aif skill register`.");
+                        std::process::exit(1);
+                    }
                 }
-                println!("\nNote: Full chain resolution requires skills to be registered.");
-                println!("Use `aif skill register` to add dependencies to the local registry.");
             }
         }
         SkillAction::Compose { input, output } => {
@@ -533,18 +569,26 @@ fn handle_skill(action: SkillAction) {
                     std::process::exit(1);
                 });
 
-            // For now, compose just outputs the single skill as a document
-            // Full composition requires registry with all dependencies registered
-            let composed = aif_core::ast::Document {
-                metadata: {
-                    let mut m = std::collections::BTreeMap::new();
-                    m.insert("chain_root".to_string(), name);
-                    m
-                },
-                blocks: doc.blocks,
-            };
-            let json = serde_json::to_string_pretty(&composed).unwrap();
-            write_output(&json, output.as_ref());
+            let registry = load_local_registry();
+            match aif_skill::chain::resolve_chain(&name, &registry) {
+                Ok(result) => {
+                    match aif_skill::chain::compose_chain(&result.order, &registry) {
+                        Ok(composed) => {
+                            let json = serde_json::to_string_pretty(&composed).unwrap();
+                            write_output(&json, output.as_ref());
+                        }
+                        Err(e) => {
+                            eprintln!("Composition failed: {}", e);
+                            std::process::exit(1);
+                        }
+                    }
+                }
+                Err(e) => {
+                    eprintln!("Chain resolution failed: {}", e);
+                    eprintln!("Ensure all dependencies are registered with `aif skill register`.");
+                    std::process::exit(1);
+                }
+            }
         }
         SkillAction::Search { query, tags } => {
             let config = aif_skill::remote::RemoteConfig::from_env();

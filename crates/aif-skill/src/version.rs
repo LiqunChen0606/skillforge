@@ -54,6 +54,10 @@ impl VersionConstraint {
             let max_str = parts[1].strip_prefix('<')?;
             let min = Semver::parse(min_str.trim())?;
             let max = Semver::parse(max_str.trim())?;
+            // Reject inverted ranges where min >= max
+            if min >= max {
+                return None;
+            }
             return Some(VersionConstraint::Range { min, max });
         }
         if let Some(rest) = s.strip_prefix(">=") {

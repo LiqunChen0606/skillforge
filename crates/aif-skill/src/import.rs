@@ -57,11 +57,11 @@ fn parse_frontmatter(input: &str) -> (std::collections::BTreeMap<String, String>
     }
     // Find the closing ---
     let after_first = &trimmed[3..];
-    let after_first = after_first.trim_start_matches(|c: char| c == '\r' || c == '\n');
+    let after_first = after_first.trim_start_matches(['\r', '\n']);
     if let Some(end_idx) = after_first.find("\n---") {
         let frontmatter_text = &after_first[..end_idx];
         let rest_start = end_idx + 4; // skip \n---
-        let rest = after_first[rest_start..].trim_start_matches(|c: char| c == '\r' || c == '\n');
+        let rest = after_first[rest_start..].trim_start_matches(['\r', '\n']);
         // Simple YAML parsing: key: value lines
         for line in frontmatter_text.lines() {
             let line = line.trim();
@@ -113,9 +113,9 @@ fn parse_md_sections(input: &str) -> (Option<String>, String, Vec<MdSection>) {
                 h1_body = current_body.trim().to_string();
             }
             current_body = String::new();
-            current_heading = Some((2, trimmed[3..].trim().to_string()));
+            current_heading = Some((2, trimmed.strip_prefix("## ").unwrap().trim().to_string()));
         } else if trimmed.starts_with("# ") && h1_title.is_none() && current_heading.is_none() {
-            h1_title = Some(trimmed[2..].trim().to_string());
+            h1_title = Some(trimmed.strip_prefix("# ").unwrap().trim().to_string());
         } else {
             current_body.push_str(line);
             current_body.push('\n');

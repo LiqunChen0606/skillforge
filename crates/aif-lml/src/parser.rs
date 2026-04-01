@@ -214,7 +214,7 @@ impl<'a> LmlParser<'a> {
 
         // Find the directive name
         let name_end = rest
-            .find(|c: char| c == '(' || c == ':')
+            .find(['(', ':'])
             .unwrap_or(rest.len());
         let name = &rest[..name_end];
 

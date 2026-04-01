@@ -79,7 +79,7 @@ pub fn parse_requires(attrs: &Attrs) -> Vec<SkillDependency> {
 
     requires_str
         .split(',')
-        .filter_map(|s| parse_dep_specifier(s))
+        .filter_map(parse_dep_specifier)
         .collect()
 }
 
@@ -151,26 +151,7 @@ pub fn resolve_chain_from_graph(
     }
 
     // Kahn's algorithm for topological sort
-    let mut in_degree: HashMap<String, usize> = HashMap::new();
-    for name in graph.keys() {
-        in_degree.entry(name.clone()).or_insert(0);
-    }
-    for deps in graph.values() {
-        for dep in deps {
-            *in_degree.entry(dep.clone()).or_insert(0) += 1;
-        }
-    }
-
-    // Note: in_degree counts how many skills *depend on* each skill.
-    // Wait — that's reversed. Let me reconsider.
-    // graph[skill] = [deps of skill]. An edge skill -> dep means "skill depends on dep".
-    // In topological sort for execution order, dependencies come first.
-    // So we need: for edge skill -> dep, dep must come before skill.
-    // in_degree should count incoming edges where "incoming" = "someone depends on me" = "I am a dependency".
-    // Actually for Kahn's: in_degree[node] = number of prerequisites that must come before node.
-    // graph[skill] = dependencies of skill. So skill has in_degree = len(graph[skill]) edges coming "in" (its prerequisites).
-
-    // Let me redo this properly:
+    // in_degree[node] = number of prerequisites that must come before node
     let mut in_degree: HashMap<String, usize> = HashMap::new();
     for name in graph.keys() {
         in_degree.entry(name.clone()).or_insert(0);
@@ -233,27 +214,57 @@ pub fn resolve_chain_from_graph(
 }
 
 /// Resolve a skill chain starting from a root skill, using the registry for lookups.
+///
+/// Loads each skill file from the registry to extract its `requires` attribute,
+/// building the full dependency graph for transitive resolution.
 pub fn resolve_chain(
     root_skill: &str,
     registry: &Registry,
 ) -> Result<ResolutionResult, ChainError> {
-    // Build available_skills from registry
     let mut available_skills: BTreeMap<String, (Semver, Vec<SkillDependency>)> = BTreeMap::new();
 
     for entry in registry.list() {
-        let version = Semver::parse(&entry.version).unwrap_or_default();
-        // Parse requires from the entry — we store it in registry entry's path
-        // For now, registry entries don't store requires, so we just use empty deps
-        // The caller should build the available_skills map with full dependency info
-        available_skills.insert(entry.name.clone(), (version, vec![]));
+        let version = Semver::parse(&entry.version).ok_or_else(|| {
+            ChainError::SkillNotFound(format!(
+                "{} (invalid version '{}' in registry)",
+                entry.name, entry.version
+            ))
+        })?;
+
+        // Load the skill file and extract dependencies
+        let deps = if std::path::Path::new(&entry.path).exists() {
+            match std::fs::read_to_string(&entry.path) {
+                Ok(source) => {
+                    if let Ok(doc) = serde_json::from_str::<Document>(&source) {
+                        extract_deps_from_doc(&doc)
+                    } else {
+                        vec![]
+                    }
+                }
+                Err(_) => vec![],
+            }
+        } else {
+            vec![]
+        };
+
+        available_skills.insert(entry.name.clone(), (version, deps));
     }
 
-    // If the root skill isn't in the registry, error
     if !available_skills.contains_key(root_skill) {
         return Err(ChainError::SkillNotFound(root_skill.to_string()));
     }
 
     resolve_chain_from_graph(root_skill, &available_skills)
+}
+
+/// Extract dependencies from all skill blocks in a document.
+fn extract_deps_from_doc(doc: &Document) -> Vec<SkillDependency> {
+    for block in &doc.blocks {
+        if let Some((_, deps)) = extract_skill_info(block) {
+            return deps;
+        }
+    }
+    vec![]
 }
 
 /// Compose a resolved chain into a single document by loading skills from the registry.
@@ -262,7 +273,7 @@ pub fn compose_chain(
     registry: &Registry,
 ) -> Result<Document, ChainError> {
     let mut doc = Document::new();
-    doc.metadata.insert("chain_root".to_string(), order.last().cloned().unwrap_or_default());
+    doc.metadata.insert("chain_root".to_string(), order.first().cloned().unwrap_or_default());
     doc.metadata.insert("chain_length".to_string(), order.len().to_string());
 
     for name in order {
@@ -274,8 +285,10 @@ pub fn compose_chain(
         let source = std::fs::read_to_string(&entry.path).map_err(|_| {
             ChainError::SkillNotFound(format!("{} (file not found: {})", name, entry.path))
         })?;
-        let skill_doc: Document = serde_json::from_str(&source).map_err(|_| {
-            ChainError::InvalidSkillBlock
+        let skill_doc: Document = serde_json::from_str(&source).map_err(|e| {
+            ChainError::SkillNotFound(format!(
+                "{} (failed to parse {}: {})", name, entry.path, e
+            ))
         })?;
 
         for block in skill_doc.blocks {
@@ -499,5 +512,90 @@ mod tests {
         assert!(range.satisfies(&v1));
         assert!(!range.satisfies(&v2));
         assert!(!range.satisfies(&v05));
+    }
+
+    #[test]
+    fn inverted_version_range_rejected() {
+        // >=2.0.0+<1.0.0 is an inverted range and should fail to parse
+        let result = VersionConstraint::parse(">=2.0.0+<1.0.0");
+        assert!(result.is_none(), "Inverted version range should be rejected");
+    }
+
+    #[test]
+    fn equal_version_range_rejected() {
+        // >=1.0.0+<1.0.0 is an empty range and should fail to parse
+        let result = VersionConstraint::parse(">=1.0.0+<1.0.0");
+        assert!(result.is_none(), "Equal min/max range should be rejected");
+    }
+
+    #[test]
+    fn resolve_chain_with_registry_and_files() {
+        use std::io::Write;
+
+        // Create temp dir with skill files
+        let dir = std::env::temp_dir().join("aif_chain_test");
+        let _ = std::fs::create_dir_all(&dir);
+
+        // Create a skill doc with requires attribute
+        let skill_a = aif_core::ast::Document {
+            metadata: std::collections::BTreeMap::new(),
+            blocks: vec![Block {
+                kind: BlockKind::SkillBlock {
+                    skill_type: SkillBlockType::Skill,
+                    attrs: {
+                        let mut a = aif_core::ast::Attrs::new();
+                        a.pairs.insert("name".into(), "skill-a".into());
+                        a.pairs.insert("version".into(), "1.0.0".into());
+                        a.pairs.insert("requires".into(), "skill-b".into());
+                        a
+                    },
+                    title: None,
+                    content: vec![],
+                    children: vec![],
+                },
+                span: aif_core::span::Span::empty(),
+            }],
+        };
+
+        let skill_b = aif_core::ast::Document {
+            metadata: std::collections::BTreeMap::new(),
+            blocks: vec![Block {
+                kind: BlockKind::SkillBlock {
+                    skill_type: SkillBlockType::Skill,
+                    attrs: {
+                        let mut a = aif_core::ast::Attrs::new();
+                        a.pairs.insert("name".into(), "skill-b".into());
+                        a.pairs.insert("version".into(), "1.0.0".into());
+                        a
+                    },
+                    title: None,
+                    content: vec![],
+                    children: vec![],
+                },
+                span: aif_core::span::Span::empty(),
+            }],
+        };
+
+        let path_a = dir.join("skill-a.json");
+        let path_b = dir.join("skill-b.json");
+        let mut f = std::fs::File::create(&path_a).unwrap();
+        f.write_all(serde_json::to_string(&skill_a).unwrap().as_bytes()).unwrap();
+        let mut f = std::fs::File::create(&path_b).unwrap();
+        f.write_all(serde_json::to_string(&skill_b).unwrap().as_bytes()).unwrap();
+
+        // Build registry
+        let mut registry = Registry::new(dir.join("registry.json"));
+        registry.register("skill-a", "1.0.0", "sha256:aaa", path_a.to_str().unwrap());
+        registry.register("skill-b", "1.0.0", "sha256:bbb", path_b.to_str().unwrap());
+
+        // Resolve chain — should find skill-b as dependency of skill-a
+        let result = resolve_chain("skill-a", &registry).unwrap();
+        assert_eq!(result.order.len(), 2);
+        let b_pos = result.order.iter().position(|s| s == "skill-b").unwrap();
+        let a_pos = result.order.iter().position(|s| s == "skill-a").unwrap();
+        assert!(b_pos < a_pos, "skill-b should come before skill-a");
+
+        // Cleanup
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }

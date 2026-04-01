@@ -192,15 +192,23 @@ enum ClassifiedBlock {
     CodeBlock(String),
 }
 
+// Confidence scores for heuristic-based block classification.
+// These are conservative estimates reflecting the reliability of each heuristic:
+//   HEADING: 0.65 — short single-line text is often a heading but could be a label or caption
+//   CODE:    0.55 — indentation-based detection has high false-positive rate (quoted text, lists)
+//   PARA:    0.80 — multi-sentence text is almost always a paragraph
+const CONFIDENCE_HEADING: f32 = 0.65;
+const CONFIDENCE_CODE: f32 = 0.55;
+const CONFIDENCE_PARAGRAPH: f32 = 0.80;
+
 /// Classify a text block using simple heuristics.
 fn classify_text_block(text: &str) -> (ClassifiedBlock, f32) {
-    // Short, single-line text that looks like a heading
     let line_count = text.lines().count();
     let word_count = text.split_whitespace().count();
 
     // Heading heuristic: single line, short, no period at end
     if line_count == 1 && word_count <= 12 && !text.ends_with('.') && !text.ends_with(',') {
-        return (ClassifiedBlock::Heading(text.to_string()), 0.65);
+        return (ClassifiedBlock::Heading(text.to_string()), CONFIDENCE_HEADING);
     }
 
     // Code heuristic: many lines with consistent indentation or special chars
@@ -209,11 +217,11 @@ fn classify_text_block(text: &str) -> (ClassifiedBlock, f32) {
         .filter(|l| l.starts_with("    ") || l.starts_with('\t'))
         .count();
     if line_count > 2 && indented_lines as f32 / line_count as f32 > 0.5 {
-        return (ClassifiedBlock::CodeBlock(text.to_string()), 0.55);
+        return (ClassifiedBlock::CodeBlock(text.to_string()), CONFIDENCE_CODE);
     }
 
     // Default: paragraph
-    (ClassifiedBlock::Paragraph(text.to_string()), 0.80)
+    (ClassifiedBlock::Paragraph(text.to_string()), CONFIDENCE_PARAGRAPH)
 }
 
 #[cfg(test)]

@@ -47,7 +47,12 @@ impl SkillResolver {
     ) -> Result<ResolvedSkill, ChainError> {
         // Try local first
         if let Some(entry) = self.local.lookup(name) {
-            let version = Semver::parse(&entry.version).unwrap_or_default();
+            let version = Semver::parse(&entry.version).ok_or_else(|| {
+                ChainError::SkillNotFound(format!(
+                    "{} (invalid version '{}' in registry)",
+                    name, entry.version
+                ))
+            })?;
             if constraint.satisfies(&version) {
                 return Ok(ResolvedSkill {
                     name: name.to_string(),
@@ -67,7 +72,13 @@ impl SkillResolver {
         if let Some(remote) = &self.remote {
             match remote.fetch_metadata(name, None) {
                 Ok(entry) => {
-                    let version = Semver::parse(&entry.version).unwrap_or_default();
+                    let version = match Semver::parse(&entry.version) {
+                        Some(v) => v,
+                        None => return Err(ChainError::SkillNotFound(format!(
+                            "{} (invalid version '{}' from remote)",
+                            name, entry.version
+                        ))),
+                    };
                     if constraint.satisfies(&version) {
                         // Would download and cache here
                         return Err(ChainError::SkillNotFound(format!(
@@ -103,10 +114,10 @@ impl SkillResolver {
                 let name_str = filename.to_string_lossy();
                 if let Some(version_str) = name_str.strip_suffix(".aif") {
                     if let Some(version) = Semver::parse(version_str) {
-                        if constraint.satisfies(&version) {
-                            if best.as_ref().map_or(true, |(best_v, _)| version > *best_v) {
-                                best = Some((version, entry.path()));
-                            }
+                        if constraint.satisfies(&version)
+                            && best.as_ref().is_none_or(|(best_v, _)| version > *best_v)
+                        {
+                            best = Some((version, entry.path()));
                         }
                     }
                 }
@@ -130,9 +141,15 @@ impl SkillResolver {
         let remote = self
             .remote
             .as_ref()
-            .ok_or_else(|| RemoteError::NotConfigured)?;
+            .ok_or(RemoteError::NotConfigured)?;
 
         let data = remote.download(name, version)?;
+
+        // Validate downloaded data is parseable as JSON Document
+        let data_str = std::str::from_utf8(&data)
+            .map_err(|e| format!("Downloaded skill is not valid UTF-8: {}", e))?;
+        let _doc: aif_core::ast::Document = serde_json::from_str(data_str)
+            .map_err(|e| format!("Downloaded skill is not a valid AIF document: {}", e))?;
 
         // Write to cache
         let cache_path = self

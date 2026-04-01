@@ -8,6 +8,7 @@ use super::ids::compute_doc_hash;
 pub enum ChunkError {
     EmptyDocument,
     InvalidStrategy(String),
+    Other(String),
 }
 
 impl fmt::Display for ChunkError {
@@ -15,6 +16,7 @@ impl fmt::Display for ChunkError {
         match self {
             ChunkError::EmptyDocument => write!(f, "document has no blocks"),
             ChunkError::InvalidStrategy(msg) => write!(f, "invalid strategy: {}", msg),
+            ChunkError::Other(msg) => write!(f, "{}", msg),
         }
     }
 }
@@ -31,7 +33,8 @@ pub fn chunk_document(
         return Err(ChunkError::EmptyDocument);
     }
 
-    let doc_content = serde_json::to_string(doc).unwrap_or_default();
+    let doc_content = serde_json::to_string(doc)
+        .map_err(|e| ChunkError::Other(format!("Failed to serialize document for hashing: {}", e)))?;
     let doc_hash = compute_doc_hash(&doc_content);
 
     let chunks = match strategy {
@@ -177,18 +180,15 @@ fn chunk_by_fixed_blocks(
     blocks_per_chunk: usize,
 ) -> Vec<Chunk> {
     let mut chunks = Vec::new();
-    let mut sequence = 0;
-
     for (chunk_idx, block_group) in doc.blocks.chunks(blocks_per_chunk).enumerate() {
         let start_idx = chunk_idx * blocks_per_chunk;
         chunks.push(make_chunk(
             doc_hash,
             doc_path,
-            &block_group.to_vec(),
+            block_group,
             start_idx,
-            sequence,
+            chunk_idx,
         ));
-        sequence += 1;
     }
 
     chunks
@@ -246,8 +246,8 @@ fn make_chunk(
     sequence: usize,
 ) -> Chunk {
     let block_types: Vec<String> = blocks.iter().map(|b| block_type_name(&b.kind)).collect();
-    let tokens: usize = blocks.iter().map(|b| estimate_block_tokens(b)).sum();
-    let title = blocks.first().and_then(|b| extract_block_title(b));
+    let tokens: usize = blocks.iter().map(estimate_block_tokens).sum();
+    let title = blocks.first().and_then(extract_block_title);
 
     Chunk {
         id: ChunkId::new(doc_hash, &[start_idx]),
@@ -318,11 +318,16 @@ fn inlines_to_text(inlines: &[Inline]) -> String {
     out
 }
 
-/// Estimate token count: word_count * 1.3 (BPE approximation).
+/// Average ratio of BPE tokens to whitespace-delimited words for English text.
+/// Based on empirical measurement across cl100k_base (GPT-4/Claude) tokenizers.
+/// English prose averages ~1.3 tokens/word; code and technical text may be higher.
+const BPE_TOKENS_PER_WORD: f64 = 1.3;
+
+/// Estimate token count using a fixed BPE approximation (word_count * 1.3).
 fn estimate_block_tokens(block: &Block) -> usize {
     let text = collect_all_text(block);
     let words = text.split_whitespace().count();
-    (words as f64 * 1.3).ceil() as usize
+    (words as f64 * BPE_TOKENS_PER_WORD).ceil() as usize
 }
 
 fn collect_all_text(block: &Block) -> String {
@@ -341,7 +346,7 @@ fn collect_all_text(block: &Block) -> String {
         BlockKind::CodeBlock { code, .. } => code.clone(),
         BlockKind::BlockQuote { content } => content
             .iter()
-            .map(|b| collect_all_text(b))
+            .map(collect_all_text)
             .collect::<Vec<_>>()
             .join(" "),
         BlockKind::List { items, .. } => items

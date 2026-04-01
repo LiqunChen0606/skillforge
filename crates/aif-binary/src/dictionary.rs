@@ -1,5 +1,4 @@
 /// Maps repeated tag/type names to single-byte IDs.
-
 // Block type IDs (0x01-0x1F)
 pub const PARAGRAPH: u8 = 0x01;
 pub const SECTION: u8 = 0x02;

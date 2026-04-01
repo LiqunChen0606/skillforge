@@ -1,6 +1,7 @@
 /// Page size presets.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub enum PageSize {
+    #[default]
     A4,
     Letter,
     Custom { width_pt: f32, height_pt: f32 },
@@ -13,12 +14,6 @@ impl PageSize {
             PageSize::Letter => (612.0, 792.0),
             PageSize::Custom { width_pt, height_pt } => (*width_pt, *height_pt),
         }
-    }
-}
-
-impl Default for PageSize {
-    fn default() -> Self {
-        PageSize::A4
     }
 }
 
