@@ -19,16 +19,16 @@ enum Commands {
     Compile {
         /// Input .aif file
         input: PathBuf,
-        /// Output format: html, markdown, lml, lml-compact, lml-conservative, lml-moderate, lml-aggressive, lml-hybrid, json, binary-wire, binary-token
+        /// Output format: html, markdown, lml, lml-compact, lml-conservative, lml-moderate, lml-aggressive, lml-hybrid, json, binary-wire, binary-token, pdf
         #[arg(short, long, default_value = "html")]
         format: String,
         /// Output file (defaults to stdout)
         #[arg(short, long)]
         output: Option<PathBuf>,
     },
-    /// Import a Markdown file to AIF IR (JSON)
+    /// Import a Markdown or PDF file to AIF IR (JSON)
     Import {
-        /// Input Markdown file
+        /// Input file (Markdown or PDF)
         input: PathBuf,
         /// Output file (defaults to stdout)
         #[arg(short, long)]
@@ -43,6 +43,11 @@ enum Commands {
     Skill {
         #[command(subcommand)]
         action: SkillAction,
+    },
+    /// Chunk a document into addressable sub-document units
+    Chunk {
+        #[command(subcommand)]
+        action: ChunkAction,
     },
     /// Print JSON Schema for the AIF Document type
     Schema {},
@@ -129,6 +134,35 @@ enum SkillAction {
         name: String,
         #[arg(long)]
         version: Option<String>,
+    },
+}
+
+#[derive(Subcommand)]
+enum ChunkAction {
+    /// Chunk a document with a given strategy
+    Split {
+        /// Input .aif file
+        input: PathBuf,
+        /// Chunking strategy: section, token-budget, semantic, fixed-blocks
+        #[arg(long, default_value = "token-budget")]
+        strategy: String,
+        /// Max tokens per chunk (for token-budget strategy)
+        #[arg(long, default_value = "2048")]
+        max_tokens: usize,
+        /// Blocks per chunk (for fixed-blocks strategy)
+        #[arg(long, default_value = "5")]
+        blocks_per_chunk: usize,
+        /// Output directory for individual chunk files
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+    },
+    /// Build a chunk graph from multiple documents
+    Graph {
+        /// Input .aif files
+        inputs: Vec<PathBuf>,
+        /// Output JSON file for the graph
+        #[arg(short, long)]
+        output: Option<PathBuf>,
     },
 }
 
@@ -648,13 +682,17 @@ fn main() {
             let source = read_source(&input);
             let doc = parse_aif(&source);
 
-            // Binary formats need raw byte output, not text
+            // Binary and PDF formats need raw byte output, not text
             match format.as_str() {
-                "binary-wire" | "binary-token" => {
-                    let bytes = if format == "binary-wire" {
-                        aif_binary::render_wire(&doc)
-                    } else {
-                        aif_binary::render_token_optimized(&doc)
+                "binary-wire" | "binary-token" | "pdf" => {
+                    let bytes = match format.as_str() {
+                        "binary-wire" => aif_binary::render_wire(&doc),
+                        "binary-token" => aif_binary::render_token_optimized(&doc),
+                        "pdf" => aif_pdf::export::export_pdf(&doc).unwrap_or_else(|e| {
+                            eprintln!("PDF export error: {}", e);
+                            std::process::exit(1);
+                        }),
+                        _ => unreachable!(),
                     };
                     if let Some(output_path) = output.as_ref() {
                         std::fs::write(output_path, &bytes).unwrap_or_else(|e| {
@@ -683,7 +721,7 @@ fn main() {
                 "json" => serde_json::to_string_pretty(&doc).unwrap(),
                 _ => {
                     eprintln!(
-                        "Unknown format: {}. Supported: html, markdown, lml, lml-compact, lml-conservative, lml-moderate, lml-aggressive, lml-hybrid, json, binary-wire, binary-token",
+                        "Unknown format: {}. Supported: html, markdown, lml, lml-compact, lml-conservative, lml-moderate, lml-aggressive, lml-hybrid, json, binary-wire, binary-token, pdf",
                         format
                     );
                     std::process::exit(1);
@@ -693,10 +731,40 @@ fn main() {
             write_output(&result, output.as_ref());
         }
         Commands::Import { input, output } => {
-            let source = read_source(&input);
-            let doc = aif_markdown::import_markdown(&source);
-            let json = serde_json::to_string_pretty(&doc).unwrap();
-            write_output(&json, output.as_ref());
+            let is_pdf = input
+                .extension()
+                .map(|ext| ext.eq_ignore_ascii_case("pdf"))
+                .unwrap_or(false);
+
+            if is_pdf {
+                let pdf_bytes = fs::read(&input).unwrap_or_else(|e| {
+                    eprintln!("Error reading {}: {}", input.display(), e);
+                    std::process::exit(1);
+                });
+                let result = aif_pdf::import::import_pdf(&pdf_bytes).unwrap_or_else(|e| {
+                    eprintln!("PDF import error: {}", e);
+                    std::process::exit(1);
+                });
+                eprintln!(
+                    "Imported {} pages, {} blocks, avg confidence: {:.2}",
+                    result.page_count,
+                    result.document.blocks.len(),
+                    result.avg_confidence
+                );
+                for diag in &result.diagnostics {
+                    eprintln!(
+                        "  [page {}] {:?}: {}",
+                        diag.page, diag.kind, diag.message
+                    );
+                }
+                let json = serde_json::to_string_pretty(&result.document).unwrap();
+                write_output(&json, output.as_ref());
+            } else {
+                let source = read_source(&input);
+                let doc = aif_markdown::import_markdown(&source);
+                let json = serde_json::to_string_pretty(&doc).unwrap();
+                write_output(&json, output.as_ref());
+            }
         }
         Commands::DumpIr { input } => {
             let source = read_source(&input);
@@ -707,8 +775,144 @@ fn main() {
         Commands::Skill { action } => {
             handle_skill(action);
         }
+        Commands::Chunk { action } => {
+            handle_chunk(action);
+        }
         Commands::Schema {} => {
             println!("{}", aif_core::schema::generate_schema());
+        }
+    }
+}
+
+fn handle_chunk(action: ChunkAction) {
+    match action {
+        ChunkAction::Split {
+            input,
+            strategy,
+            max_tokens,
+            blocks_per_chunk,
+            output,
+        } => {
+            let source = read_source(&input);
+            let doc = parse_aif(&source);
+
+            let chunk_strategy = match strategy.as_str() {
+                "section" => aif_core::chunk::ChunkStrategy::Section,
+                "token-budget" => aif_core::chunk::ChunkStrategy::TokenBudget { max_tokens },
+                "semantic" => aif_core::chunk::ChunkStrategy::Semantic,
+                "fixed-blocks" => {
+                    aif_core::chunk::ChunkStrategy::FixedBlocks { blocks_per_chunk }
+                }
+                _ => {
+                    eprintln!(
+                        "Unknown strategy: {}. Supported: section, token-budget, semantic, fixed-blocks",
+                        strategy
+                    );
+                    std::process::exit(1);
+                }
+            };
+
+            let chunks = aif_pdf::chunk::chunk_document(
+                &doc,
+                input.to_str().unwrap_or("input.aif"),
+                chunk_strategy,
+            )
+            .unwrap_or_else(|e| {
+                eprintln!("Chunking error: {}", e);
+                std::process::exit(1);
+            });
+
+            eprintln!("Produced {} chunks", chunks.len());
+
+            if let Some(output_dir) = output {
+                fs::create_dir_all(&output_dir).unwrap_or_else(|e| {
+                    eprintln!("Error creating output dir: {}", e);
+                    std::process::exit(1);
+                });
+                for chunk in &chunks {
+                    let filename = format!("chunk_{}.json", chunk.metadata.sequence);
+                    let path = output_dir.join(&filename);
+                    let json = serde_json::to_string_pretty(chunk).unwrap();
+                    fs::write(&path, &json).unwrap_or_else(|e| {
+                        eprintln!("Error writing {}: {}", path.display(), e);
+                        std::process::exit(1);
+                    });
+                }
+                eprintln!("Wrote {} chunk files to {}", chunks.len(), output_dir.display());
+            } else {
+                // Print summary to stdout
+                for chunk in &chunks {
+                    println!(
+                        "{} | blocks: {} | tokens: ~{} | title: {}",
+                        chunk.id,
+                        chunk.blocks.len(),
+                        chunk.metadata.estimated_tokens,
+                        chunk.metadata.title.as_deref().unwrap_or("(none)")
+                    );
+                }
+            }
+        }
+        ChunkAction::Graph { inputs, output } => {
+            let mut graph = aif_core::chunk::ChunkGraph::new();
+
+            for input in &inputs {
+                let source = read_source(input);
+                let doc = parse_aif(&source);
+                let doc_path = input.to_str().unwrap_or("unknown");
+
+                let chunks = aif_pdf::chunk::chunk_document(
+                    &doc,
+                    doc_path,
+                    aif_core::chunk::ChunkStrategy::Section,
+                )
+                .unwrap_or_else(|e| {
+                    eprintln!("Chunking error for {}: {}", input.display(), e);
+                    std::process::exit(1);
+                });
+
+                let doc_hash = aif_pdf::chunk::compute_doc_hash(
+                    &serde_json::to_string(&doc).unwrap_or_default(),
+                );
+                graph.documents.insert(
+                    doc_path.to_string(),
+                    aif_core::chunk::DocumentEntry {
+                        path: doc_path.to_string(),
+                        content_hash: doc_hash,
+                        chunk_count: chunks.len(),
+                        title: doc.metadata.get("title").cloned(),
+                    },
+                );
+
+                // Add continuation links between sequential chunks
+                for i in 0..chunks.len() {
+                    if i > 0 {
+                        graph.add_link(aif_core::chunk::ChunkLink {
+                            source: chunks[i - 1].id.clone(),
+                            target: chunks[i].id.clone(),
+                            link_type: aif_core::chunk::LinkType::Continuation,
+                            label: None,
+                        });
+                    }
+                    graph.add_chunk(chunks[i].clone());
+                }
+            }
+
+            let json = serde_json::to_string_pretty(&graph).unwrap();
+            if let Some(output_path) = output {
+                fs::write(&output_path, &json).unwrap_or_else(|e| {
+                    eprintln!("Error writing {}: {}", output_path.display(), e);
+                    std::process::exit(1);
+                });
+                eprintln!(
+                    "Wrote graph ({} chunks, {} links, {} documents) to {}",
+                    graph.chunks.len(),
+                    graph.links.len(),
+                    graph.documents.len(),
+                    output_path.display()
+                );
+            } else {
+                println!("{}", json);
+            }
         }
     }
 }

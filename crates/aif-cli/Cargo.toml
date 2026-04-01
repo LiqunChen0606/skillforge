@@ -11,6 +11,7 @@ aif-markdown = { path = "../aif-markdown" }
 aif-lml = { path = "../aif-lml" }
 aif-skill = { path = "../aif-skill" }
 aif-binary = { path = "../aif-binary" }
+aif-pdf = { path = "../aif-pdf" }
 clap = { version = "4", features = ["derive"] }
 serde_json = { workspace = true }
 
