@@ -1,0 +1,268 @@
+{
+  "metadata": {
+    "summary": "A quick introduction to the AI-native Interchange Format",
+    "title": "Getting Started with AIF"
+  },
+  "blocks": [
+    {
+      "kind": {
+        "type": "Section",
+        "attrs": {
+          "id": "what-is-aif",
+          "pairs": {}
+        },
+        "title": [
+          {
+            "type": "Text",
+            "text": "What is AIF?"
+          }
+        ],
+        "children": []
+      },
+      "span": {
+        "start": 101,
+        "end": 139
+      }
+    },
+    {
+      "kind": {
+        "type": "Paragraph",
+        "content": [
+          {
+            "type": "Text",
+            "text": "AIF is a "
+          },
+          {
+            "type": "Strong",
+            "content": [
+              {
+                "type": "Text",
+                "text": "semantic document format"
+              }
+            ]
+          },
+          {
+            "type": "Text",
+            "text": " designed for both humans and machines. Unlike Markdown, AIF natively supports structured blocks like claims, evidence, and definitions."
+          }
+        ]
+      },
+      "span": {
+        "start": 141,
+        "end": 314
+      }
+    },
+    {
+      "kind": {
+        "type": "SemanticBlock",
+        "block_type": "Claim",
+        "attrs": {
+          "id": "c1",
+          "pairs": {}
+        },
+        "title": null,
+        "content": [
+          {
+            "type": "Text",
+            "text": "AIF preserves document "
+          },
+          {
+            "type": "Emphasis",
+            "content": [
+              {
+                "type": "Text",
+                "text": "meaning"
+              }
+            ]
+          },
+          {
+            "type": "Text",
+            "text": ", not just appearance."
+          }
+        ]
+      },
+      "span": {
+        "start": 316,
+        "end": 384
+      }
+    },
+    {
+      "kind": {
+        "type": "Section",
+        "attrs": {
+          "id": "features",
+          "pairs": {}
+        },
+        "title": [
+          {
+            "type": "Text",
+            "text": "Key Features"
+          }
+        ],
+        "children": []
+      },
+      "span": {
+        "start": 386,
+        "end": 421
+      }
+    },
+    {
+      "kind": {
+        "type": "List",
+        "ordered": false,
+        "items": [
+          {
+            "content": [
+              {
+                "type": "Text",
+                "text": "Human-readable surface syntax"
+              }
+            ],
+            "children": []
+          },
+          {
+            "content": [
+              {
+                "type": "Text",
+                "text": "Semantic block types for structured content"
+              }
+            ],
+            "children": []
+          },
+          {
+            "content": [
+              {
+                "type": "Text",
+                "text": "Multiple output targets: HTML, Markdown, LML, JSON"
+              }
+            ],
+            "children": []
+          },
+          {
+            "content": [
+              {
+                "type": "Text",
+                "text": "Lossless round-trip through the IR"
+              }
+            ],
+            "children": []
+          }
+        ]
+      },
+      "span": {
+        "start": 423,
+        "end": 590
+      }
+    },
+    {
+      "kind": {
+        "type": "Callout",
+        "callout_type": "Tip",
+        "attrs": {
+          "id": null,
+          "pairs": {
+            "type": "tip"
+          }
+        },
+        "content": [
+          {
+            "type": "Text",
+            "text": "You can import existing Markdown documents using "
+          },
+          {
+            "type": "InlineCode",
+            "code": "aif import"
+          },
+          {
+            "type": "Text",
+            "text": "."
+          }
+        ]
+      },
+      "span": {
+        "start": 592,
+        "end": 673
+      }
+    },
+    {
+      "kind": {
+        "type": "Section",
+        "attrs": {
+          "id": "example",
+          "pairs": {}
+        },
+        "title": [
+          {
+            "type": "Text",
+            "text": "Example Usage"
+          }
+        ],
+        "children": []
+      },
+      "span": {
+        "start": 675,
+        "end": 710
+      }
+    },
+    {
+      "kind": {
+        "type": "Paragraph",
+        "content": [
+          {
+            "type": "Text",
+            "text": "Compile an AIF file to HTML:"
+          }
+        ]
+      },
+      "span": {
+        "start": 712,
+        "end": 740
+      }
+    },
+    {
+      "kind": {
+        "type": "CodeBlock",
+        "lang": "bash",
+        "attrs": {
+          "id": null,
+          "pairs": {}
+        },
+        "code": "aif compile document.aif --format html --output document.html"
+      },
+      "span": {
+        "start": 742,
+        "end": 815
+      }
+    },
+    {
+      "kind": {
+        "type": "Paragraph",
+        "content": [
+          {
+            "type": "Text",
+            "text": "Or import a Markdown file:"
+          }
+        ]
+      },
+      "span": {
+        "start": 817,
+        "end": 843
+      }
+    },
+    {
+      "kind": {
+        "type": "CodeBlock",
+        "lang": "bash",
+        "attrs": {
+          "id": null,
+          "pairs": {}
+        },
+        "code": "aif import README.md --output readme.json"
+      },
+      "span": {
+        "start": 845,
+        "end": 898
+      }
+    }
+  ]
+}
