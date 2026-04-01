@@ -5,8 +5,9 @@ use std::collections::BTreeMap;
 use aif_binary::token_opt::{decode, encode};
 
 /// Helper: encode then decode, comparing the result.
-/// Note: spans are lost (always Span(0,0) after roundtrip), and
-/// SemanticBlockType/CalloutType default to Claim/Note.
+/// Note: spans are lost (always Span(0,0) after roundtrip).
+/// Unknown future byte values for SemanticBlockType/CalloutType fall back
+/// to Claim/Note for forward-compatibility, but all known variants roundtrip exactly.
 fn roundtrip(doc: &Document) -> Document {
     let bytes = encode(doc);
     decode(&bytes).expect("decode failed")
@@ -717,5 +718,103 @@ fn roundtrip_inline_image() {
         }
     } else {
         panic!("expected Paragraph");
+    }
+}
+
+#[test]
+fn roundtrip_all_semantic_block_types() {
+    let all_types = vec![
+        SemanticBlockType::Claim,
+        SemanticBlockType::Evidence,
+        SemanticBlockType::Definition,
+        SemanticBlockType::Theorem,
+        SemanticBlockType::Assumption,
+        SemanticBlockType::Result,
+        SemanticBlockType::Conclusion,
+        SemanticBlockType::Requirement,
+        SemanticBlockType::Recommendation,
+    ];
+    for bt in all_types {
+        let doc = Document {
+            metadata: BTreeMap::new(),
+            blocks: vec![Block {
+                kind: BlockKind::SemanticBlock {
+                    block_type: bt.clone(),
+                    attrs: Attrs::new(),
+                    title: Some(vec![Inline::Text {
+                        text: format!("{:?} title", bt),
+                    }]),
+                    content: vec![Inline::Text {
+                        text: format!("{:?} content", bt),
+                    }],
+                },
+                span: sp(),
+            }],
+        };
+        let decoded = roundtrip(&doc);
+        if let BlockKind::SemanticBlock {
+            block_type, title, content, ..
+        } = &decoded.blocks[0].kind
+        {
+            assert_eq!(
+                *block_type, bt,
+                "SemanticBlockType roundtrip failed for {:?}",
+                bt
+            );
+            // Verify title and content survived too
+            if let Some(title_inlines) = title {
+                if let Inline::Text { text } = &title_inlines[0] {
+                    assert_eq!(*text, format!("{:?} title", bt));
+                }
+            } else {
+                panic!("expected title for {:?}", bt);
+            }
+            if let Inline::Text { text } = &content[0] {
+                assert_eq!(*text, format!("{:?} content", bt));
+            }
+        } else {
+            panic!("expected SemanticBlock for {:?}", bt);
+        }
+    }
+}
+
+#[test]
+fn roundtrip_all_callout_types() {
+    let all_types = vec![
+        CalloutType::Note,
+        CalloutType::Warning,
+        CalloutType::Info,
+        CalloutType::Tip,
+    ];
+    for ct in all_types {
+        let doc = Document {
+            metadata: BTreeMap::new(),
+            blocks: vec![Block {
+                kind: BlockKind::Callout {
+                    callout_type: ct.clone(),
+                    attrs: Attrs::new(),
+                    content: vec![Inline::Text {
+                        text: format!("{:?} callout content", ct),
+                    }],
+                },
+                span: sp(),
+            }],
+        };
+        let decoded = roundtrip(&doc);
+        if let BlockKind::Callout {
+            callout_type, content, ..
+        } = &decoded.blocks[0].kind
+        {
+            assert_eq!(
+                *callout_type, ct,
+                "CalloutType roundtrip failed for {:?}",
+                ct
+            );
+            if let Inline::Text { text } = &content[0] {
+                assert_eq!(*text, format!("{:?} callout content", ct));
+            }
+        } else {
+            panic!("expected Callout for {:?}", ct);
+        }
     }
 }

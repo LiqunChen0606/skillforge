@@ -12,7 +12,7 @@ AIF is a semantic document format and toolchain for humans and LLMs. Concise lik
 
 | Crate | Purpose |
 |-------|---------|
-| `aif-core` | AST types, spans, errors, JSON Schema generation — shared IR |
+| `aif-core` | AST types, spans, errors, JSON Schema generation, shared `inlines_to_text` utility — shared IR |
 | `aif-parser` | Logos-based lexer + block/inline parser (`.aif` → AST) |
 | `aif-html` | HTML compiler (AST → HTML) |
 | `aif-markdown` | Markdown compiler + pulldown-cmark importer |
@@ -30,6 +30,7 @@ AIF is a semantic document format and toolchain for humans and LLMs. Concise lik
 - `SkillBlockType` — step, verify, precondition, output_contract, decision, tool, fallback, red_flag, example
 - `MediaMeta` — optional metadata on Figure/Audio/Video: alt, width, height, duration, mime, poster
 - `Attrs` — id + key-value pairs on any block
+- `TextMode` — Plain, Markdown, Render modes for `inlines_to_text` (in `aif-core::text`)
 - `ChunkGraph` / `Chunk` / `ChunkId` — sub-document addressing and cross-document linking
 
 ## Build & Test
@@ -185,9 +186,14 @@ Token-optimized binary format now encodes and decodes `SemanticBlockType` (9 var
 
 ## Known Limitations
 
-- LML bidirectional parser does not yet round-trip media block attributes (Figure/Audio/Video metadata lost on parse-back)
 - Markdown importer does not detect audio/video links for roundtrip fidelity
-- `inlines_to_text` helper is duplicated across `aif-pdf` (splitter, renderer) and `aif-markdown` with slightly different behavior — consolidation candidate for `aif-core`
+- LML aggressive mode does not emit `mime` for media blocks (derivable from `src` extension); parser handles it if present
+
+## Recent Fixes
+
+- **`inlines_to_text` consolidation** — unified into `aif-core::text` with `TextMode` enum (Plain, Markdown, Render); all 3 former call sites delegate to the shared implementation
+- **LML media roundtrip** — bidirectional parser now round-trips Figure/Audio/Video blocks with full MediaMeta attributes
+- **Binary type roundtrip coverage** — all 9 `SemanticBlockType` and 4 `CalloutType` variants now have explicit roundtrip tests
 
 ## Benchmark Results (2026-03-31, claude-opus-4-6, 10 skills)
 

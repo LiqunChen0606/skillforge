@@ -110,6 +110,11 @@ impl<'a> LmlParser<'a> {
             }
         }
 
+        // Media blocks (@fig, @audio, @vid)
+        if line.starts_with("@fig(") || line.starts_with("@audio(") || line.starts_with("@vid(") {
+            return self.parse_media_block();
+        }
+
         // Skill directive (@step, @verify, etc.)
         if line.starts_with('@') {
             return self.parse_skill_directive();
@@ -333,6 +338,87 @@ impl<'a> LmlParser<'a> {
         }
     }
 
+    fn parse_media_block(&mut self) -> Result<Block, String> {
+        let line = self.advance().unwrap();
+
+        // Determine media type from prefix
+        let (media_type, rest) = if let Some(r) = line.strip_prefix("@fig(") {
+            ("fig", r)
+        } else if let Some(r) = line.strip_prefix("@audio(") {
+            ("audio", r)
+        } else if let Some(r) = line.strip_prefix("@vid(") {
+            ("vid", r)
+        } else {
+            return Err(format!("Not a media block: {}", line));
+        };
+
+        // Find the closing ')' — may have nested attrs group after
+        // Format: @fig(src=path, alt="desc", w=800)(id=x, k=v): Caption
+        // First, find the close of the media params paren
+        let close = find_closing_paren(rest)
+            .ok_or_else(|| "Unclosed media attribute parenthesis".to_string())?;
+        let inner = &rest[..close];
+        let after_first_paren = &rest[close + 1..];
+
+        // Parse key=value pairs from inner
+        let pairs = parse_media_kv_pairs(inner);
+
+        // Extract src
+        let src = pairs.iter()
+            .find(|(k, _)| k == "src")
+            .map(|(_, v)| v.clone())
+            .unwrap_or_default();
+
+        // Build MediaMeta
+        let meta = MediaMeta {
+            alt: pairs.iter().find(|(k, _)| k == "alt").map(|(_, v)| v.clone()),
+            width: pairs.iter()
+                .find(|(k, _)| k == "w" || k == "width")
+                .and_then(|(_, v)| v.parse::<u32>().ok()),
+            height: pairs.iter()
+                .find(|(k, _)| k == "h" || k == "height")
+                .and_then(|(_, v)| v.parse::<u32>().ok()),
+            duration: pairs.iter()
+                .find(|(k, _)| k == "dur" || k == "duration")
+                .and_then(|(_, v)| v.parse::<f64>().ok()),
+            mime: pairs.iter().find(|(k, _)| k == "mime").map(|(_, v)| v.clone()),
+            poster: pairs.iter().find(|(k, _)| k == "poster").map(|(_, v)| v.clone()),
+        };
+
+        // Parse optional second attrs group
+        let (attrs, after_attrs) = if after_first_paren.starts_with('(') {
+            parse_attrs_parens(after_first_paren)?
+        } else {
+            (Attrs::new(), after_first_paren)
+        };
+
+        // Parse optional caption after ':'
+        let caption = if let Some(rest) = after_attrs.strip_prefix(':') {
+            let cap = rest.trim();
+            if cap.is_empty() {
+                None
+            } else {
+                Some(vec![Inline::Text { text: cap.to_string() }])
+            }
+        } else {
+            None
+        };
+
+        self.skip_blank_lines();
+
+        let kind = match media_type {
+            "fig" => BlockKind::Figure { attrs, caption, src, meta },
+            "audio" => BlockKind::Audio { attrs, caption, src, meta },
+            "vid" => BlockKind::Video { attrs, caption, src, meta },
+            _ => unreachable!(),
+        };
+
+        Ok(Block {
+            kind,
+            span: Span::empty(),
+        })
+    }
+
     fn parse_blockquote(&mut self) -> Result<Block, String> {
         let mut content_blocks = Vec::new();
         let mut para_lines = Vec::new();
@@ -497,6 +583,83 @@ fn parse_attrs_parens(input: &str) -> Result<(Attrs, &str), String> {
     Ok((attrs, rest))
 }
 
+/// Find the index of the closing ')' that matches the opening, handling quoted strings.
+fn find_closing_paren(s: &str) -> Option<usize> {
+    let mut depth = 0i32;
+    let mut in_quote = false;
+    for (i, ch) in s.char_indices() {
+        if in_quote {
+            if ch == '"' {
+                in_quote = false;
+            }
+            continue;
+        }
+        match ch {
+            '"' => in_quote = true,
+            '(' => depth += 1,
+            ')' => {
+                if depth == 0 {
+                    return Some(i);
+                }
+                depth -= 1;
+            }
+            _ => {}
+        }
+    }
+    None
+}
+
+/// Parse comma-separated key=value pairs from inside parentheses.
+/// Handles quoted values like alt="A description".
+fn parse_media_kv_pairs(input: &str) -> Vec<(String, String)> {
+    let mut pairs = Vec::new();
+    let mut rest = input;
+
+    while !rest.is_empty() {
+        rest = rest.trim_start();
+        if rest.is_empty() {
+            break;
+        }
+        // Skip leading comma
+        if rest.starts_with(',') {
+            rest = &rest[1..];
+            continue;
+        }
+
+        // Find '='
+        let eq_pos = match rest.find('=') {
+            Some(p) => p,
+            None => break,
+        };
+        let key = rest[..eq_pos].trim().to_string();
+        rest = &rest[eq_pos + 1..];
+
+        // Parse value — may be quoted
+        rest = rest.trim_start();
+        let value;
+        if rest.starts_with('"') {
+            // Quoted value — find closing quote
+            rest = &rest[1..]; // skip opening quote
+            let end_quote = rest.find('"').unwrap_or(rest.len());
+            value = rest[..end_quote].to_string();
+            rest = if end_quote < rest.len() {
+                &rest[end_quote + 1..]
+            } else {
+                ""
+            };
+        } else {
+            // Unquoted value — until comma or end
+            let end = rest.find(',').unwrap_or(rest.len());
+            value = rest[..end].trim().to_string();
+            rest = &rest[end..];
+        }
+
+        pairs.push((key, value));
+    }
+
+    pairs
+}
+
 fn is_ordered_list_line(line: &str) -> bool {
     // Match "N. " pattern
     let bytes = line.as_bytes();
@@ -578,6 +741,94 @@ mod tests {
                 assert_eq!(code, "fn main() {}\n");
             }
             _ => panic!("Expected CodeBlock"),
+        }
+    }
+
+    #[test]
+    fn parse_figure_basic() {
+        let input = "@fig(src=image.png, alt=\"A photo\", w=800, h=600): My caption\n";
+        let doc = parse_lml(input).unwrap();
+        assert_eq!(doc.blocks.len(), 1);
+        match &doc.blocks[0].kind {
+            BlockKind::Figure { src, meta, caption, attrs } => {
+                assert_eq!(src, "image.png");
+                assert_eq!(meta.alt.as_deref(), Some("A photo"));
+                assert_eq!(meta.width, Some(800));
+                assert_eq!(meta.height, Some(600));
+                assert!(meta.duration.is_none());
+                assert!(meta.poster.is_none());
+                assert!(attrs.id.is_none());
+                let cap_text = caption.as_ref().unwrap();
+                assert_eq!(cap_text[0], Inline::Text { text: "My caption".into() });
+            }
+            other => panic!("Expected Figure, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn parse_audio_basic() {
+        let input = "@audio(src=track.mp3, alt=\"Song\", dur=120.5)\n";
+        let doc = parse_lml(input).unwrap();
+        assert_eq!(doc.blocks.len(), 1);
+        match &doc.blocks[0].kind {
+            BlockKind::Audio { src, meta, caption, .. } => {
+                assert_eq!(src, "track.mp3");
+                assert_eq!(meta.alt.as_deref(), Some("Song"));
+                assert_eq!(meta.duration, Some(120.5));
+                assert!(meta.width.is_none());
+                assert!(caption.is_none());
+            }
+            other => panic!("Expected Audio, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn parse_video_with_poster() {
+        let input = "@vid(src=movie.mp4, alt=\"A movie\", w=1920, h=1080, dur=300, poster=thumb.jpg): Movie title\n";
+        let doc = parse_lml(input).unwrap();
+        assert_eq!(doc.blocks.len(), 1);
+        match &doc.blocks[0].kind {
+            BlockKind::Video { src, meta, caption, .. } => {
+                assert_eq!(src, "movie.mp4");
+                assert_eq!(meta.alt.as_deref(), Some("A movie"));
+                assert_eq!(meta.width, Some(1920));
+                assert_eq!(meta.height, Some(1080));
+                assert_eq!(meta.duration, Some(300.0));
+                assert_eq!(meta.poster.as_deref(), Some("thumb.jpg"));
+                let cap = caption.as_ref().unwrap();
+                assert_eq!(cap[0], Inline::Text { text: "Movie title".into() });
+            }
+            other => panic!("Expected Video, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn parse_figure_no_caption() {
+        let input = "@fig(src=diagram.svg)\n";
+        let doc = parse_lml(input).unwrap();
+        assert_eq!(doc.blocks.len(), 1);
+        match &doc.blocks[0].kind {
+            BlockKind::Figure { src, caption, meta, .. } => {
+                assert_eq!(src, "diagram.svg");
+                assert!(caption.is_none());
+                assert!(meta.alt.is_none());
+            }
+            other => panic!("Expected Figure, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn parse_figure_with_attrs() {
+        let input = "@fig(src=img.png, alt=\"Photo\")(id=fig1): Caption here\n";
+        let doc = parse_lml(input).unwrap();
+        match &doc.blocks[0].kind {
+            BlockKind::Figure { src, attrs, meta, caption } => {
+                assert_eq!(src, "img.png");
+                assert_eq!(attrs.id.as_deref(), Some("fig1"));
+                assert_eq!(meta.alt.as_deref(), Some("Photo"));
+                assert!(caption.is_some());
+            }
+            other => panic!("Expected Figure, got {:?}", other),
         }
     }
 

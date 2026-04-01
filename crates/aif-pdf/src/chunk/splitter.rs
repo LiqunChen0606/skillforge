@@ -1,5 +1,6 @@
 use aif_core::ast::{Block, BlockKind, Document, Inline};
 use aif_core::chunk::{Chunk, ChunkId, ChunkMetadata, ChunkStrategy};
+use aif_core::text::{self, TextMode};
 use std::fmt;
 
 use super::ids::compute_doc_hash;
@@ -304,21 +305,7 @@ fn extract_block_title(block: &Block) -> Option<String> {
 }
 
 fn inlines_to_text(inlines: &[Inline]) -> String {
-    let mut out = String::new();
-    for inline in inlines {
-        match inline {
-            Inline::Text { text } => out.push_str(text),
-            Inline::Emphasis { content } | Inline::Strong { content } => {
-                out.push_str(&inlines_to_text(content))
-            }
-            Inline::InlineCode { code } => out.push_str(code),
-            Inline::Link { text, .. } => out.push_str(&inlines_to_text(text)),
-            Inline::Image { alt, .. } => out.push_str(alt),
-            Inline::SoftBreak | Inline::HardBreak => out.push(' '),
-            _ => {}
-        }
-    }
-    out
+    text::inlines_to_text(inlines, TextMode::Plain)
 }
 
 /// Average ratio of BPE tokens to whitespace-delimited words for English text.

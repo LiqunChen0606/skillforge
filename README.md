@@ -80,7 +80,7 @@ cargo run -p aif-cli -- schema
 
 | Crate | Purpose |
 |-------|---------|
-| `aif-core` | AST types, spans, errors, JSON Schema generation — shared IR |
+| `aif-core` | AST types, spans, errors, JSON Schema generation, shared `inlines_to_text` utility — shared IR |
 | `aif-parser` | Logos-based lexer + parser (`.aif` → AST) |
 | `aif-html` | HTML compiler (AST → HTML) |
 | `aif-markdown` | Markdown compiler + pulldown-cmark importer |
@@ -280,7 +280,7 @@ See [docs/proposal.md](docs/proposal.md) for the full specification.
 
 ```bash
 cargo build --workspace        # Build all crates
-cargo test --workspace         # Run all ~296 tests
+cargo test --workspace         # Run all ~334 tests
 cargo run -p aif-cli -- --help # CLI usage
 ```
 

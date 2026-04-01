@@ -1,4 +1,5 @@
 use aif_core::ast::*;
+use aif_core::text::{self, TextMode};
 
 /// Convert an AIF Document to Markdown.
 pub fn emit_markdown(doc: &Document) -> String {
@@ -332,52 +333,7 @@ fn emit_list(out: &mut String, items: &[ListItem], ordered: bool, indent: usize)
 
 /// Convert inline elements to their Markdown text representation.
 pub fn inlines_to_text(inlines: &[Inline]) -> String {
-    let mut out = String::new();
-    for inline in inlines {
-        match inline {
-            Inline::Text { text } => out.push_str(text),
-            Inline::Strong { content } => {
-                out.push_str("**");
-                out.push_str(&inlines_to_text(content));
-                out.push_str("**");
-            }
-            Inline::Emphasis { content } => {
-                out.push('*');
-                out.push_str(&inlines_to_text(content));
-                out.push('*');
-            }
-            Inline::InlineCode { code } => {
-                out.push('`');
-                out.push_str(code);
-                out.push('`');
-            }
-            Inline::Link { text, url } => {
-                out.push('[');
-                out.push_str(&inlines_to_text(text));
-                out.push_str("](");
-                out.push_str(url);
-                out.push(')');
-            }
-            Inline::Image { alt, src } => {
-                out.push_str("![");
-                out.push_str(alt);
-                out.push_str("](");
-                out.push_str(src);
-                out.push(')');
-            }
-            Inline::Reference { target } => {
-                out.push_str(&format!("[{}](#{})", target, target));
-            }
-            Inline::Footnote { content } => {
-                out.push_str("[^");
-                out.push_str(&inlines_to_text(content));
-                out.push(']');
-            }
-            Inline::SoftBreak => out.push('\n'),
-            Inline::HardBreak => out.push_str("  \n"),
-        }
-    }
-    out
+    text::inlines_to_text(inlines, TextMode::Markdown)
 }
 
 fn semantic_block_type_name(bt: &SemanticBlockType) -> &'static str {

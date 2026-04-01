@@ -1,4 +1,5 @@
 use aif_core::ast::{Block, BlockKind, Document, Inline};
+use aif_core::text::{self, TextMode};
 use krilla::geom::Point;
 use krilla::page::PageSettings;
 use krilla::text::{Font, TextDirection};
@@ -314,34 +315,7 @@ fn heading_font_size(base: f32, depth: usize) -> f32 {
 }
 
 fn inlines_to_text(inlines: &[Inline]) -> String {
-    let mut out = String::new();
-    for inline in inlines {
-        match inline {
-            Inline::Text { text } => out.push_str(text),
-            Inline::Emphasis { content } => out.push_str(&inlines_to_text(content)),
-            Inline::Strong { content } => out.push_str(&inlines_to_text(content)),
-            Inline::InlineCode { code } => {
-                out.push('`');
-                out.push_str(code);
-                out.push('`');
-            }
-            Inline::Link { text, .. } => out.push_str(&inlines_to_text(text)),
-            Inline::Image { alt, .. } => out.push_str(alt),
-            Inline::Reference { target } => {
-                out.push_str("[ref:");
-                out.push_str(target);
-                out.push(']');
-            }
-            Inline::Footnote { content } => {
-                out.push_str("[^");
-                out.push_str(&inlines_to_text(content));
-                out.push(']');
-            }
-            Inline::SoftBreak => out.push(' '),
-            Inline::HardBreak => out.push('\n'),
-        }
-    }
-    out
+    text::inlines_to_text(inlines, TextMode::Render)
 }
 
 /// Simple word-wrap: estimate character width and break at word boundaries.

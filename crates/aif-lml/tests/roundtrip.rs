@@ -3,6 +3,133 @@ use aif_core::span::Span;
 use aif_lml::{parse_lml, render_lml_aggressive};
 use std::collections::BTreeMap;
 
+#[test]
+fn figure_roundtrip() {
+    let doc = Document {
+        metadata: BTreeMap::new(),
+        blocks: vec![block(BlockKind::Figure {
+            attrs: Attrs::new(),
+            caption: Some(vec![text("A nice photo")]),
+            src: "photo.jpg".to_string(),
+            meta: MediaMeta {
+                alt: Some("Sunset".to_string()),
+                width: Some(1024),
+                height: Some(768),
+                duration: None,
+                mime: None,
+                poster: None,
+            },
+        })],
+    };
+    let lml = render_lml_aggressive(&doc);
+    let parsed = parse_lml(&lml).unwrap();
+    assert_eq!(parsed.blocks.len(), 1);
+    match &parsed.blocks[0].kind {
+        BlockKind::Figure { src, meta, caption, .. } => {
+            assert_eq!(src, "photo.jpg");
+            assert_eq!(meta.alt.as_deref(), Some("Sunset"));
+            assert_eq!(meta.width, Some(1024));
+            assert_eq!(meta.height, Some(768));
+            assert!(meta.duration.is_none());
+            let cap = caption.as_ref().unwrap();
+            assert_eq!(cap[0], text("A nice photo"));
+        }
+        other => panic!("Expected Figure, got {:?}", other),
+    }
+}
+
+#[test]
+fn audio_roundtrip() {
+    let doc = Document {
+        metadata: BTreeMap::new(),
+        blocks: vec![block(BlockKind::Audio {
+            attrs: Attrs::new(),
+            caption: Some(vec![text("Episode 1")]),
+            src: "podcast.mp3".to_string(),
+            meta: MediaMeta {
+                alt: Some("Podcast episode".to_string()),
+                width: None,
+                height: None,
+                duration: Some(3600.0),
+                mime: None,
+                poster: None,
+            },
+        })],
+    };
+    let lml = render_lml_aggressive(&doc);
+    let parsed = parse_lml(&lml).unwrap();
+    assert_eq!(parsed.blocks.len(), 1);
+    match &parsed.blocks[0].kind {
+        BlockKind::Audio { src, meta, caption, .. } => {
+            assert_eq!(src, "podcast.mp3");
+            assert_eq!(meta.alt.as_deref(), Some("Podcast episode"));
+            assert_eq!(meta.duration, Some(3600.0));
+            let cap = caption.as_ref().unwrap();
+            assert_eq!(cap[0], text("Episode 1"));
+        }
+        other => panic!("Expected Audio, got {:?}", other),
+    }
+}
+
+#[test]
+fn video_roundtrip() {
+    let doc = Document {
+        metadata: BTreeMap::new(),
+        blocks: vec![block(BlockKind::Video {
+            attrs: Attrs::new(),
+            caption: Some(vec![text("Tutorial video")]),
+            src: "tutorial.mp4".to_string(),
+            meta: MediaMeta {
+                alt: Some("Tutorial".to_string()),
+                width: Some(1920),
+                height: Some(1080),
+                duration: Some(300.5),
+                mime: None,
+                poster: Some("thumb.jpg".to_string()),
+            },
+        })],
+    };
+    let lml = render_lml_aggressive(&doc);
+    let parsed = parse_lml(&lml).unwrap();
+    assert_eq!(parsed.blocks.len(), 1);
+    match &parsed.blocks[0].kind {
+        BlockKind::Video { src, meta, caption, .. } => {
+            assert_eq!(src, "tutorial.mp4");
+            assert_eq!(meta.alt.as_deref(), Some("Tutorial"));
+            assert_eq!(meta.width, Some(1920));
+            assert_eq!(meta.height, Some(1080));
+            assert_eq!(meta.duration, Some(300.5));
+            assert_eq!(meta.poster.as_deref(), Some("thumb.jpg"));
+            let cap = caption.as_ref().unwrap();
+            assert_eq!(cap[0], text("Tutorial video"));
+        }
+        other => panic!("Expected Video, got {:?}", other),
+    }
+}
+
+#[test]
+fn figure_no_caption_roundtrip() {
+    let doc = Document {
+        metadata: BTreeMap::new(),
+        blocks: vec![block(BlockKind::Figure {
+            attrs: Attrs::new(),
+            caption: None,
+            src: "diagram.svg".to_string(),
+            meta: MediaMeta::default(),
+        })],
+    };
+    let lml = render_lml_aggressive(&doc);
+    let parsed = parse_lml(&lml).unwrap();
+    assert_eq!(parsed.blocks.len(), 1);
+    match &parsed.blocks[0].kind {
+        BlockKind::Figure { src, caption, .. } => {
+            assert_eq!(src, "diagram.svg");
+            assert!(caption.is_none());
+        }
+        other => panic!("Expected Figure, got {:?}", other),
+    }
+}
+
 fn text(s: &str) -> Inline {
     Inline::Text { text: s.to_string() }
 }
