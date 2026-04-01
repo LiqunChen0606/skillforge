@@ -17,7 +17,7 @@ struct Cli {
 enum Commands {
     /// Compile an AIF document to an output format
     Compile {
-        /// Input .aif file
+        /// Input .aif file (or JSON IR with --input-format json)
         input: PathBuf,
         /// Output format: html, markdown, lml, lml-compact, lml-conservative, lml-moderate, lml-aggressive, lml-hybrid, json, binary-wire, binary-token, pdf
         #[arg(short, long, default_value = "html")]
@@ -25,6 +25,9 @@ enum Commands {
         /// Output file (defaults to stdout)
         #[arg(short, long)]
         output: Option<PathBuf>,
+        /// Input format: aif (default) or json (AIF JSON IR)
+        #[arg(long, default_value = "aif")]
+        input_format: String,
     },
     /// Import a Markdown or PDF file to AIF IR (JSON)
     Import {
@@ -722,9 +725,21 @@ fn main() {
             input,
             format,
             output,
+            input_format,
         } => {
-            let source = read_source(&input);
-            let doc = parse_aif(&source);
+            let doc = match input_format.as_str() {
+                "json" => {
+                    let source = read_source(&input);
+                    serde_json::from_str::<aif_core::ast::Document>(&source).unwrap_or_else(|e| {
+                        eprintln!("Error parsing JSON IR: {}", e);
+                        std::process::exit(1);
+                    })
+                }
+                "aif" | _ => {
+                    let source = read_source(&input);
+                    parse_aif(&source)
+                }
+            };
 
             // Binary and PDF formats need raw byte output, not text
             match format.as_str() {

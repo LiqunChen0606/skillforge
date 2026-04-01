@@ -96,6 +96,7 @@ cargo run -p aif-cli -- --help # CLI usage
 ```bash
 # Document compilation
 aif compile input.aif -f html|markdown|lml|lml-compact|lml-conservative|lml-moderate|lml-aggressive|json|binary-wire|binary-token|pdf [-o output]
+aif compile --input-format json input.json -f html|lml-aggressive|...  # Compile from JSON IR
 aif import input.md|input.pdf [-o output]
 aif dump-ir input.aif
 aif schema                     # Generate JSON Schema for AIF Document type
@@ -123,7 +124,8 @@ aif chunk split input.aif --strategy section|token-budget|semantic|fixed-blocks 
 aif chunk graph input1.aif input2.aif [-o graph.json]
 
 # Benchmarks
-python benchmarks/skill_token_benchmark.py  # Requires ANTHROPIC_API_KEY
+python benchmarks/skill_token_benchmark.py  # Skill format comparison (requires ANTHROPIC_API_KEY)
+python benchmarks/token_benchmark.py        # Document format comparison: raw HTML/PDF/MD vs AIF formats (Wikipedia articles)
 ```
 
 ## Phase 2 Features
@@ -192,3 +194,25 @@ Extended `benchmarks/skill_token_benchmark.py` with HTML, Markdown, and JSON com
 
 Full HTML report: `benchmarks/skill_benchmark_report.html`
 Raw data: `benchmarks/skill_results.json`
+
+## Document Benchmark Results (2026-04-01, claude-opus-4-6, 10 Wikipedia articles)
+
+Compares raw formats (HTML, PDF, Markdown) vs AIF output formats for general documents.
+Baseline: Raw HTML (5.5M tokens total).
+
+| Format | Total Tokens | vs Raw HTML | Bytes |
+|--------|-------------|-------------|-------|
+| Raw HTML (baseline) | 5.5M | — | 13.6M |
+| Raw PDF (file) | 1.4M | +75.5% saved | 23.7M |
+| Raw PDF (text) | 561.0K | +89.8% saved | 1.7M |
+| Raw Markdown | 1.3M | +77.1% saved | 3.5M |
+| AIF JSON IR | 4.5M | +18.7% saved | 18.4M |
+| AIF HTML | 1.3M | +77.0% saved | 3.5M |
+| AIF Markdown (RT) | 1.0M | +81.7% saved | 2.9M |
+| AIF LML Aggressive | 979.8K | **+82.2% saved** | 2.8M |
+| AIF LML Standard | 985.1K | +82.1% saved | 2.8M |
+
+Key findings: AIF LML Aggressive is the most token-efficient format, saving **82.2%** vs raw HTML. Even raw Markdown saves 77.1%, but AIF LML adds another 5+ percentage points on top.
+
+Full HTML report: `benchmarks/results.html`
+Raw data: `benchmarks/results.json`

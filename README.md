@@ -16,16 +16,20 @@ AIF eliminates the trade-off: typed semantic blocks with token counts matching o
 
 - **Semantic blocks** — typed content like `@claim`, `@evidence`, `@definition`, `@theorem`
 - **Skill profiles** — structured AI skill representation with `@skill`, `@step`, `@verify`, `@precondition`
-- **8 output formats** — HTML, Markdown, LML (5 modes), JSON IR, binary wire, binary token-optimized
-- **Markdown import** — convert existing `.md` files to AIF semantic IR
+- **12+ output formats** — HTML, Markdown, LML (5 modes), JSON IR, binary wire, binary token-optimized, PDF
+- **Markdown & PDF import** — convert existing `.md` and `.pdf` files to AIF semantic IR
 - **Integrity verification** — SHA-256 content hashing for skill blocks
 - **Skill versioning** — semver parsing, semantic diff, auto-bump with change classification
+- **Skill chaining** — dependency declaration with semver constraints, topological sort, cycle detection
+- **Skill marketplace** — remote registry client with local/cache/remote resolution
 - **Binary serialization** — wire format (postcard) for tool-to-tool transfer, token-optimized for compact storage
-- **Token efficient** — LML Aggressive matches SKILL.md baseline with 100% semantic compliance
+- **Token efficient** — LML Aggressive saves **82.2%** vs raw HTML with 100% semantic compliance
 - **Bidirectional LML** — parse LML aggressive-mode back to AST for full roundtrip
 - **JSON Schema** — cross-language SDK support via generated JSON Schema
+- **Cross-language SDKs** — Python (Pydantic v2) and TypeScript (Zod) models generated from JSON Schema
 - **Skill registry** — local file-based registry for skill lookup by name, version, or hash
 - **Delta transport** — incremental binary diff encoding for efficient skill updates
+- **Document chunking** — 4 strategies (section, token-budget, semantic, fixed-blocks) with cross-document chunk graphs
 - **Format recommender** — analyzes document structure to suggest optimal output format
 - **Semantic compression** — text deduplication dictionary for repeated content
 - **Hybrid format** — LML text with base64-encoded binary content blocks
@@ -42,14 +46,21 @@ cargo run -p aif-cli -- compile doc.aif --format html
 # Compile to LLM-optimized format (5 verbosity modes)
 cargo run -p aif-cli -- compile doc.aif --format lml-aggressive
 
+# Compile to PDF
+cargo run -p aif-cli -- compile doc.aif --format pdf
+
 # Compile to compact binary
 cargo run -p aif-cli -- compile doc.aif --format binary-wire
 
-# Import Markdown to AIF IR
+# Import Markdown or PDF to AIF IR
 cargo run -p aif-cli -- import doc.md
+cargo run -p aif-cli -- import doc.pdf
 
 # Dump semantic IR as JSON
 cargo run -p aif-cli -- dump-ir doc.aif
+
+# Generate JSON Schema
+cargo run -p aif-cli -- schema
 ```
 
 ## Architecture
@@ -61,59 +72,77 @@ cargo run -p aif-cli -- dump-ir doc.aif
                     │             │                  │
                     ▼             ▼                  ▼
               Human-readable   LLM-optimized    Machine-optimized
-              (HTML, Markdown)  (LML modes)     (JSON, Binary)
+              (HTML, Markdown,  (LML modes)     (JSON, Binary)
+               PDF)
 ```
 
 ### Workspace Crates
 
 | Crate | Purpose |
 |-------|---------|
-| `aif-core` | Shared AST types, spans, errors |
+| `aif-core` | AST types, spans, errors, JSON Schema generation — shared IR |
 | `aif-parser` | Logos-based lexer + parser (`.aif` → AST) |
-| `aif-html` | HTML compiler |
+| `aif-html` | HTML compiler (AST → HTML) |
 | `aif-markdown` | Markdown compiler + pulldown-cmark importer |
 | `aif-lml` | LML compiler — 5 prose modes, bidirectional parser, hybrid format, semantic compression |
 | `aif-binary` | Binary serialization — wire (postcard) and token-optimized with full encode/decode roundtrip |
-| `aif-skill` | Skill profiles — validation, hashing, versioning, diff, registry, delta transport, format recommender |
-| `aif-cli` | CLI tool: `compile`, `import`, `dump-ir`, `skill`, `schema` subcommands |
+| `aif-skill` | Skill profiles — validation, hashing, versioning, diff, registry, delta transport, format recommender, chaining, marketplace |
+| `aif-pdf` | PDF export (krilla) + import (pdf_oxide) + document chunking (4 strategies) + chunk graphs |
+| `aif-cli` | CLI tool: `compile`, `import`, `dump-ir`, `skill`, `schema`, `chunk` subcommands |
 
 ## Benchmark Results
 
-Benchmarked across 10 real-world AI skill documents using Claude API token counting (claude-opus-4-6, 2026-03-31).
+### Document Token Efficiency (10 Wikipedia Articles)
 
-### Token Efficiency (LLM Context Windows)
+Benchmarked with Claude API token counting (claude-opus-4-6, 2026-04-01). Baseline: Raw HTML (5.5M tokens total across 10 articles).
 
-| Format | Total Tokens | vs SKILL.md Baseline | Compliance | TNO |
-|--------|-------------|---------------------|------------|-----|
-| **Markdown (roundtrip)** | **38.8K** | **+1.9% saved** | — | — |
+| Format | Total Tokens | vs Raw HTML | Bytes |
+|--------|-------------|-------------|-------|
+| Raw HTML (baseline) | 5,515,206 | — | 13.6M |
+| Raw PDF (file) | 1,351,997 | +75.5% saved | 23.7M |
+| Raw PDF (text) | 560,950 | +89.8% saved | 1.7M |
+| Raw Markdown | 1,262,755 | +77.1% saved | 3.5M |
+| AIF JSON IR | 4,483,743 | +18.7% saved | 18.4M |
+| AIF HTML | 1,268,768 | +77.0% saved | 3.5M |
+| AIF Markdown (RT) | 1,009,181 | +81.7% saved | 2.9M |
+| AIF LML Standard | 985,090 | +82.1% saved | 2.8M |
+| **AIF LML Aggressive** | **979,838** | **+82.2% saved** | **2.8M** |
+
+> Full HTML report: `benchmarks/results.html` | Raw data: `benchmarks/results.json`
+
+### Skill Token Efficiency (10 AI Skills)
+
+Benchmarked with Claude API token counting (claude-opus-4-6, 2026-04-01). Baseline: SKILL.md (39.5K tokens total).
+
+| Format | Total Tokens | vs SKILL.md | Compliance | TNO |
+|--------|-------------|-------------|------------|-----|
+| **Markdown (roundtrip)** | **38.8K** | **+1.9% saved** | 100% | 1.05 |
 | SKILL.md (baseline) | 39.5K | — | — | — |
-| **LML Aggressive** | **39.5K** | **~0%** | **100%** | **0.99** |
+| LML Aggressive | 39.5K | ~0% | 100% | 0.99 |
 | LML Compact | 40.6K | -2.7% | 100% | 0.98 |
 | LML Standard | 40.8K | -3.3% | 100% | 0.94 |
-| HTML | 44.4K | -12.5% | — | — |
-| JSON IR | 71.6K | -81.3% | — | — |
+| HTML | 44.4K | -12.5% | 100% | 0.82 |
+| JSON IR | 71.6K | -81.3% | 100% | 0.49 |
+| Binary Wire | 179.3K | -353.9%\* | — | — |
+| Binary Token | 179.3K | -353.8%\* | — | — |
 
+> \* Binary formats are compact in bytes (~82% smaller than JSON) but inflate when base64-encoded for token counting. Use binary for wire transport, not LLM context.
+>
 > **TNO** = Token-Normalized Output quality (1.0 = perfect). Measures semantic compliance per token spent.
-
-### Byte Efficiency (Wire Transport)
-
-| Format | Bytes | vs JSON IR |
-|--------|-------|-----------|
-| Binary wire (postcard) | ~1.4 KB | **-82%** |
-| Binary token-optimized | ~1.4 KB | **-82%** |
-| JSON IR | ~7.7 KB | baseline |
-
-> Binary formats are compact in bytes but inflate under base64 encoding for LLM token counting. Use binary for tool-to-tool transfer, not LLM context windows.
+>
+> Full HTML report: `benchmarks/skill_benchmark_report.html` | Raw data: `benchmarks/skill_results.json`
 
 ### Key Takeaways
 
-1. **For LLM context windows:** LML Aggressive is the sweet spot — matches Markdown token count with 100% semantic compliance and 0.99 TNO. Markdown roundtrip saves 1.9% more tokens but loses type information.
+1. **For LLM context windows:** AIF LML Aggressive is the most token-efficient format — **82.2% savings** vs raw HTML for general documents. For skills, it matches SKILL.md baseline with 100% semantic compliance (TNO 0.99).
 
-2. **For wire transport:** Binary wire format (postcard) is 82% smaller than JSON, ideal for tool-to-tool pipelines and bulk storage.
+2. **Raw Markdown saves 77.1%** vs HTML, but AIF LML adds another ~5 percentage points on top while preserving full semantic structure.
 
-3. **Avoid for LLM context:** HTML (+12.5%), JSON (+81%), and binary formats (base64 inflation) all waste tokens.
+3. **For wire transport:** Binary wire format (postcard) is 82% smaller than JSON, ideal for tool-to-tool pipelines and bulk storage.
 
 4. **Semantic tags are nearly free:** LML Aggressive proves that semantic structure doesn't have to cost tokens — the right tag design (`@step:`, `@verify:`) adds negligible overhead versus unstructured Markdown.
+
+5. **Avoid for LLM context:** HTML (+12.5%), JSON (+81%), and binary formats (base64 inflation) all waste tokens.
 
 ## Skill Profiles
 
@@ -159,6 +188,17 @@ aif skill bump skill.aif --dry-run
 
 # Inspect skill metadata
 aif skill inspect skill.aif
+
+# Skill chaining & dependencies
+aif skill deps skill.aif          # Show dependencies
+aif skill chain skill.aif         # Resolve execution order
+aif skill compose skill.aif       # Compose dependency chain
+
+# Skill marketplace
+aif skill search "query" --tags t1,t2   # Search remote registry
+aif skill publish skill.aif             # Publish to remote
+aif skill install name --version v      # Install from remote
+aif skill info name                     # Show remote metadata
 ```
 
 ### Change Classification
@@ -171,6 +211,23 @@ The diff engine classifies changes for automatic semver bumping:
 | **Additive** | New step, new example, new fallback | Minor |
 | **Cosmetic** | Rewording text, reordering within block | Patch |
 
+## Document Chunking
+
+Split documents into addressable chunks for RAG pipelines and sub-document referencing:
+
+```bash
+# Split by section boundaries
+aif chunk split doc.aif --strategy section -o chunks/
+
+# Split by token budget (for LLM context windows)
+aif chunk split doc.aif --strategy token-budget --max-tokens 4096 -o chunks/
+
+# Build cross-document chunk graph
+aif chunk graph doc1.aif doc2.aif -o graph.json
+```
+
+Four chunking strategies: Section, TokenBudget, Semantic, FixedBlocks. Chunk graphs support typed edges: Evidence, Dependency, Continuation, CrossReference, Refutation.
+
 ## LML Prose Modes
 
 Five verbosity levels for different token budgets:
@@ -182,6 +239,21 @@ Five verbosity levels for different token budgets:
 | Conservative | `[ST]`, `[VER]` + legend | Abbreviated tags |
 | Moderate | Conservative + flatten | Fewer structural wrappers |
 | Aggressive | `@step:`, `@verify:` | Minimal delimiters, best token efficiency |
+
+## Cross-Language SDKs
+
+Generated from JSON Schema for type-safe AIF document handling in any language:
+
+- **Python** (`sdks/python/`) — Pydantic v2 models with Literal discriminators and StrEnum
+- **TypeScript** (`sdks/typescript/`) — TypeScript interfaces + Zod schemas with discriminated unions
+
+```bash
+# Generate SDKs from JSON Schema
+python scripts/generate_sdks.py
+
+# Validate SDKs match current schema (CI mode)
+python scripts/generate_sdks.py --check
+```
 
 ## Syntax Overview
 
@@ -208,9 +280,18 @@ See [docs/proposal.md](docs/proposal.md) for the full specification.
 
 ```bash
 cargo build --workspace        # Build all crates
-cargo test --workspace         # Run all ~230 tests
+cargo test --workspace         # Run all ~296 tests
 cargo run -p aif-cli -- --help # CLI usage
 ```
+
+## Design Documents
+
+- [Skill Profile Design](docs/plans/2026-03-30-skill-profile-design.md)
+- [Binary IR Versioning](docs/plans/2026-03-31-binary-ir-versioning-design.md)
+- [Phase 2 Implementation Plan](docs/plans/2026-03-31-phase2-all-tasks.md)
+- [PDF & Document Chunking](docs/plans/2026-03-31-pdf-chunking-design.md)
+- [Skill Chaining & Marketplace](docs/plans/2026-03-31-skill-chaining-marketplace-design.md)
+- [Cross-Language SDK](docs/plans/2026-03-31-multi-language-sdk-design.md)
 
 ## License
 

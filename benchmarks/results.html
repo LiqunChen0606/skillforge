@@ -1,535 +1,152 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AIF Token Efficiency Benchmark Results</title>
+<meta charset="utf-8">
+<title>AIF Document Token Benchmark Report</title>
 <style>
-  :root {
-    --bg: #0d1117;
-    --surface: #161b22;
-    --border: #30363d;
-    --text: #e6edf3;
-    --text-muted: #8b949e;
-    --accent: #58a6ff;
-    --green: #3fb950;
-    --red: #f85149;
-    --orange: #d29922;
-    --purple: #bc8cff;
-    --cyan: #39d2c0;
-  }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    line-height: 1.6;
-    padding: 2rem;
-    max-width: 1400px;
-    margin: 0 auto;
-  }
-  h1 {
-    font-size: 2rem;
-    margin-bottom: 0.25rem;
-  }
-  .subtitle {
-    color: var(--text-muted);
-    font-size: 0.95rem;
-    margin-bottom: 2rem;
-  }
-  .summary-cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
-    margin-bottom: 2.5rem;
-  }
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 1.25rem;
-  }
-  .card-label {
-    color: var(--text-muted);
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 0.25rem;
-  }
-  .card-value {
-    font-size: 2rem;
-    font-weight: 700;
-  }
-  .card-detail {
-    color: var(--text-muted);
-    font-size: 0.85rem;
-    margin-top: 0.25rem;
-  }
-  .green { color: var(--green); }
-  .red { color: var(--red); }
-  .orange { color: var(--orange); }
-  .accent { color: var(--accent); }
-  .purple { color: var(--purple); }
-  .cyan { color: var(--cyan); }
-
-  h2 {
-    font-size: 1.3rem;
-    margin: 2rem 0 1rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid var(--border);
-  }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    overflow: hidden;
-    margin-bottom: 2rem;
-    font-size: 0.9rem;
-  }
-  th {
-    text-align: left;
-    padding: 0.75rem 1rem;
-    background: rgba(255,255,255,0.03);
-    color: var(--text-muted);
-    font-weight: 600;
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    border-bottom: 1px solid var(--border);
-  }
-  th.right, td.right { text-align: right; }
-  td {
-    padding: 0.6rem 1rem;
-    border-bottom: 1px solid var(--border);
-  }
-  tr:last-child td { border-bottom: none; }
-  tr.total-row {
-    background: rgba(88,166,255,0.06);
-    font-weight: 700;
-  }
-  tr.total-row td { border-top: 2px solid var(--accent); }
-
-  .bar-cell { min-width: 150px; }
-  .bar-container {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-  .bar-bg {
-    flex: 1;
-    height: 20px;
-    background: rgba(255,255,255,0.05);
-    border-radius: 4px;
-    overflow: hidden;
-    position: relative;
-  }
-  .bar-fill {
-    height: 100%;
-    border-radius: 4px;
-    transition: width 0.6s ease;
-  }
-  .bar-pdf { background: var(--cyan); }
-  .bar-md { background: var(--green); }
-  .bar-aif { background: var(--orange); }
-  .bar-pdftxt { background: var(--purple); }
-  .bar-label {
-    font-size: 0.8rem;
-    min-width: 50px;
-    text-align: right;
-    font-weight: 600;
-  }
-
-  .format-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 1rem;
-    margin-bottom: 2rem;
-  }
-  .format-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 1rem;
-    text-align: center;
-  }
-  .format-name {
-    font-size: 0.85rem;
-    color: var(--text-muted);
-    margin-bottom: 0.5rem;
-  }
-  .format-tokens {
-    font-size: 1.5rem;
-    font-weight: 700;
-  }
-  .format-bytes {
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    margin-top: 0.25rem;
-  }
-  .format-savings {
-    font-size: 0.85rem;
-    margin-top: 0.5rem;
-    font-weight: 600;
-  }
-
-  .note {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--accent);
-    border-radius: 4px;
-    padding: 1rem;
-    margin: 1.5rem 0;
-    font-size: 0.9rem;
-    color: var(--text-muted);
-  }
-  .note strong { color: var(--text); }
-
-  footer {
-    margin-top: 3rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--border);
-    color: var(--text-muted);
-    font-size: 0.8rem;
-  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 1600px; margin: 2rem auto; padding: 0 1rem; background: #f8f9fa; color: #1a1a2e; }
+  h1 { color: #16213e; border-bottom: 3px solid #0f3460; padding-bottom: 0.5rem; }
+  h2 { color: #16213e; margin-top: 2rem; }
+  .meta { color: #666; font-size: 0.9rem; margin-bottom: 2rem; }
+  .winner { background: linear-gradient(135deg, #d4edda, #c3e6cb); border: 1px solid #28a745; border-radius: 8px; padding: 1rem 1.5rem; margin: 1rem 0; font-size: 1.1rem; }
+  .winner strong { color: #155724; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  th { background: #16213e; color: white; padding: 10px 8px; font-size: 0.82rem; text-align: center; }
+  td { padding: 8px; text-align: center; border-bottom: 1px solid #eee; font-size: 0.82rem; }
+  td.article-name { text-align: left; font-weight: 600; white-space: nowrap; }
+  .positive { background: #d4edda; }
+  .negative { background: #f8d7da; }
+  .total-row td { background: #e8eaf6; font-weight: bold; border-top: 2px solid #16213e; }
+  .bar-chart { display: flex; align-items: flex-end; gap: 6px; height: 240px; margin: 1rem 0; padding: 1rem; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  .bar-wrapper { display: flex; flex-direction: column; align-items: center; flex: 1; }
+  .bar { width: 100%; border-radius: 4px 4px 0 0; min-height: 2px; }
+  .bar-label { font-size: 0.65rem; margin-top: 4px; text-align: center; word-break: break-all; }
+  .bar-value { font-size: 0.7rem; font-weight: bold; margin-bottom: 2px; }
+  .bar-pos { background: linear-gradient(180deg, #28a745, #20c997); }
+  .bar-neg { background: linear-gradient(180deg, #dc3545, #e74c6c); }
+  .legend { display: flex; gap: 2rem; margin: 1rem 0; font-size: 0.85rem; }
+  .legend-item { display: flex; align-items: center; gap: 0.4rem; }
+  .legend-swatch { width: 16px; height: 16px; border-radius: 3px; }
+  small { color: #666; }
+  .note { background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 0.8rem 1rem; margin: 1rem 0; font-size: 0.9rem; }
+  .timestamp { text-align: right; color: #999; font-size: 0.8rem; margin-top: 2rem; }
 </style>
 </head>
 <body>
+<h1>AIF Document Token Benchmark Report</h1>
+<p class="meta">Model: claude-opus-4-6 &bull; Articles: 10 Wikipedia articles &bull; Formats: 12</p>
 
-<h1>AIF Token Efficiency Benchmark</h1>
-<p class="subtitle">Model: claude-opus-4-6 &middot; 10 Wikipedia articles &middot; March 30, 2026</p>
-
-<div class="summary-cards">
-  <div class="card">
-    <div class="card-label">Articles Tested</div>
-    <div class="card-value accent">10</div>
-    <div class="card-detail">Real Wikipedia pages</div>
-  </div>
-  <div class="card">
-    <div class="card-label">Total HTML Tokens</div>
-    <div class="card-value">5.51M</div>
-    <div class="card-detail">Baseline (raw Wikipedia HTML)</div>
-  </div>
-  <div class="card">
-    <div class="card-label">PDF (native) Reduction</div>
-    <div class="card-value cyan">75.5%</div>
-    <div class="card-detail">1.35M tokens (sent as file)</div>
-  </div>
-  <div class="card">
-    <div class="card-label">PDF (text) Reduction</div>
-    <div class="card-value purple">89.8%</div>
-    <div class="card-detail">561K tokens (extracted text)</div>
-  </div>
-  <div class="card">
-    <div class="card-label">Markdown Reduction</div>
-    <div class="card-value green">77.1%</div>
-    <div class="card-detail">1.26M tokens</div>
-  </div>
-  <div class="card">
-    <div class="card-label">AIF JSON IR Reduction</div>
-    <div class="card-value orange">18.7%</div>
-    <div class="card-detail">4.48M tokens (structured AST)</div>
-  </div>
+<div class="winner">
+  <strong>Most Efficient AIF Format: AIF LML Aggress.</strong> &mdash; +82.2% tokens vs Raw HTML (979.8K total)
 </div>
 
 <div class="note">
-  <strong>Key Insight:</strong> PDF files sent natively to Claude cost ~75% fewer tokens than raw HTML &mdash; on par with Markdown.
-  Extracted PDF text (plain text, no formatting) achieves ~90% reduction but loses all structure.
-  The AIF JSON IR is a verbose AST for programmatic use; the real token-efficient semantic formats are <strong>AIF source</strong> (31%) and <strong>LML</strong> (35%).
-  Markdown wins on raw token count (77%) but loses semantic block types.
+  <strong>What this measures:</strong> Real Wikipedia articles fetched as raw HTML and PDF, converted to Markdown,
+  then imported into AIF and compiled to all output formats. Token counts via Claude claude-opus-4-6 token counting API.
+  Baseline is Raw HTML.
 </div>
 
-<h2>Per-Article Token Comparison</h2>
+<h2>Token Savings vs Raw HTML Baseline</h2>
+<div class="legend">
+  <div class="legend-item"><div class="legend-swatch" style="background:#28a745"></div> Savings (fewer tokens)</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#dc3545"></div> Overhead (more tokens)</div>
+</div>
+<div class="bar-chart">
+  <div class="bar-wrapper">
+    <div class="bar-value">+75.5%</div>
+    <div class="bar bar-pos" style="height:151px"></div>
+    <div class="bar-label">Raw PDF (file)</div>
+  </div>
+  <div class="bar-wrapper">
+    <div class="bar-value">+89.8%</div>
+    <div class="bar bar-pos" style="height:180px"></div>
+    <div class="bar-label">Raw PDF (text)</div>
+  </div>
+  <div class="bar-wrapper">
+    <div class="bar-value">+77.1%</div>
+    <div class="bar bar-pos" style="height:155px"></div>
+    <div class="bar-label">Raw Markdown</div>
+  </div>
+  <div class="bar-wrapper">
+    <div class="bar-value">+18.7%</div>
+    <div class="bar bar-pos" style="height:37px"></div>
+    <div class="bar-label">AIF JSON IR</div>
+  </div>
+  <div class="bar-wrapper">
+    <div class="bar-value">+77.0%</div>
+    <div class="bar bar-pos" style="height:154px"></div>
+    <div class="bar-label">AIF HTML</div>
+  </div>
+  <div class="bar-wrapper">
+    <div class="bar-value">+81.7%</div>
+    <div class="bar bar-pos" style="height:164px"></div>
+    <div class="bar-label">AIF Markdown (RT)</div>
+  </div>
+  <div class="bar-wrapper">
+    <div class="bar-value">+82.1%</div>
+    <div class="bar bar-pos" style="height:165px"></div>
+    <div class="bar-label">AIF LML</div>
+  </div>
+  <div class="bar-wrapper">
+    <div class="bar-value">+82.1%</div>
+    <div class="bar bar-pos" style="height:165px"></div>
+    <div class="bar-label">AIF LML Compact</div>
+  </div>
+  <div class="bar-wrapper">
+    <div class="bar-value">+82.1%</div>
+    <div class="bar bar-pos" style="height:165px"></div>
+    <div class="bar-label">AIF LML Conserv.</div>
+  </div>
+  <div class="bar-wrapper">
+    <div class="bar-value">+82.1%</div>
+    <div class="bar bar-pos" style="height:165px"></div>
+    <div class="bar-label">AIF LML Moderate</div>
+  </div>
+  <div class="bar-wrapper">
+    <div class="bar-value">+82.2%</div>
+    <div class="bar bar-pos" style="height:165px"></div>
+    <div class="bar-label">AIF LML Aggress.</div>
+  </div>
+</div>
 
+<h2>Per-Article Comparison</h2>
 <table>
-  <thead>
-    <tr>
-      <th>Article</th>
-      <th class="right">HTML</th>
-      <th class="right">PDF (file)</th>
-      <th class="right">PDF (text)</th>
-      <th class="right">Markdown</th>
-      <th class="right">AIF JSON</th>
-      <th class="bar-cell">Best Reduction</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>Photosynthesis</td>
-      <td class="right">318,327</td>
-      <td class="right">81,214</td>
-      <td class="right">37,294</td>
-      <td class="right">80,089</td>
-      <td class="right">291,209</td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-pdftxt" style="width:88.3%"></div></div><span class="bar-label purple">88.3%</span></div></td>
-    </tr>
-    <tr>
-      <td>General Relativity</td>
-      <td class="right">560,502</td>
-      <td class="right">149,152</td>
-      <td class="right">64,198</td>
-      <td class="right">136,314</td>
-      <td class="right">488,028</td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-pdftxt" style="width:88.5%"></div></div><span class="bar-label purple">88.5%</span></div></td>
-    </tr>
-    <tr>
-      <td>Python (Programming Language)</td>
-      <td class="right">341,853</td>
-      <td class="right">85,702</td>
-      <td class="right">33,728</td>
-      <td class="right">69,640</td>
-      <td class="right">258,340</td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-pdftxt" style="width:90.1%"></div></div><span class="bar-label purple">90.1%</span></div></td>
-    </tr>
-    <tr>
-      <td>World War II</td>
-      <td class="right">726,070</td>
-      <td class="right">156,268</td>
-      <td class="right">61,678</td>
-      <td class="right">176,957</td>
-      <td class="right">601,539</td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-pdftxt" style="width:91.5%"></div></div><span class="bar-label purple">91.5%</span></div></td>
-    </tr>
-    <tr>
-      <td>Quantum Computing</td>
-      <td class="right">353,668</td>
-      <td class="right">86,365</td>
-      <td class="right">36,133</td>
-      <td class="right">82,777</td>
-      <td class="right">291,417</td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-pdftxt" style="width:89.8%"></div></div><span class="bar-label purple">89.8%</span></div></td>
-    </tr>
-    <tr>
-      <td>DNA</td>
-      <td class="right">448,309</td>
-      <td class="right">127,070</td>
-      <td class="right">54,865</td>
-      <td class="right">94,683</td>
-      <td class="right">336,852</td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-pdftxt" style="width:87.8%"></div></div><span class="bar-label purple">87.8%</span></div></td>
-    </tr>
-    <tr>
-      <td>Climate Change</td>
-      <td class="right">839,096</td>
-      <td class="right">216,754</td>
-      <td class="right">89,564</td>
-      <td class="right">168,117</td>
-      <td class="right">563,155</td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-pdftxt" style="width:89.3%"></div></div><span class="bar-label purple">89.3%</span></div></td>
-    </tr>
-    <tr>
-      <td>Machine Learning</td>
-      <td class="right">338,290</td>
-      <td class="right">105,774</td>
-      <td class="right">41,268</td>
-      <td class="right">82,879</td>
-      <td class="right">295,407</td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-pdftxt" style="width:87.8%"></div></div><span class="bar-label purple">87.8%</span></div></td>
-    </tr>
-    <tr>
-      <td>Roman Empire</td>
-      <td class="right">843,087</td>
-      <td class="right">155,428</td>
-      <td class="right">64,044</td>
-      <td class="right">199,956</td>
-      <td class="right">732,706</td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-pdftxt" style="width:92.4%"></div></div><span class="bar-label purple">92.4%</span></div></td>
-    </tr>
-    <tr>
-      <td>Artificial Intelligence</td>
-      <td class="right">743,254</td>
-      <td class="right">186,521</td>
-      <td class="right">77,965</td>
-      <td class="right">170,913</td>
-      <td class="right">623,837</td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-pdftxt" style="width:89.5%"></div></div><span class="bar-label purple">89.5%</span></div></td>
-    </tr>
-    <tr class="total-row">
-      <td>TOTAL</td>
-      <td class="right">5,512,456</td>
-      <td class="right">1,350,248</td>
-      <td class="right">560,737</td>
-      <td class="right">1,262,325</td>
-      <td class="right">4,482,490</td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-pdftxt" style="width:89.8%"></div></div><span class="bar-label purple">89.8%</span></div></td>
-    </tr>
-  </tbody>
+<thead><tr><th>Article</th><th>Raw HTML</th><th>Raw PDF (file)</th><th>Raw PDF (text)</th><th>Raw Markdown</th><th>AIF JSON IR</th><th>AIF HTML</th><th>AIF Markdown (RT)</th><th>AIF LML</th><th>AIF LML Compact</th><th>AIF LML Conserv.</th><th>AIF LML Moderate</th><th>AIF LML Aggress.</th></tr></thead>
+<tbody>
+<tr><td class='article-name'>Photosynthesis</td><td>318.3K<br><small>base</small></td><td class='positive'>81.2K<br><small>+74.5%</small></td><td class='positive'>37.3K<br><small>+88.3%</small></td><td class='positive'>80.1K<br><small>+74.8%</small></td><td class='positive'>291.2K<br><small>+8.5%</small></td><td class='positive'>79.4K<br><small>+75.0%</small></td><td class='positive'>61.9K<br><small>+80.6%</small></td><td class='positive'>59.9K<br><small>+81.2%</small></td><td class='positive'>59.9K<br><small>+81.2%</small></td><td class='positive'>60.0K<br><small>+81.1%</small></td><td class='positive'>60.0K<br><small>+81.1%</small></td><td class='positive'>59.5K<br><small>+81.3%</small></td></tr>
+<tr><td class='article-name'>General_relativity</td><td>560.4K<br><small>base</small></td><td class='positive'>149.2K<br><small>+73.4%</small></td><td class='positive'>64.2K<br><small>+88.5%</small></td><td class='positive'>136.3K<br><small>+75.7%</small></td><td class='positive'>488.0K<br><small>+12.9%</small></td><td class='positive'>134.8K<br><small>+75.9%</small></td><td class='positive'>107.6K<br><small>+80.8%</small></td><td class='positive'>105.1K<br><small>+81.2%</small></td><td class='positive'>105.1K<br><small>+81.2%</small></td><td class='positive'>105.2K<br><small>+81.2%</small></td><td class='positive'>105.2K<br><small>+81.2%</small></td><td class='positive'>104.6K<br><small>+81.3%</small></td></tr>
+<tr><td class='article-name'>Python_(programming_language)</td><td>341.9K<br><small>base</small></td><td class='positive'>85.7K<br><small>+74.9%</small></td><td class='positive'>33.7K<br><small>+90.1%</small></td><td class='positive'>69.6K<br><small>+79.6%</small></td><td class='positive'>258.3K<br><small>+24.4%</small></td><td class='positive'>72.6K<br><small>+78.8%</small></td><td class='positive'>56.9K<br><small>+83.4%</small></td><td class='positive'>55.2K<br><small>+83.9%</small></td><td class='positive'>55.2K<br><small>+83.9%</small></td><td class='positive'>55.3K<br><small>+83.8%</small></td><td class='positive'>55.3K<br><small>+83.8%</small></td><td class='positive'>54.8K<br><small>+84.0%</small></td></tr>
+<tr><td class='article-name'>World_War_II</td><td>726.0K<br><small>base</small></td><td class='positive'>156.3K<br><small>+78.5%</small></td><td class='positive'>61.7K<br><small>+91.5%</small></td><td class='positive'>176.9K<br><small>+75.6%</small></td><td class='positive'>601.5K<br><small>+17.2%</small></td><td class='positive'>172.1K<br><small>+76.3%</small></td><td class='positive'>138.3K<br><small>+81.0%</small></td><td class='positive'>134.8K<br><small>+81.4%</small></td><td class='positive'>134.8K<br><small>+81.4%</small></td><td class='positive'>134.9K<br><small>+81.4%</small></td><td class='positive'>134.9K<br><small>+81.4%</small></td><td class='positive'>134.4K<br><small>+81.5%</small></td></tr>
+<tr><td class='article-name'>Quantum_computing</td><td>359.9K<br><small>base</small></td><td class='positive'>88.8K<br><small>+75.3%</small></td><td class='positive'>37.0K<br><small>+89.7%</small></td><td class='positive'>84.0K<br><small>+76.7%</small></td><td class='positive'>294.9K<br><small>+18.1%</small></td><td class='positive'>82.1K<br><small>+77.2%</small></td><td class='positive'>64.7K<br><small>+82.0%</small></td><td class='positive'>63.3K<br><small>+82.4%</small></td><td class='positive'>63.3K<br><small>+82.4%</small></td><td class='positive'>63.4K<br><small>+82.4%</small></td><td class='positive'>63.4K<br><small>+82.4%</small></td><td class='positive'>62.9K<br><small>+82.5%</small></td></tr>
+<tr><td class='article-name'>DNA</td><td>448.9K<br><small>base</small></td><td class='positive'>127.1K<br><small>+71.7%</small></td><td class='positive'>54.9K<br><small>+87.8%</small></td><td class='positive'>94.8K<br><small>+78.9%</small></td><td class='positive'>337.3K<br><small>+24.9%</small></td><td class='positive'>95.7K<br><small>+78.7%</small></td><td class='positive'>75.9K<br><small>+83.1%</small></td><td class='positive'>74.5K<br><small>+83.4%</small></td><td class='positive'>74.5K<br><small>+83.4%</small></td><td class='positive'>74.6K<br><small>+83.4%</small></td><td class='positive'>74.6K<br><small>+83.4%</small></td><td class='positive'>74.0K<br><small>+83.5%</small></td></tr>
+<tr><td class='article-name'>Climate_change</td><td>839.0K<br><small>base</small></td><td class='positive'>216.8K<br><small>+74.2%</small></td><td class='positive'>89.6K<br><small>+89.3%</small></td><td class='positive'>168.1K<br><small>+80.0%</small></td><td class='positive'>563.2K<br><small>+32.9%</small></td><td class='positive'>173.2K<br><small>+79.4%</small></td><td class='positive'>141.7K<br><small>+83.1%</small></td><td class='positive'>139.3K<br><small>+83.4%</small></td><td class='positive'>139.3K<br><small>+83.4%</small></td><td class='positive'>139.4K<br><small>+83.4%</small></td><td class='positive'>139.4K<br><small>+83.4%</small></td><td class='positive'>138.8K<br><small>+83.5%</small></td></tr>
+<tr><td class='article-name'>Machine_learning</td><td>338.3K<br><small>base</small></td><td class='positive'>105.8K<br><small>+68.7%</small></td><td class='positive'>41.3K<br><small>+87.8%</small></td><td class='positive'>82.9K<br><small>+75.5%</small></td><td class='positive'>295.5K<br><small>+12.7%</small></td><td class='positive'>84.0K<br><small>+75.2%</small></td><td class='positive'>66.1K<br><small>+80.5%</small></td><td class='positive'>64.7K<br><small>+80.9%</small></td><td class='positive'>64.7K<br><small>+80.9%</small></td><td class='positive'>64.8K<br><small>+80.9%</small></td><td class='positive'>64.8K<br><small>+80.9%</small></td><td class='positive'>64.1K<br><small>+81.1%</small></td></tr>
+<tr><td class='article-name'>Roman_Empire</td><td>843.0K<br><small>base</small></td><td class='positive'>155.4K<br><small>+81.6%</small></td><td class='positive'>64.0K<br><small>+92.4%</small></td><td class='positive'>200.0K<br><small>+76.3%</small></td><td class='positive'>732.7K<br><small>+13.1%</small></td><td class='positive'>196.9K<br><small>+76.6%</small></td><td class='positive'>154.2K<br><small>+81.7%</small></td><td class='positive'>149.4K<br><small>+82.3%</small></td><td class='positive'>149.4K<br><small>+82.3%</small></td><td class='positive'>149.5K<br><small>+82.3%</small></td><td class='positive'>149.5K<br><small>+82.3%</small></td><td class='positive'>148.7K<br><small>+82.4%</small></td></tr>
+<tr><td class='article-name'>Artificial_intelligence</td><td>739.6K<br><small>base</small></td><td class='positive'>185.8K<br><small>+74.9%</small></td><td class='positive'>77.3K<br><small>+89.6%</small></td><td class='positive'>170.0K<br><small>+77.0%</small></td><td class='positive'>621.1K<br><small>+16.0%</small></td><td class='positive'>178.0K<br><small>+75.9%</small></td><td class='positive'>142.0K<br><small>+80.8%</small></td><td class='positive'>138.8K<br><small>+81.2%</small></td><td class='positive'>138.8K<br><small>+81.2%</small></td><td class='positive'>138.9K<br><small>+81.2%</small></td><td class='positive'>138.9K<br><small>+81.2%</small></td><td class='positive'>138.1K<br><small>+81.3%</small></td></tr>
+
+<tr class='total-row'><td class='article-name'><strong>TOTAL</strong></td><td>5.5M<br><small>base</small></td><td class='positive'>1.4M<br><small>+75.5%</small></td><td class='positive'>561.0K<br><small>+89.8%</small></td><td class='positive'>1.3M<br><small>+77.1%</small></td><td class='positive'>4.5M<br><small>+18.7%</small></td><td class='positive'>1.3M<br><small>+77.0%</small></td><td class='positive'>1.0M<br><small>+81.7%</small></td><td class='positive'>985.1K<br><small>+82.1%</small></td><td class='positive'>985.1K<br><small>+82.1%</small></td><td class='positive'>986.1K<br><small>+82.1%</small></td><td class='positive'>986.0K<br><small>+82.1%</small></td><td class='positive'>979.8K<br><small>+82.2%</small></td></tr>
+</tbody>
 </table>
 
-<h2>Reduction vs Raw HTML (%)</h2>
-
+<h2>Summary</h2>
 <table>
-  <thead>
-    <tr>
-      <th>Article</th>
-      <th class="bar-cell">PDF (native file)</th>
-      <th class="bar-cell">PDF (extracted text)</th>
-      <th class="bar-cell">Markdown</th>
-      <th class="bar-cell">AIF JSON IR</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>Photosynthesis</td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-pdf" style="width:74.5%"></div></div><span class="bar-label cyan">74.5%</span></div></td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-pdftxt" style="width:88.3%"></div></div><span class="bar-label purple">88.3%</span></div></td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-md" style="width:74.8%"></div></div><span class="bar-label green">74.8%</span></div></td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-aif" style="width:8.5%"></div></div><span class="bar-label orange">8.5%</span></div></td>
-    </tr>
-    <tr>
-      <td>General Relativity</td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-pdf" style="width:73.4%"></div></div><span class="bar-label cyan">73.4%</span></div></td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-pdftxt" style="width:88.5%"></div></div><span class="bar-label purple">88.5%</span></div></td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-md" style="width:75.7%"></div></div><span class="bar-label green">75.7%</span></div></td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-aif" style="width:12.9%"></div></div><span class="bar-label orange">12.9%</span></div></td>
-    </tr>
-    <tr>
-      <td>Python</td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-pdf" style="width:74.9%"></div></div><span class="bar-label cyan">74.9%</span></div></td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-pdftxt" style="width:90.1%"></div></div><span class="bar-label purple">90.1%</span></div></td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-md" style="width:79.6%"></div></div><span class="bar-label green">79.6%</span></div></td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-aif" style="width:24.4%"></div></div><span class="bar-label orange">24.4%</span></div></td>
-    </tr>
-    <tr>
-      <td>World War II</td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-pdf" style="width:78.5%"></div></div><span class="bar-label cyan">78.5%</span></div></td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-pdftxt" style="width:91.5%"></div></div><span class="bar-label purple">91.5%</span></div></td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-md" style="width:75.6%"></div></div><span class="bar-label green">75.6%</span></div></td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-aif" style="width:17.2%"></div></div><span class="bar-label orange">17.2%</span></div></td>
-    </tr>
-    <tr>
-      <td>Quantum Computing</td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-pdf" style="width:75.6%"></div></div><span class="bar-label cyan">75.6%</span></div></td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-pdftxt" style="width:89.8%"></div></div><span class="bar-label purple">89.8%</span></div></td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-md" style="width:76.6%"></div></div><span class="bar-label green">76.6%</span></div></td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-aif" style="width:17.6%"></div></div><span class="bar-label orange">17.6%</span></div></td>
-    </tr>
-    <tr>
-      <td>DNA</td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-pdf" style="width:71.7%"></div></div><span class="bar-label cyan">71.7%</span></div></td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-pdftxt" style="width:87.8%"></div></div><span class="bar-label purple">87.8%</span></div></td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-md" style="width:78.9%"></div></div><span class="bar-label green">78.9%</span></div></td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-aif" style="width:24.9%"></div></div><span class="bar-label orange">24.9%</span></div></td>
-    </tr>
-    <tr>
-      <td>Climate Change</td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-pdf" style="width:74.2%"></div></div><span class="bar-label cyan">74.2%</span></div></td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-pdftxt" style="width:89.3%"></div></div><span class="bar-label purple">89.3%</span></div></td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-md" style="width:80.0%"></div></div><span class="bar-label green">80.0%</span></div></td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-aif" style="width:32.9%"></div></div><span class="bar-label orange">32.9%</span></div></td>
-    </tr>
-    <tr>
-      <td>Machine Learning</td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-pdf" style="width:68.7%"></div></div><span class="bar-label cyan">68.7%</span></div></td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-pdftxt" style="width:87.8%"></div></div><span class="bar-label purple">87.8%</span></div></td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-md" style="width:75.5%"></div></div><span class="bar-label green">75.5%</span></div></td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-aif" style="width:12.7%"></div></div><span class="bar-label orange">12.7%</span></div></td>
-    </tr>
-    <tr>
-      <td>Roman Empire</td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-pdf" style="width:81.6%"></div></div><span class="bar-label cyan">81.6%</span></div></td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-pdftxt" style="width:92.4%"></div></div><span class="bar-label purple">92.4%</span></div></td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-md" style="width:76.3%"></div></div><span class="bar-label green">76.3%</span></div></td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-aif" style="width:13.1%"></div></div><span class="bar-label orange">13.1%</span></div></td>
-    </tr>
-    <tr>
-      <td>Artificial Intelligence</td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-pdf" style="width:74.9%"></div></div><span class="bar-label cyan">74.9%</span></div></td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-pdftxt" style="width:89.5%"></div></div><span class="bar-label purple">89.5%</span></div></td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-md" style="width:77.0%"></div></div><span class="bar-label green">77.0%</span></div></td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-aif" style="width:16.1%"></div></div><span class="bar-label orange">16.1%</span></div></td>
-    </tr>
-    <tr class="total-row">
-      <td>AVERAGE</td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-pdf" style="width:75.5%"></div></div><span class="bar-label cyan">75.5%</span></div></td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-pdftxt" style="width:89.8%"></div></div><span class="bar-label purple">89.8%</span></div></td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-md" style="width:77.1%"></div></div><span class="bar-label green">77.1%</span></div></td>
-      <td class="bar-cell"><div class="bar-container"><div class="bar-bg"><div class="bar-fill bar-aif" style="width:18.7%"></div></div><span class="bar-label orange">18.7%</span></div></td>
-    </tr>
-  </tbody>
+<thead><tr><th>Format</th><th>Total Tokens</th><th>Total Bytes</th><th>Token Savings vs HTML</th></tr></thead>
+<tbody>
+<tr><td style='text-align:left'>Raw HTML</td><td>5,515,206</td><td>13,630,999</td><td>baseline</td></tr>
+<tr><td style='text-align:left'>Raw PDF (file)</td><td>1,351,997</td><td>23,678,665</td><td>+75.5%</td></tr>
+<tr><td style='text-align:left'>Raw PDF (text)</td><td>560,950</td><td>1,709,431</td><td>+89.8%</td></tr>
+<tr><td style='text-align:left'>Raw Markdown</td><td>1,262,755</td><td>3,536,042</td><td>+77.1%</td></tr>
+<tr><td style='text-align:left'>AIF JSON IR</td><td>4,483,743</td><td>18,372,100</td><td>+18.7%</td></tr>
+<tr><td style='text-align:left'>AIF HTML</td><td>1,268,768</td><td>3,458,165</td><td>+77.0%</td></tr>
+<tr><td style='text-align:left'>AIF Markdown (RT)</td><td>1,009,181</td><td>2,883,580</td><td>+81.7%</td></tr>
+<tr><td style='text-align:left'>AIF LML</td><td>985,090</td><td>2,841,399</td><td>+82.1%</td></tr>
+<tr><td style='text-align:left'>AIF LML Compact</td><td>985,090</td><td>2,841,399</td><td>+82.1%</td></tr>
+<tr><td style='text-align:left'>AIF LML Conserv.</td><td>986,130</td><td>2,844,199</td><td>+82.1%</td></tr>
+<tr><td style='text-align:left'>AIF LML Moderate</td><td>986,020</td><td>2,844,069</td><td>+82.1%</td></tr>
+<tr><td style='text-align:left'>AIF LML Aggress.</td><td>979,838</td><td>2,830,501</td><td>+82.2%</td></tr>
+</tbody>
 </table>
 
-<h2>AIF Format Comparison (Built-in Example)</h2>
-<p style="color: var(--text-muted); margin-bottom: 1rem; font-size: 0.9rem;">
-  Comparing all AIF output formats on the same Photosynthesis wiki article example.
-</p>
-
-<div class="format-grid">
-  <div class="format-card">
-    <div class="format-name">HTML Output</div>
-    <div class="format-tokens">1,107</div>
-    <div class="format-bytes">3,607 bytes</div>
-    <div class="format-savings" style="color: var(--text-muted);">baseline</div>
-  </div>
-  <div class="format-card">
-    <div class="format-name">AIF Source</div>
-    <div class="format-tokens accent">761</div>
-    <div class="format-bytes">2,797 bytes</div>
-    <div class="format-savings green">31.3% fewer tokens</div>
-  </div>
-  <div class="format-card">
-    <div class="format-name">LML Output</div>
-    <div class="format-tokens purple">715</div>
-    <div class="format-bytes">2,596 bytes</div>
-    <div class="format-savings green">35.4% fewer tokens</div>
-  </div>
-  <div class="format-card">
-    <div class="format-name">Markdown Output</div>
-    <div class="format-tokens green">643</div>
-    <div class="format-bytes">2,420 bytes</div>
-    <div class="format-savings green">41.9% fewer tokens</div>
-  </div>
-</div>
-
-<div class="note">
-  <strong>Format Trade-offs:</strong>
-  <ul style="margin-top: 0.5rem; padding-left: 1.5rem;">
-    <li><strong>PDF (extracted text)</strong> &mdash; Best raw token efficiency (~90%) but loses all formatting, structure, and layout</li>
-    <li><strong>PDF (native file)</strong> &mdash; Good reduction (~75%) when sent as a document, but opaque binary format</li>
-    <li><strong>Markdown</strong> &mdash; Strong token efficiency (~77%) but loses semantic block types (definitions, theorems, callouts)</li>
-    <li><strong>LML</strong> &mdash; Optimized for LLM consumption, preserves semantics with minimal syntax overhead</li>
-    <li><strong>AIF Source</strong> &mdash; Full fidelity format with all metadata, attributes, and structure</li>
-    <li><strong>AIF JSON IR</strong> &mdash; Verbose AST for programmatic processing, not intended for direct LLM consumption</li>
-  </ul>
-</div>
-
-<h2>File Size Comparison</h2>
-<table>
-  <thead>
-    <tr>
-      <th>Article</th>
-      <th class="right">HTML (bytes)</th>
-      <th class="right">PDF (bytes)</th>
-      <th class="right">PDF text (bytes)</th>
-      <th class="right">Markdown (bytes)</th>
-      <th class="right">AIF JSON (bytes)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr><td>Photosynthesis</td><td class="right">786,104</td><td class="right">1,671,773</td><td class="right">108,770</td><td class="right">216,642</td><td class="right">1,169,460</td></tr>
-    <tr><td>General Relativity</td><td class="right">1,381,010</td><td class="right">1,727,107</td><td class="right">186,266</td><td class="right">369,408</td><td class="right">2,050,667</td></tr>
-    <tr><td>Python</td><td class="right">866,584</td><td class="right">814,244</td><td class="right">106,663</td><td class="right">202,014</td><td class="right">1,059,010</td></tr>
-    <tr><td>World War II</td><td class="right">1,785,446</td><td class="right">3,827,261</td><td class="right">195,551</td><td class="right">483,388</td><td class="right">2,457,351</td></tr>
-    <tr><td>Quantum Computing</td><td class="right">873,442</td><td class="right">1,041,133</td><td class="right">108,170</td><td class="right">230,948</td><td class="right">1,184,599</td></tr>
-    <tr><td>DNA</td><td class="right">1,068,906</td><td class="right">2,679,500</td><td class="right">154,957</td><td class="right">253,376</td><td class="right">1,346,247</td></tr>
-    <tr><td>Climate Change</td><td class="right">2,048,705</td><td class="right">3,606,344</td><td class="right">258,580</td><td class="right">471,508</td><td class="right">2,305,229</td></tr>
-    <tr><td>Machine Learning</td><td class="right">871,278</td><td class="right">1,000,596</td><td class="right">135,636</td><td class="right">258,126</td><td class="right">1,209,878</td></tr>
-    <tr><td>Roman Empire</td><td class="right">2,069,063</td><td class="right">5,501,617</td><td class="right">211,159</td><td class="right">541,672</td><td class="right">3,006,688</td></tr>
-    <tr><td>Artificial Intelligence</td><td class="right">1,873,788</td><td class="right">2,125,125</td><td class="right">242,857</td><td class="right">507,595</td><td class="right">2,577,568</td></tr>
-  </tbody>
-</table>
-
-<div class="note">
-  <strong>Note on PDF file sizes:</strong> PDF files are often <em>larger</em> than HTML on disk (due to embedded fonts, images, and rendering metadata),
-  yet they consume fewer <em>tokens</em> when processed by Claude. This is because Claude's PDF processing extracts and tokenizes the content efficiently,
-  discarding the binary overhead. File size and token cost do not correlate for PDFs.
-</div>
-
-<footer>
-  Generated from benchmark run on March 30, 2026 &middot; Model: claude-opus-4-6 &middot; AIF Project
-</footer>
-
+<p class="timestamp">Generated: 2026-04-01 18:05:55 UTC</p>
 </body>
 </html>
