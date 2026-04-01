@@ -1,5 +1,6 @@
 use aif_core::ast::*;
 use base64::{engine::general_purpose::STANDARD as B64, Engine as _};
+use std::fmt::Write;
 
 const BINARY_THRESHOLD: usize = 50;
 
@@ -52,6 +53,13 @@ fn inline_to_plain(out: &mut String, inline: &Inline) {
             out.push_str(url);
             out.push(')');
         }
+        Inline::Image { alt, src } => {
+            out.push_str("![");
+            out.push_str(alt);
+            out.push_str("](");
+            out.push_str(src);
+            out.push(')');
+        }
         Inline::Reference { target } => {
             out.push('@');
             out.push_str(target);
@@ -70,6 +78,30 @@ fn emit_content_maybe_binary(out: &mut String, inlines: &[Inline]) {
         out.push_str(&encoded);
     } else {
         out.push_str(&plain);
+    }
+}
+
+fn emit_media_meta_inline(out: &mut String, meta: &MediaMeta) {
+    if let Some(alt) = &meta.alt {
+        out.push_str(" alt=");
+        out.push_str(alt);
+    }
+    if let Some(w) = meta.width {
+        write!(out, " w={}", w).unwrap();
+    }
+    if let Some(h) = meta.height {
+        write!(out, " h={}", h).unwrap();
+    }
+    if let Some(d) = meta.duration {
+        write!(out, " dur={}", d).unwrap();
+    }
+    if let Some(m) = &meta.mime {
+        out.push_str(" mime=");
+        out.push_str(m);
+    }
+    if let Some(p) = &meta.poster {
+        out.push_str(" poster=");
+        out.push_str(p);
     }
 }
 
@@ -199,7 +231,7 @@ fn emit_block(out: &mut String, block: &Block, depth: usize) {
             }
             out.push_str("\n\n");
         }
-        BlockKind::Figure { attrs, caption, src } => {
+        BlockKind::Figure { attrs, caption, src, meta } => {
             out.push_str("![");
             if let Some(cap) = caption {
                 emit_content_maybe_binary(out, cap);
@@ -207,7 +239,34 @@ fn emit_block(out: &mut String, block: &Block, depth: usize) {
             out.push_str("](");
             out.push_str(src);
             emit_attrs_inline(out, attrs);
+            emit_media_meta_inline(out, meta);
             out.push_str(")\n\n");
+        }
+        BlockKind::Audio { attrs, caption, src, meta } => {
+            out.push_str("[AUDIO");
+            emit_attrs_inline(out, attrs);
+            out.push_str(" src=");
+            out.push_str(src);
+            emit_media_meta_inline(out, meta);
+            out.push(']');
+            if let Some(cap) = caption {
+                out.push(' ');
+                emit_content_maybe_binary(out, cap);
+            }
+            out.push_str("\n\n");
+        }
+        BlockKind::Video { attrs, caption, src, meta } => {
+            out.push_str("[VIDEO");
+            emit_attrs_inline(out, attrs);
+            out.push_str(" src=");
+            out.push_str(src);
+            emit_media_meta_inline(out, meta);
+            out.push(']');
+            if let Some(cap) = caption {
+                out.push(' ');
+                emit_content_maybe_binary(out, cap);
+            }
+            out.push_str("\n\n");
         }
         BlockKind::List { ordered, items } => {
             for (i, item) in items.iter().enumerate() {

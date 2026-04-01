@@ -334,6 +334,7 @@ fn roundtrip_figure() {
                     text: "A figure".into(),
                 }]),
                 src: "image.png".into(),
+                meta: MediaMeta::default(),
             },
             span: sp(),
         }],
@@ -570,4 +571,151 @@ fn decode_rejects_bad_version() {
 fn decode_rejects_short_data() {
     let result = decode(b"AT");
     assert!(result.is_err());
+}
+
+#[test]
+fn roundtrip_audio() {
+    let doc = Document {
+        metadata: BTreeMap::new(),
+        blocks: vec![Block {
+            kind: BlockKind::Audio {
+                attrs: Attrs::new(),
+                caption: Some(vec![Inline::Text {
+                    text: "My audio".into(),
+                }]),
+                src: "audio.mp3".into(),
+                meta: MediaMeta::default(),
+            },
+            span: sp(),
+        }],
+    };
+    let decoded = roundtrip(&doc);
+    if let BlockKind::Audio { caption, src, .. } = &decoded.blocks[0].kind {
+        assert!(caption.is_some());
+        assert_eq!(src, "audio.mp3");
+    } else {
+        panic!("expected Audio");
+    }
+}
+
+#[test]
+fn roundtrip_video() {
+    let doc = Document {
+        metadata: BTreeMap::new(),
+        blocks: vec![Block {
+            kind: BlockKind::Video {
+                attrs: Attrs::new(),
+                caption: Some(vec![Inline::Text {
+                    text: "My video".into(),
+                }]),
+                src: "video.mp4".into(),
+                meta: MediaMeta::default(),
+            },
+            span: sp(),
+        }],
+    };
+    let decoded = roundtrip(&doc);
+    if let BlockKind::Video { caption, src, .. } = &decoded.blocks[0].kind {
+        assert!(caption.is_some());
+        assert_eq!(src, "video.mp4");
+    } else {
+        panic!("expected Video");
+    }
+}
+
+#[test]
+fn roundtrip_figure_with_media_meta() {
+    let doc = Document {
+        metadata: BTreeMap::new(),
+        blocks: vec![Block {
+            kind: BlockKind::Figure {
+                attrs: Attrs::new(),
+                caption: Some(vec![Inline::Text { text: "Photo".into() }]),
+                src: "photo.jpg".into(),
+                meta: MediaMeta {
+                    alt: Some("A sunset".into()),
+                    width: Some(1920),
+                    height: Some(1080),
+                    duration: None,
+                    mime: Some("image/jpeg".into()),
+                    poster: None,
+                },
+            },
+            span: sp(),
+        }],
+    };
+    let decoded = roundtrip(&doc);
+    if let BlockKind::Figure { meta, src, .. } = &decoded.blocks[0].kind {
+        assert_eq!(src, "photo.jpg");
+        assert_eq!(meta.alt.as_deref(), Some("A sunset"));
+        assert_eq!(meta.width, Some(1920));
+        assert_eq!(meta.height, Some(1080));
+        assert_eq!(meta.mime.as_deref(), Some("image/jpeg"));
+        assert!(meta.poster.is_none());
+        assert!(meta.duration.is_none());
+    } else {
+        panic!("expected Figure");
+    }
+}
+
+#[test]
+fn roundtrip_video_with_full_meta() {
+    let doc = Document {
+        metadata: BTreeMap::new(),
+        blocks: vec![Block {
+            kind: BlockKind::Video {
+                attrs: Attrs::new(),
+                caption: None,
+                src: "vid.mp4".into(),
+                meta: MediaMeta {
+                    alt: Some("A video".into()),
+                    width: Some(1280),
+                    height: Some(720),
+                    duration: Some(120.5),
+                    mime: Some("video/mp4".into()),
+                    poster: Some("thumb.jpg".into()),
+                },
+            },
+            span: sp(),
+        }],
+    };
+    let decoded = roundtrip(&doc);
+    if let BlockKind::Video { meta, .. } = &decoded.blocks[0].kind {
+        assert_eq!(meta.alt.as_deref(), Some("A video"));
+        assert_eq!(meta.width, Some(1280));
+        assert_eq!(meta.height, Some(720));
+        assert_eq!(meta.duration, Some(120.5));
+        assert_eq!(meta.mime.as_deref(), Some("video/mp4"));
+        assert_eq!(meta.poster.as_deref(), Some("thumb.jpg"));
+    } else {
+        panic!("expected Video");
+    }
+}
+
+#[test]
+fn roundtrip_inline_image() {
+    let doc = Document {
+        metadata: BTreeMap::new(),
+        blocks: vec![Block {
+            kind: BlockKind::Paragraph {
+                content: vec![Inline::Image {
+                    alt: "photo".into(),
+                    src: "img.png".into(),
+                }],
+            },
+            span: sp(),
+        }],
+    };
+    let decoded = roundtrip(&doc);
+    if let BlockKind::Paragraph { content } = &decoded.blocks[0].kind {
+        assert_eq!(content.len(), 1);
+        if let Inline::Image { alt, src } = &content[0] {
+            assert_eq!(alt, "photo");
+            assert_eq!(src, "img.png");
+        } else {
+            panic!("expected Image inline");
+        }
+    } else {
+        panic!("expected Paragraph");
+    }
 }

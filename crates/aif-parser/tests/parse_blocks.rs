@@ -140,7 +140,7 @@ fn parse_figure() {
     let doc = parse(input).unwrap();
     assert_eq!(doc.blocks.len(), 1);
     match &doc.blocks[0].kind {
-        BlockKind::Figure { src, caption, attrs } => {
+        BlockKind::Figure { src, caption, attrs, .. } => {
             assert_eq!(src, "photo.jpg");
             assert!(caption.is_some());
             assert_eq!(attrs.id.as_deref(), Some("fig1"));

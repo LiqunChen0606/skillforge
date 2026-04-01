@@ -61,6 +61,19 @@ enum WireBlockKind {
         attrs: WireAttrs,
         caption: Option<Vec<WireInline>>,
         src: String,
+        meta: WireMediaMeta,
+    },
+    Audio {
+        attrs: WireAttrs,
+        caption: Option<Vec<WireInline>>,
+        src: String,
+        meta: WireMediaMeta,
+    },
+    Video {
+        attrs: WireAttrs,
+        caption: Option<Vec<WireInline>>,
+        src: String,
+        meta: WireMediaMeta,
     },
     CodeBlock {
         lang: Option<String>,
@@ -97,12 +110,23 @@ struct WireAttrs {
 }
 
 #[derive(Serialize, Deserialize)]
+struct WireMediaMeta {
+    alt: Option<String>,
+    width: Option<u32>,
+    height: Option<u32>,
+    duration: Option<f64>,
+    mime: Option<String>,
+    poster: Option<String>,
+}
+
+#[derive(Serialize, Deserialize)]
 enum WireInline {
     Text { text: String },
     Emphasis { content: Vec<WireInline> },
     Strong { content: Vec<WireInline> },
     InlineCode { code: String },
     Link { text: Vec<WireInline>, url: String },
+    Image { alt: String, src: String },
     Reference { target: String },
     Footnote { content: Vec<WireInline> },
     SoftBreak,
@@ -189,10 +213,34 @@ fn blockkind_to_wire(k: &ast::BlockKind) -> WireBlockKind {
             attrs,
             caption,
             src,
+            meta,
         } => WireBlockKind::Figure {
             attrs: attrs_to_wire(attrs),
             caption: caption.as_ref().map(|c| c.iter().map(inline_to_wire).collect()),
             src: src.clone(),
+            meta: media_meta_to_wire(meta),
+        },
+        ast::BlockKind::Audio {
+            attrs,
+            caption,
+            src,
+            meta,
+        } => WireBlockKind::Audio {
+            attrs: attrs_to_wire(attrs),
+            caption: caption.as_ref().map(|c| c.iter().map(inline_to_wire).collect()),
+            src: src.clone(),
+            meta: media_meta_to_wire(meta),
+        },
+        ast::BlockKind::Video {
+            attrs,
+            caption,
+            src,
+            meta,
+        } => WireBlockKind::Video {
+            attrs: attrs_to_wire(attrs),
+            caption: caption.as_ref().map(|c| c.iter().map(inline_to_wire).collect()),
+            src: src.clone(),
+            meta: media_meta_to_wire(meta),
         },
         ast::BlockKind::CodeBlock { lang, attrs, code } => WireBlockKind::CodeBlock {
             lang: lang.clone(),
@@ -230,6 +278,17 @@ fn attrs_to_wire(a: &ast::Attrs) -> WireAttrs {
     }
 }
 
+fn media_meta_to_wire(m: &ast::MediaMeta) -> WireMediaMeta {
+    WireMediaMeta {
+        alt: m.alt.clone(),
+        width: m.width,
+        height: m.height,
+        duration: m.duration,
+        mime: m.mime.clone(),
+        poster: m.poster.clone(),
+    }
+}
+
 fn inline_to_wire(i: &ast::Inline) -> WireInline {
     match i {
         ast::Inline::Text { text } => WireInline::Text { text: text.clone() },
@@ -243,6 +302,10 @@ fn inline_to_wire(i: &ast::Inline) -> WireInline {
         ast::Inline::Link { text, url } => WireInline::Link {
             text: text.iter().map(inline_to_wire).collect(),
             url: url.clone(),
+        },
+        ast::Inline::Image { alt, src } => WireInline::Image {
+            alt: alt.clone(),
+            src: src.clone(),
         },
         ast::Inline::Reference { target } => WireInline::Reference {
             target: target.clone(),
@@ -339,10 +402,34 @@ fn wire_to_blockkind(k: WireBlockKind) -> ast::BlockKind {
             attrs,
             caption,
             src,
+            meta,
         } => ast::BlockKind::Figure {
             attrs: wire_to_attrs(attrs),
             caption: caption.map(|c| c.into_iter().map(wire_to_inline).collect()),
             src,
+            meta: wire_to_media_meta(meta),
+        },
+        WireBlockKind::Audio {
+            attrs,
+            caption,
+            src,
+            meta,
+        } => ast::BlockKind::Audio {
+            attrs: wire_to_attrs(attrs),
+            caption: caption.map(|c| c.into_iter().map(wire_to_inline).collect()),
+            src,
+            meta: wire_to_media_meta(meta),
+        },
+        WireBlockKind::Video {
+            attrs,
+            caption,
+            src,
+            meta,
+        } => ast::BlockKind::Video {
+            attrs: wire_to_attrs(attrs),
+            caption: caption.map(|c| c.into_iter().map(wire_to_inline).collect()),
+            src,
+            meta: wire_to_media_meta(meta),
         },
         WireBlockKind::CodeBlock { lang, attrs, code } => ast::BlockKind::CodeBlock {
             lang,
@@ -380,6 +467,17 @@ fn wire_to_attrs(a: WireAttrs) -> ast::Attrs {
     }
 }
 
+fn wire_to_media_meta(m: WireMediaMeta) -> ast::MediaMeta {
+    ast::MediaMeta {
+        alt: m.alt,
+        width: m.width,
+        height: m.height,
+        duration: m.duration,
+        mime: m.mime,
+        poster: m.poster,
+    }
+}
+
 fn wire_to_inline(i: WireInline) -> ast::Inline {
     match i {
         WireInline::Text { text } => ast::Inline::Text { text },
@@ -394,6 +492,7 @@ fn wire_to_inline(i: WireInline) -> ast::Inline {
             text: text.into_iter().map(wire_to_inline).collect(),
             url,
         },
+        WireInline::Image { alt, src } => ast::Inline::Image { alt, src },
         WireInline::Reference { target } => ast::Inline::Reference { target },
         WireInline::Footnote { content } => ast::Inline::Footnote {
             content: content.into_iter().map(wire_to_inline).collect(),

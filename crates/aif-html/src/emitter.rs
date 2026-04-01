@@ -137,19 +137,81 @@ fn emit_block(out: &mut String, block: &Block, heading_level: u8) {
             attrs,
             caption,
             src,
+            meta,
         } => {
             if let Some(id) = &attrs.id {
                 out.push_str(&format!("<figure id=\"{}\">", escape_html(id)));
             } else {
                 out.push_str("<figure>");
             }
-            out.push_str(&format!("<img src=\"{}\" alt=\"\">", escape_html(src)));
+            out.push_str(&format!("<img src=\"{}\"", escape_html(src)));
+            let alt_text = meta.alt.as_deref().unwrap_or("");
+            out.push_str(&format!(" alt=\"{}\"", escape_html(alt_text)));
+            if let Some(w) = meta.width {
+                out.push_str(&format!(" width=\"{}\"", w));
+            }
+            if let Some(h) = meta.height {
+                out.push_str(&format!(" height=\"{}\"", h));
+            }
+            out.push('>');
             if let Some(cap) = caption {
                 out.push_str("<figcaption>");
                 emit_inlines(out, cap);
                 out.push_str("</figcaption>");
             }
             out.push_str("</figure>\n");
+        }
+        BlockKind::Audio {
+            attrs,
+            caption,
+            src,
+            meta,
+        } => {
+            out.push_str("<audio controls");
+            if meta.mime.is_none() {
+                out.push_str(&format!(" src=\"{}\"", escape_html(src)));
+            }
+            if let Some(id) = &attrs.id {
+                out.push_str(&format!(" id=\"{}\"", escape_html(id)));
+            }
+            out.push('>');
+            if let Some(mime) = &meta.mime {
+                out.push_str(&format!("<source src=\"{}\" type=\"{}\">", escape_html(src), escape_html(mime)));
+            }
+            if let Some(cap) = caption {
+                out.push_str("<p>");
+                emit_inlines(out, cap);
+                out.push_str("</p>");
+            }
+            out.push_str("</audio>\n");
+        }
+        BlockKind::Video {
+            attrs,
+            caption,
+            src,
+            meta,
+        } => {
+            out.push_str("<video controls");
+            out.push_str(&format!(" src=\"{}\"", escape_html(src)));
+            if let Some(id) = &attrs.id {
+                out.push_str(&format!(" id=\"{}\"", escape_html(id)));
+            }
+            if let Some(w) = meta.width {
+                out.push_str(&format!(" width=\"{}\"", w));
+            }
+            if let Some(h) = meta.height {
+                out.push_str(&format!(" height=\"{}\"", h));
+            }
+            if let Some(poster) = &meta.poster {
+                out.push_str(&format!(" poster=\"{}\"", escape_html(poster)));
+            }
+            out.push('>');
+            if let Some(cap) = caption {
+                out.push_str("<p>");
+                emit_inlines(out, cap);
+                out.push_str("</p>");
+            }
+            out.push_str("</video>\n");
         }
         BlockKind::CodeBlock {
             lang, attrs: _, code,
@@ -255,6 +317,9 @@ fn emit_inline(out: &mut String, inline: &Inline) {
             emit_inlines(out, text);
             out.push_str("</a>");
         }
+        Inline::Image { alt, src } => {
+            out.push_str(&format!("<img src=\"{}\" alt=\"{}\">", escape_html(src), escape_html(alt)));
+        }
         Inline::Reference { target } => {
             out.push_str(&format!(
                 "<a class=\"aif-ref\" href=\"#{}\">{}</a>",
@@ -338,5 +403,118 @@ mod tests {
         assert_eq!(escape_html("<div>"), "&lt;div&gt;");
         assert_eq!(escape_html("say \"hi\""), "say &quot;hi&quot;");
         assert_eq!(escape_html("plain"), "plain");
+    }
+
+    #[test]
+    fn test_audio_block() {
+        use aif_core::span::Span;
+        let mut doc = Document::new();
+        doc.blocks.push(Block {
+            kind: BlockKind::Audio {
+                attrs: Attrs::new(),
+                caption: Some(vec![Inline::Text { text: "My Song".into() }]),
+                src: "song.mp3".into(),
+                meta: MediaMeta::default(),
+            },
+            span: Span::new(0, 10),
+        });
+        let html = emit_html(&doc);
+        assert!(html.contains("<audio controls src=\"song.mp3\">"));
+        assert!(html.contains("<p>My Song</p>"));
+        assert!(html.contains("</audio>"));
+    }
+
+    #[test]
+    fn test_video_block() {
+        use aif_core::span::Span;
+        let mut doc = Document::new();
+        doc.blocks.push(Block {
+            kind: BlockKind::Video {
+                attrs: Attrs::new(),
+                caption: Some(vec![Inline::Text { text: "My Video".into() }]),
+                src: "clip.mp4".into(),
+                meta: MediaMeta::default(),
+            },
+            span: Span::new(0, 10),
+        });
+        let html = emit_html(&doc);
+        assert!(html.contains("<video controls src=\"clip.mp4\">"));
+        assert!(html.contains("<p>My Video</p>"));
+        assert!(html.contains("</video>"));
+    }
+
+    #[test]
+    fn test_inline_image() {
+        let mut out = String::new();
+        emit_inline(&mut out, &Inline::Image { alt: "photo".into(), src: "img.png".into() });
+        assert_eq!(out, "<img src=\"img.png\" alt=\"photo\">");
+    }
+
+    #[test]
+    fn test_figure_with_media_meta() {
+        use aif_core::span::Span;
+        let mut doc = Document::new();
+        doc.blocks.push(Block {
+            kind: BlockKind::Figure {
+                attrs: Attrs::new(),
+                caption: Some(vec![Inline::Text { text: "Photo".into() }]),
+                src: "photo.jpg".into(),
+                meta: MediaMeta {
+                    alt: Some("A sunset".into()),
+                    width: Some(800),
+                    height: Some(600),
+                    ..MediaMeta::default()
+                },
+            },
+            span: Span::new(0, 10),
+        });
+        let html = emit_html(&doc);
+        assert!(html.contains("alt=\"A sunset\""));
+        assert!(html.contains("width=\"800\""));
+        assert!(html.contains("height=\"600\""));
+    }
+
+    #[test]
+    fn test_video_with_poster() {
+        use aif_core::span::Span;
+        let mut doc = Document::new();
+        doc.blocks.push(Block {
+            kind: BlockKind::Video {
+                attrs: Attrs::new(),
+                caption: None,
+                src: "vid.mp4".into(),
+                meta: MediaMeta {
+                    poster: Some("thumb.jpg".into()),
+                    width: Some(1920),
+                    height: Some(1080),
+                    ..MediaMeta::default()
+                },
+            },
+            span: Span::new(0, 10),
+        });
+        let html = emit_html(&doc);
+        assert!(html.contains("poster=\"thumb.jpg\""));
+        assert!(html.contains("width=\"1920\""));
+        assert!(html.contains("height=\"1080\""));
+    }
+
+    #[test]
+    fn test_audio_with_mime() {
+        use aif_core::span::Span;
+        let mut doc = Document::new();
+        doc.blocks.push(Block {
+            kind: BlockKind::Audio {
+                attrs: Attrs::new(),
+                caption: None,
+                src: "track.ogg".into(),
+                meta: MediaMeta {
+                    mime: Some("audio/ogg".into()),
+                    ..MediaMeta::default()
+                },
+            },
+            span: Span::new(0, 10),
+        });
+        let html = emit_html(&doc);
+        assert!(html.contains("type=\"audio/ogg\""));
     }
 }

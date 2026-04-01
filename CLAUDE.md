@@ -17,7 +17,7 @@ AIF is a semantic document format and toolchain for humans and LLMs. Concise lik
 | `aif-html` | HTML compiler (AST → HTML) |
 | `aif-markdown` | Markdown compiler + pulldown-cmark importer |
 | `aif-lml` | LML compiler — 5 prose modes, bidirectional parser, hybrid LML+binary, semantic compression |
-| `aif-binary` | Binary serialization — wire (postcard) and token-optimized formats with full encode/decode roundtrip |
+| `aif-binary` | Binary serialization — wire (postcard) and token-optimized formats with full encode/decode roundtrip, media metadata, semantic/callout type preservation |
 | `aif-skill` | Skill profiles — validation, hashing, versioning, diff, registry, delta transport, format recommender, chaining, marketplace |
 | `aif-pdf` | PDF export (krilla) + import (pdf_oxide) + document chunking (4 strategies) + chunk graphs |
 | `aif-cli` | CLI tool: `compile`, `import`, `dump-ir`, `skill`, `schema`, `chunk` subcommands |
@@ -28,6 +28,7 @@ AIF is a semantic document format and toolchain for humans and LLMs. Concise lik
 - `Block` / `BlockKind` — paragraphs, sections, semantic blocks, callouts, tables, figures, code, lists, skills
 - `Inline` — text, emphasis, strong, code, links, references, footnotes
 - `SkillBlockType` — step, verify, precondition, output_contract, decision, tool, fallback, red_flag, example
+- `MediaMeta` — optional metadata on Figure/Audio/Video: alt, width, height, duration, mime, poster
 - `Attrs` — id + key-value pairs on any block
 - `ChunkGraph` / `Chunk` / `ChunkId` — sub-document addressing and cross-document linking
 
@@ -171,10 +172,22 @@ Extended `benchmarks/skill_token_benchmark.py` with HTML, Markdown, and JSON com
 ### Skill Marketplace
 `crates/aif-skill/src/remote.rs` + `resolver.rs` — Remote registry client with REST API protocol (stub). Unified resolver: local → cache → remote with version-aware matching. Download validation ensures fetched skills are valid AIF documents before caching. Version parsing errors are surfaced (not silently defaulted).
 
+### Rich Media Metadata
+`MediaMeta` struct on Figure, Audio, and Video blocks with 6 optional fields: `alt`, `width`, `height`, `duration`, `mime`, `poster`. Propagated across all emitters (HTML, Markdown, LML standard/aggressive, binary wire/token-opt, PDF, skill export/hash, compression, hybrid). Binary uses presence-flags byte (6 bits) encoding only non-None fields. LML aggressive uses abbreviated keys (`w=`, `h=`). JSON uses `skip_serializing_if` to omit null fields.
+
+### Binary Type Preservation
+Token-optimized binary format now encodes and decodes `SemanticBlockType` (9 variants) and `CalloutType` (4 variants) as single-byte IDs, enabling lossless roundtrip for all semantic block and callout types.
+
 ### Cross-Language SDKs
 `sdks/python/` — Pydantic v2 models with Literal discriminators and StrEnum for tagged unions.
 `sdks/typescript/` — TypeScript interfaces + Zod schemas (z.discriminatedUnion, z.lazy for recursive types).
 `scripts/generate_sdks.py` — Codegen from JSON Schema with `--check` mode for CI validation.
+
+## Known Limitations
+
+- LML bidirectional parser does not yet round-trip media block attributes (Figure/Audio/Video metadata lost on parse-back)
+- Markdown importer does not detect audio/video links for roundtrip fidelity
+- `inlines_to_text` helper is duplicated across `aif-pdf` (splitter, renderer) and `aif-markdown` with slightly different behavior — consolidation candidate for `aif-core`
 
 ## Benchmark Results (2026-03-31, claude-opus-4-6, 10 skills)
 

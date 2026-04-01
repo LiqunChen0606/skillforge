@@ -61,6 +61,18 @@ impl<'a> InlineParser<'a> {
                 continue;
             }
 
+            // ![alt](url)
+            if remaining.starts_with("![") {
+                self.flush_text(text_start, &mut inlines);
+                if let Some((alt, src)) = self.parse_image() {
+                    inlines.push(Inline::Image { alt, src });
+                    text_start = self.pos;
+                    continue;
+                }
+                self.pos += 2;
+                continue;
+            }
+
             // [text](url)
             if remaining.starts_with('[') {
                 self.flush_text(text_start, &mut inlines);
@@ -147,6 +159,24 @@ impl<'a> InlineParser<'a> {
         }
     }
 
+    fn parse_image(&mut self) -> Option<(String, String)> {
+        // Starts at '!', we need ![alt](url)
+        let start = self.pos + 2; // skip '!['
+        let remaining = &self.input[start..];
+        let close_bracket = remaining.find(']')?;
+        let alt = remaining[..close_bracket].to_string();
+        let after = &remaining[close_bracket + 1..];
+        if !after.starts_with('(') {
+            return None;
+        }
+        let url_start = close_bracket + 2;
+        let url_remaining = &remaining[url_start..];
+        let close_paren = url_remaining.find(')')?;
+        let src = url_remaining[..close_paren].to_string();
+        self.pos = start + url_start + close_paren + 1;
+        Some((alt, src))
+    }
+
     fn parse_link(&mut self) -> Option<(String, String)> {
         let start = self.pos + 1;
         let remaining = &self.input[start..];
@@ -227,6 +257,19 @@ mod tests {
             assert_eq!(content.len(), 2);
         } else {
             panic!("expected Strong");
+        }
+    }
+
+    #[test]
+    fn parse_inline_image() {
+        let result = parse_inline("see ![alt text](https://img.png) here");
+        assert_eq!(result.len(), 3);
+        match &result[1] {
+            Inline::Image { alt, src } => {
+                assert_eq!(alt, "alt text");
+                assert_eq!(src, "https://img.png");
+            }
+            other => panic!("expected Image, got {:?}", other),
         }
     }
 }

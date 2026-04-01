@@ -80,7 +80,8 @@ pub fn import(input: &str) -> Document {
                     Tag::Emphasis => BuilderKind::Emphasis,
                     Tag::Strong => BuilderKind::Strong,
                     Tag::Link { dest_url, .. } => BuilderKind::Link(dest_url.to_string()),
-                    _ => BuilderKind::Root, // fallback: collect children
+                    Tag::Image { dest_url, .. } => BuilderKind::Link(format!("!img:{}", dest_url)),
+                    _ => BuilderKind::Root,
                 };
                 stack.push(BlockBuilder::new(kind));
             }
@@ -200,6 +201,15 @@ pub fn import(input: &str) -> Document {
                         parent.inlines.push(inline);
                     }
 
+                    TagEnd::Image => {
+                        let src = match builder.kind {
+                            BuilderKind::Link(u) => u.strip_prefix("!img:").unwrap_or(&u).to_string(),
+                            _ => String::new(),
+                        };
+                        let alt = inlines_to_plain_text(&builder.inlines);
+                        parent.inlines.push(Inline::Image { alt, src });
+                    }
+
                     _ => {
                         // For any unhandled tag, merge children/inlines upward.
                         parent.inlines.extend(builder.inlines);
@@ -279,6 +289,7 @@ fn inlines_to_plain_text(inlines: &[Inline]) -> String {
             Inline::Emphasis { content } => out.push_str(&inlines_to_plain_text(content)),
             Inline::Strong { content } => out.push_str(&inlines_to_plain_text(content)),
             Inline::Link { text, .. } => out.push_str(&inlines_to_plain_text(text)),
+            Inline::Image { alt, .. } => out.push_str(alt),
             Inline::SoftBreak | Inline::HardBreak => out.push(' '),
             _ => {}
         }

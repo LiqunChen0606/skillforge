@@ -11,6 +11,8 @@ pub const BLOCK_QUOTE: u8 = 0x08;
 pub const LIST: u8 = 0x09;
 pub const SKILL_BLOCK: u8 = 0x0A;
 pub const THEMATIC_BREAK: u8 = 0x0B;
+pub const AUDIO: u8 = 0x0C;
+pub const VIDEO: u8 = 0x0D;
 
 // Inline type IDs (0x20-0x3F)
 pub const TEXT: u8 = 0x20;
@@ -22,6 +24,24 @@ pub const REFERENCE: u8 = 0x25;
 pub const FOOTNOTE: u8 = 0x26;
 pub const SOFT_BREAK: u8 = 0x27;
 pub const HARD_BREAK: u8 = 0x28;
+pub const IMAGE: u8 = 0x29;
+
+// SemanticBlockType IDs (0x50-0x5F)
+pub const SEM_CLAIM: u8 = 0x50;
+pub const SEM_EVIDENCE: u8 = 0x51;
+pub const SEM_DEFINITION: u8 = 0x52;
+pub const SEM_THEOREM: u8 = 0x53;
+pub const SEM_ASSUMPTION: u8 = 0x54;
+pub const SEM_RESULT: u8 = 0x55;
+pub const SEM_CONCLUSION: u8 = 0x56;
+pub const SEM_REQUIREMENT: u8 = 0x57;
+pub const SEM_RECOMMENDATION: u8 = 0x58;
+
+// CalloutType IDs (0x60-0x6F)
+pub const CT_NOTE: u8 = 0x60;
+pub const CT_WARNING: u8 = 0x61;
+pub const CT_INFO: u8 = 0x62;
+pub const CT_TIP: u8 = 0x63;
 
 // Skill block type IDs (0x40-0x4F)
 pub const SK_SKILL: u8 = 0x40;

@@ -174,11 +174,49 @@ fn emit_block_mode(out: &mut String, block: &Block, depth: usize, mode: LmlMode)
             attrs,
             caption,
             src,
+            meta,
         } => {
             out.push_str("[FIGURE");
             emit_attrs(out, attrs);
             out.push(' ');
             emit_attr_pair(out, "src", src);
+            emit_media_meta_attrs(out, meta);
+            out.push(']');
+            if let Some(cap) = caption {
+                out.push(' ');
+                emit_inlines_plain(out, cap);
+            }
+            out.push_str("\n\n");
+        }
+        BlockKind::Audio {
+            attrs,
+            caption,
+            src,
+            meta,
+        } => {
+            out.push_str("[AUDIO");
+            emit_attrs(out, attrs);
+            out.push(' ');
+            emit_attr_pair(out, "src", src);
+            emit_media_meta_attrs(out, meta);
+            out.push(']');
+            if let Some(cap) = caption {
+                out.push(' ');
+                emit_inlines_plain(out, cap);
+            }
+            out.push_str("\n\n");
+        }
+        BlockKind::Video {
+            attrs,
+            caption,
+            src,
+            meta,
+        } => {
+            out.push_str("[VIDEO");
+            emit_attrs(out, attrs);
+            out.push(' ');
+            emit_attr_pair(out, "src", src);
+            emit_media_meta_attrs(out, meta);
             out.push(']');
             if let Some(cap) = caption {
                 out.push(' ');
@@ -347,14 +385,38 @@ fn emit_block_aggressive(out: &mut String, block: &Block, depth: usize) {
             }
             out.push_str("\n\n");
         }
-        BlockKind::Figure { attrs, caption, src } => {
-            out.push_str("[FIGURE");
-            emit_attrs(out, attrs);
-            out.push(' ');
-            emit_attr_pair(out, "src", src);
-            out.push(']');
+        BlockKind::Figure { attrs, caption, src, meta } => {
+            out.push_str("@fig(src=");
+            out.push_str(src);
+            emit_media_meta_aggressive(out, meta);
+            emit_attrs_aggressive(out, attrs);
+            out.push(')');
             if let Some(cap) = caption {
-                out.push(' ');
+                out.push_str(": ");
+                emit_inlines_plain(out, cap);
+            }
+            out.push_str("\n\n");
+        }
+        BlockKind::Audio { attrs, caption, src, meta } => {
+            out.push_str("@audio(src=");
+            out.push_str(src);
+            emit_media_meta_aggressive(out, meta);
+            emit_attrs_aggressive(out, attrs);
+            out.push(')');
+            if let Some(cap) = caption {
+                out.push_str(": ");
+                emit_inlines_plain(out, cap);
+            }
+            out.push_str("\n\n");
+        }
+        BlockKind::Video { attrs, caption, src, meta } => {
+            out.push_str("@vid(src=");
+            out.push_str(src);
+            emit_media_meta_aggressive(out, meta);
+            emit_attrs_aggressive(out, attrs);
+            out.push(')');
+            if let Some(cap) = caption {
+                out.push_str(": ");
                 emit_inlines_plain(out, cap);
             }
             out.push_str("\n\n");
@@ -494,6 +556,71 @@ fn needs_quotes(value: &str) -> bool {
     value.is_empty() || value.contains(' ') || value.contains('"') || value.contains(']')
 }
 
+/// Emit MediaMeta fields as standard LML attributes.
+fn emit_media_meta_attrs(out: &mut String, meta: &MediaMeta) {
+    if let Some(alt) = &meta.alt {
+        out.push(' ');
+        emit_attr_pair(out, "alt", alt);
+    }
+    if let Some(w) = meta.width {
+        out.push(' ');
+        emit_attr_pair(out, "width", &w.to_string());
+    }
+    if let Some(h) = meta.height {
+        out.push(' ');
+        emit_attr_pair(out, "height", &h.to_string());
+    }
+    if let Some(d) = meta.duration {
+        out.push(' ');
+        emit_attr_pair(out, "duration", &format!("{}", d));
+    }
+    if let Some(m) = &meta.mime {
+        out.push(' ');
+        emit_attr_pair(out, "mime", m);
+    }
+    if let Some(p) = &meta.poster {
+        out.push(' ');
+        emit_attr_pair(out, "poster", p);
+    }
+}
+
+/// Emit MediaMeta fields in aggressive compact format: w=, h=, dur=
+/// Mime is not emitted in aggressive mode (derivable from src extension).
+fn emit_media_meta_aggressive(out: &mut String, meta: &MediaMeta) {
+    if let Some(alt) = &meta.alt {
+        out.push_str(", alt=");
+        if needs_quotes(alt) {
+            out.push('"');
+            out.push_str(alt);
+            out.push('"');
+        } else {
+            out.push_str(alt);
+        }
+    }
+    if let Some(w) = meta.width {
+        out.push_str(", w=");
+        out.push_str(&w.to_string());
+    }
+    if let Some(h) = meta.height {
+        out.push_str(", h=");
+        out.push_str(&h.to_string());
+    }
+    if let Some(d) = meta.duration {
+        out.push_str(", dur=");
+        out.push_str(&format!("{}", d));
+    }
+    if let Some(p) = &meta.poster {
+        out.push_str(", poster=");
+        if needs_quotes(p) {
+            out.push('"');
+            out.push_str(p);
+            out.push('"');
+        } else {
+            out.push_str(p);
+        }
+    }
+}
+
 // ── Inline helpers ───────────────────────────────────────────────────
 
 fn emit_inlines_plain(out: &mut String, inlines: &[Inline]) {
@@ -512,6 +639,13 @@ fn emit_inline_plain(out: &mut String, inline: &Inline) {
             emit_inlines_plain(out, text);
             out.push_str(" (");
             out.push_str(url);
+            out.push(')');
+        }
+        Inline::Image { alt, src } => {
+            out.push_str("![");
+            out.push_str(alt);
+            out.push_str("](");
+            out.push_str(src);
             out.push(')');
         }
         Inline::Reference { target } => {

@@ -273,6 +273,8 @@ fn block_type_name(kind: &BlockKind) -> String {
         BlockKind::Callout { callout_type, .. } => format!("Callout:{:?}", callout_type),
         BlockKind::Table { .. } => "Table".to_string(),
         BlockKind::Figure { .. } => "Figure".to_string(),
+        BlockKind::Audio { .. } => "Audio".to_string(),
+        BlockKind::Video { .. } => "Video".to_string(),
         BlockKind::CodeBlock { .. } => "CodeBlock".to_string(),
         BlockKind::BlockQuote { .. } => "BlockQuote".to_string(),
         BlockKind::List { ordered, .. } => {
@@ -311,6 +313,7 @@ fn inlines_to_text(inlines: &[Inline]) -> String {
             }
             Inline::InlineCode { code } => out.push_str(code),
             Inline::Link { text, .. } => out.push_str(&inlines_to_text(text)),
+            Inline::Image { alt, .. } => out.push_str(alt),
             Inline::SoftBreak | Inline::HardBreak => out.push(' '),
             _ => {}
         }
@@ -389,7 +392,22 @@ fn collect_all_text(block: &Block) -> String {
             }
             text
         }
-        BlockKind::Figure { .. } | BlockKind::ThematicBreak => String::new(),
+        BlockKind::Figure { caption, meta, .. }
+        | BlockKind::Audio { caption, meta, .. }
+        | BlockKind::Video { caption, meta, .. } => {
+            let mut text = String::new();
+            if let Some(alt) = &meta.alt {
+                text.push_str(alt);
+            }
+            if let Some(cap) = caption {
+                if !text.is_empty() {
+                    text.push(' ');
+                }
+                text.push_str(&inlines_to_text(cap));
+            }
+            text
+        }
+        BlockKind::ThematicBreak => String::new(),
     }
 }
 

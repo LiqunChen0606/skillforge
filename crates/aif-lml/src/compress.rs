@@ -83,6 +83,16 @@ fn collect_text_occurrences(block: &Block, counts: &mut HashMap<String, usize>) 
                 collect_inlines(cap, counts);
             }
         }
+        BlockKind::Audio { caption, .. } => {
+            if let Some(cap) = caption {
+                collect_inlines(cap, counts);
+            }
+        }
+        BlockKind::Video { caption, .. } => {
+            if let Some(cap) = caption {
+                collect_inlines(cap, counts);
+            }
+        }
         BlockKind::BlockQuote { content } => {
             for child in content {
                 collect_text_occurrences(child, counts);
@@ -196,11 +206,38 @@ fn emit_block_compressed(
             }
             out.push_str("\n\n");
         }
-        BlockKind::Figure { attrs, caption, src } => {
+        BlockKind::Figure { attrs, caption, src, meta } => {
             out.push_str("[FIGURE");
             emit_attrs(out, attrs);
             out.push_str(" src=");
             out.push_str(src);
+            emit_media_meta_compressed(out, meta);
+            out.push(']');
+            if let Some(cap) = caption {
+                out.push(' ');
+                emit_inlines_compressed(out, cap, dict);
+            }
+            out.push_str("\n\n");
+        }
+        BlockKind::Audio { attrs, caption, src, meta } => {
+            out.push_str("[AUDIO");
+            emit_attrs(out, attrs);
+            out.push_str(" src=");
+            out.push_str(src);
+            emit_media_meta_compressed(out, meta);
+            out.push(']');
+            if let Some(cap) = caption {
+                out.push(' ');
+                emit_inlines_compressed(out, cap, dict);
+            }
+            out.push_str("\n\n");
+        }
+        BlockKind::Video { attrs, caption, src, meta } => {
+            out.push_str("[VIDEO");
+            emit_attrs(out, attrs);
+            out.push_str(" src=");
+            out.push_str(src);
+            emit_media_meta_compressed(out, meta);
             out.push(']');
             if let Some(cap) = caption {
                 out.push(' ');
@@ -276,6 +313,13 @@ fn emit_inlines_compressed(out: &mut String, inlines: &[Inline], dict: &HashMap<
                 out.push_str(url);
                 out.push(')');
             }
+            Inline::Image { alt, src } => {
+                out.push_str("![");
+                out.push_str(alt);
+                out.push_str("](");
+                out.push_str(src);
+                out.push(')');
+            }
             Inline::Reference { target } => {
                 out.push('@');
                 out.push_str(target);
@@ -287,16 +331,57 @@ fn emit_inlines_compressed(out: &mut String, inlines: &[Inline], dict: &HashMap<
     }
 }
 
+fn needs_quotes(value: &str) -> bool {
+    value.is_empty() || value.contains(' ') || value.contains('"') || value.contains(']')
+}
+
+fn emit_quoted_value(out: &mut String, value: &str) {
+    if needs_quotes(value) {
+        out.push('"');
+        out.push_str(value);
+        out.push('"');
+    } else {
+        out.push_str(value);
+    }
+}
+
+fn emit_media_meta_compressed(out: &mut String, meta: &MediaMeta) {
+    if let Some(alt) = &meta.alt {
+        out.push_str(" alt=");
+        emit_quoted_value(out, alt);
+    }
+    if let Some(w) = meta.width {
+        out.push_str(" width=");
+        out.push_str(&w.to_string());
+    }
+    if let Some(h) = meta.height {
+        out.push_str(" height=");
+        out.push_str(&h.to_string());
+    }
+    if let Some(d) = meta.duration {
+        out.push_str(" duration=");
+        out.push_str(&format!("{}", d));
+    }
+    if let Some(m) = &meta.mime {
+        out.push_str(" mime=");
+        emit_quoted_value(out, m);
+    }
+    if let Some(p) = &meta.poster {
+        out.push_str(" poster=");
+        emit_quoted_value(out, p);
+    }
+}
+
 fn emit_attrs(out: &mut String, attrs: &Attrs) {
     if let Some(id) = &attrs.id {
         out.push_str(" id=");
-        out.push_str(id);
+        emit_quoted_value(out, id);
     }
     for (key, value) in &attrs.pairs {
         out.push(' ');
         out.push_str(key);
         out.push('=');
-        out.push_str(value);
+        emit_quoted_value(out, value);
     }
 }
 

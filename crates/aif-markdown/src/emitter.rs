@@ -125,12 +125,43 @@ fn emit_block(out: &mut String, block: &Block, heading_level: usize) {
             attrs: _,
             caption,
             src,
+            meta,
         } => {
-            let alt = caption
-                .as_ref()
-                .map(|c| inlines_to_text(c))
+            let alt = meta.alt.as_deref()
+                .map(|s| s.to_string())
+                .or_else(|| caption.as_ref().map(|c| inlines_to_text(c)))
                 .unwrap_or_default();
             out.push_str(&format!("![{}]({})\n", alt, src));
+        }
+        BlockKind::Audio {
+            attrs: _,
+            caption,
+            src,
+            meta,
+        } => {
+            let mut text = caption
+                .as_ref()
+                .map(|c| inlines_to_text(c))
+                .unwrap_or_else(|| "Audio".to_string());
+            if let Some(dur) = meta.duration {
+                text.push_str(&format!(" ({:.0}s)", dur));
+            }
+            out.push_str(&format!("[{}]({})\n", text, src));
+        }
+        BlockKind::Video {
+            attrs: _,
+            caption,
+            src,
+            meta,
+        } => {
+            let mut text = caption
+                .as_ref()
+                .map(|c| inlines_to_text(c))
+                .unwrap_or_else(|| "Video".to_string());
+            if let Some(dur) = meta.duration {
+                text.push_str(&format!(" ({:.0}s)", dur));
+            }
+            out.push_str(&format!("[{}]({})\n", text, src));
         }
         BlockKind::CodeBlock {
             lang,
@@ -325,6 +356,13 @@ pub fn inlines_to_text(inlines: &[Inline]) -> String {
                 out.push_str(&inlines_to_text(text));
                 out.push_str("](");
                 out.push_str(url);
+                out.push(')');
+            }
+            Inline::Image { alt, src } => {
+                out.push_str("![");
+                out.push_str(alt);
+                out.push_str("](");
+                out.push_str(src);
                 out.push(')');
             }
             Inline::Reference { target } => {

@@ -72,12 +72,13 @@ fn encode_block(block: &Block, out: &mut Vec<u8>) {
             }
         }
         BlockKind::SemanticBlock {
-            block_type: _,
+            block_type,
             attrs,
             title,
             content,
         } => {
             out.push(SEMANTIC_BLOCK);
+            out.push(encode_semantic_block_type(block_type));
             encode_attrs(attrs, out);
             if let Some(t) = title {
                 out.push(1);
@@ -88,11 +89,12 @@ fn encode_block(block: &Block, out: &mut Vec<u8>) {
             encode_inlines(content, out);
         }
         BlockKind::Callout {
-            callout_type: _,
+            callout_type,
             attrs,
             content,
         } => {
             out.push(CALLOUT);
+            out.push(encode_callout_type(callout_type));
             encode_attrs(attrs, out);
             encode_inlines(content, out);
         }
@@ -148,10 +150,9 @@ fn encode_block(block: &Block, out: &mut Vec<u8>) {
                 }
             }
         }
-        BlockKind::Figure { attrs, caption, src } => {
+        BlockKind::Figure { attrs, caption, src, meta } => {
             out.push(FIGURE);
             encode_attrs(attrs, out);
-            // caption is Option<Vec<Inline>>
             if let Some(cap) = caption {
                 out.push(1);
                 encode_inlines(cap, out);
@@ -159,6 +160,31 @@ fn encode_block(block: &Block, out: &mut Vec<u8>) {
                 out.push(0);
             }
             encode_str(src, out);
+            encode_media_meta(meta, out);
+        }
+        BlockKind::Audio { attrs, caption, src, meta } => {
+            out.push(AUDIO);
+            encode_attrs(attrs, out);
+            if let Some(cap) = caption {
+                out.push(1);
+                encode_inlines(cap, out);
+            } else {
+                out.push(0);
+            }
+            encode_str(src, out);
+            encode_media_meta(meta, out);
+        }
+        BlockKind::Video { attrs, caption, src, meta } => {
+            out.push(VIDEO);
+            encode_attrs(attrs, out);
+            if let Some(cap) = caption {
+                out.push(1);
+                encode_inlines(cap, out);
+            } else {
+                out.push(0);
+            }
+            encode_str(src, out);
+            encode_media_meta(meta, out);
         }
         BlockKind::ThematicBreak => {
             out.push(THEMATIC_BREAK);
@@ -193,9 +219,13 @@ fn encode_inline(inline: &Inline, out: &mut Vec<u8>) {
         }
         Inline::Link { text, url } => {
             out.push(LINK);
-            // text is Vec<Inline>, not String
             encode_inlines(text, out);
             encode_str(url, out);
+        }
+        Inline::Image { alt, src } => {
+            out.push(IMAGE);
+            encode_str(alt, out);
+            encode_str(src, out);
         }
         Inline::Reference { target } => {
             out.push(REFERENCE);
@@ -223,6 +253,37 @@ fn encode_attrs(attrs: &Attrs, out: &mut Vec<u8>) {
     for (k, v) in &attrs.pairs {
         encode_str(k, out);
         encode_str(v, out);
+    }
+}
+
+fn encode_media_meta(meta: &MediaMeta, out: &mut Vec<u8>) {
+    // Presence flags: bit 0=alt, 1=width, 2=height, 3=duration, 4=mime, 5=poster
+    let mut flags: u8 = 0;
+    if meta.alt.is_some() { flags |= 1; }
+    if meta.width.is_some() { flags |= 2; }
+    if meta.height.is_some() { flags |= 4; }
+    if meta.duration.is_some() { flags |= 8; }
+    if meta.mime.is_some() { flags |= 16; }
+    if meta.poster.is_some() { flags |= 32; }
+    out.push(flags);
+
+    if let Some(alt) = &meta.alt {
+        encode_str(alt, out);
+    }
+    if let Some(w) = meta.width {
+        encode_varint(w as usize, out);
+    }
+    if let Some(h) = meta.height {
+        encode_varint(h as usize, out);
+    }
+    if let Some(d) = meta.duration {
+        out.extend_from_slice(&d.to_le_bytes());
+    }
+    if let Some(m) = &meta.mime {
+        encode_str(m, out);
+    }
+    if let Some(p) = &meta.poster {
+        encode_str(p, out);
     }
 }
 
@@ -355,6 +416,8 @@ fn decode_block(data: &[u8]) -> Result<(Block, usize), &'static str> {
             }
         }
         SEMANTIC_BLOCK => {
+            let block_type_val = decode_semantic_block_type(data[pos]);
+            pos += 1;
             let (attrs, n) = decode_attrs(&data[pos..])?;
             pos += n;
             let title = if pos < data.len() && data[pos] == 1 {
@@ -369,19 +432,21 @@ fn decode_block(data: &[u8]) -> Result<(Block, usize), &'static str> {
             let (content, n) = decode_inlines(&data[pos..])?;
             pos += n;
             BlockKind::SemanticBlock {
-                block_type: SemanticBlockType::Claim, // not stored in binary
+                block_type: block_type_val,
                 attrs,
                 title,
                 content,
             }
         }
         CALLOUT => {
+            let callout_type_val = decode_callout_type(data[pos]);
+            pos += 1;
             let (attrs, n) = decode_attrs(&data[pos..])?;
             pos += n;
             let (content, n) = decode_inlines(&data[pos..])?;
             pos += n;
             BlockKind::Callout {
-                callout_type: CalloutType::Note, // not stored in binary
+                callout_type: callout_type_val,
                 attrs,
                 content,
             }
@@ -490,10 +555,59 @@ fn decode_block(data: &[u8]) -> Result<(Block, usize), &'static str> {
             };
             let (src, n) = decode_str(&data[pos..])?;
             pos += n;
+            let (meta, n) = decode_media_meta(&data[pos..])?;
+            pos += n;
             BlockKind::Figure {
                 attrs,
                 caption,
                 src,
+                meta,
+            }
+        }
+        AUDIO => {
+            let (attrs, n) = decode_attrs(&data[pos..])?;
+            pos += n;
+            let caption = if pos < data.len() && data[pos] == 1 {
+                pos += 1;
+                let (cap, n) = decode_inlines(&data[pos..])?;
+                pos += n;
+                Some(cap)
+            } else {
+                pos += 1;
+                None
+            };
+            let (src, n) = decode_str(&data[pos..])?;
+            pos += n;
+            let (meta, n) = decode_media_meta(&data[pos..])?;
+            pos += n;
+            BlockKind::Audio {
+                attrs,
+                caption,
+                src,
+                meta,
+            }
+        }
+        VIDEO => {
+            let (attrs, n) = decode_attrs(&data[pos..])?;
+            pos += n;
+            let caption = if pos < data.len() && data[pos] == 1 {
+                pos += 1;
+                let (cap, n) = decode_inlines(&data[pos..])?;
+                pos += n;
+                Some(cap)
+            } else {
+                pos += 1;
+                None
+            };
+            let (src, n) = decode_str(&data[pos..])?;
+            pos += n;
+            let (meta, n) = decode_media_meta(&data[pos..])?;
+            pos += n;
+            BlockKind::Video {
+                attrs,
+                caption,
+                src,
+                meta,
             }
         }
         THEMATIC_BREAK => BlockKind::ThematicBreak,
@@ -555,6 +669,13 @@ fn decode_inline(data: &[u8]) -> Result<(Inline, usize), &'static str> {
             pos += n;
             Inline::Link { text, url }
         }
+        IMAGE => {
+            let (alt, n) = decode_str(&data[pos..])?;
+            pos += n;
+            let (src, n) = decode_str(&data[pos..])?;
+            pos += n;
+            Inline::Image { alt, src }
+        }
         REFERENCE => {
             let (target, n) = decode_str(&data[pos..])?;
             pos += n;
@@ -598,6 +719,99 @@ fn decode_attrs(data: &[u8]) -> Result<(Attrs, usize), &'static str> {
         pairs.insert(k, v);
     }
     Ok((Attrs { id, pairs }, pos))
+}
+
+fn decode_media_meta(data: &[u8]) -> Result<(MediaMeta, usize), &'static str> {
+    if data.is_empty() {
+        return Err("unexpected end of media meta");
+    }
+    let flags = data[0];
+    let mut pos = 1;
+    let mut meta = MediaMeta::default();
+
+    if flags & 1 != 0 {
+        let (alt, n) = decode_str(&data[pos..])?;
+        pos += n;
+        meta.alt = Some(alt);
+    }
+    if flags & 2 != 0 {
+        let (w, n) = decode_varint(&data[pos..])?;
+        pos += n;
+        meta.width = Some(w as u32);
+    }
+    if flags & 4 != 0 {
+        let (h, n) = decode_varint(&data[pos..])?;
+        pos += n;
+        meta.height = Some(h as u32);
+    }
+    if flags & 8 != 0 {
+        if pos + 8 > data.len() {
+            return Err("unexpected end of duration");
+        }
+        let d = f64::from_le_bytes(data[pos..pos + 8].try_into().unwrap());
+        pos += 8;
+        meta.duration = Some(d);
+    }
+    if flags & 16 != 0 {
+        let (m, n) = decode_str(&data[pos..])?;
+        pos += n;
+        meta.mime = Some(m);
+    }
+    if flags & 32 != 0 {
+        let (p, n) = decode_str(&data[pos..])?;
+        pos += n;
+        meta.poster = Some(p);
+    }
+
+    Ok((meta, pos))
+}
+
+fn encode_semantic_block_type(t: &SemanticBlockType) -> u8 {
+    match t {
+        SemanticBlockType::Claim => SEM_CLAIM,
+        SemanticBlockType::Evidence => SEM_EVIDENCE,
+        SemanticBlockType::Definition => SEM_DEFINITION,
+        SemanticBlockType::Theorem => SEM_THEOREM,
+        SemanticBlockType::Assumption => SEM_ASSUMPTION,
+        SemanticBlockType::Result => SEM_RESULT,
+        SemanticBlockType::Conclusion => SEM_CONCLUSION,
+        SemanticBlockType::Requirement => SEM_REQUIREMENT,
+        SemanticBlockType::Recommendation => SEM_RECOMMENDATION,
+    }
+}
+
+fn decode_semantic_block_type(byte: u8) -> SemanticBlockType {
+    match byte {
+        SEM_CLAIM => SemanticBlockType::Claim,
+        SEM_EVIDENCE => SemanticBlockType::Evidence,
+        SEM_DEFINITION => SemanticBlockType::Definition,
+        SEM_THEOREM => SemanticBlockType::Theorem,
+        SEM_ASSUMPTION => SemanticBlockType::Assumption,
+        SEM_RESULT => SemanticBlockType::Result,
+        SEM_CONCLUSION => SemanticBlockType::Conclusion,
+        SEM_REQUIREMENT => SemanticBlockType::Requirement,
+        SEM_RECOMMENDATION => SemanticBlockType::Recommendation,
+        _ => SemanticBlockType::Claim, // fallback
+    }
+}
+
+fn encode_callout_type(t: &CalloutType) -> u8 {
+    match t {
+        CalloutType::Note => CT_NOTE,
+        CalloutType::Warning => CT_WARNING,
+        CalloutType::Info => CT_INFO,
+        CalloutType::Tip => CT_TIP,
+    }
+}
+
+fn decode_callout_type(byte: u8) -> CalloutType {
+    match byte {
+        CT_NOTE => CalloutType::Note,
+        CT_WARNING => CalloutType::Warning,
+        CT_INFO => CalloutType::Info,
+        CT_TIP => CalloutType::Tip,
+        _ => CalloutType::Note, // fallback
+    }
 }
 
 fn decode_skill_type(byte: u8) -> SkillBlockType {

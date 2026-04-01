@@ -55,6 +55,19 @@ pub enum BlockKind {
         attrs: Attrs,
         caption: Option<Vec<Inline>>,
         src: String,
+        meta: MediaMeta,
+    },
+    Audio {
+        attrs: Attrs,
+        caption: Option<Vec<Inline>>,
+        src: String,
+        meta: MediaMeta,
+    },
+    Video {
+        attrs: Attrs,
+        caption: Option<Vec<Inline>>,
+        src: String,
+        meta: MediaMeta,
     },
     CodeBlock {
         lang: Option<String>,
@@ -119,6 +132,24 @@ pub enum SkillBlockType {
     Example,
 }
 
+/// Shared metadata for media blocks (Figure, Audio, Video).
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, JsonSchema)]
+#[serde(default)]
+pub struct MediaMeta {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub alt: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub width: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub height: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub duration: Option<f64>,  // seconds, for audio/video
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub mime: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub poster: Option<String>, // poster image URL for video
+}
+
 /// Attributes on a block
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, JsonSchema)]
 pub struct Attrs {
@@ -149,6 +180,7 @@ pub enum Inline {
     Strong { content: Vec<Inline> },
     InlineCode { code: String },
     Link { text: Vec<Inline>, url: String },
+    Image { alt: String, src: String },
     Reference { target: String },
     Footnote { content: Vec<Inline> },
     SoftBreak,

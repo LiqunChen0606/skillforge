@@ -269,15 +269,29 @@ fn collect_block_lines(block: &Block, base_size: f32, depth: usize, lines: &mut 
                 collect_block_lines(child, base_size, depth + 1, lines);
             }
         }
-        BlockKind::Figure { caption, .. } => {
-            if let Some(cap) = caption {
-                let text = inlines_to_text(cap);
-                lines.push(TextLine {
-                    text: format!("[Figure: {}]", text),
-                    font_size: base_size * 0.9,
-                    y_spacing: base_size * 1.4,
-                });
-            }
+        BlockKind::Figure { caption, src, .. } => {
+            let cap_text = caption.as_ref().map(|c| inlines_to_text(c)).unwrap_or_default();
+            lines.push(TextLine {
+                text: format!("[Figure: {} ({})]", cap_text, src),
+                font_size: base_size * 0.9,
+                y_spacing: base_size * 1.4,
+            });
+        }
+        BlockKind::Audio { caption, src, .. } => {
+            let cap_text = caption.as_ref().map(|c| inlines_to_text(c)).unwrap_or_default();
+            lines.push(TextLine {
+                text: format!("[Audio: {} ({})]", cap_text, src),
+                font_size: base_size * 0.9,
+                y_spacing: base_size * 1.4,
+            });
+        }
+        BlockKind::Video { caption, src, .. } => {
+            let cap_text = caption.as_ref().map(|c| inlines_to_text(c)).unwrap_or_default();
+            lines.push(TextLine {
+                text: format!("[Video: {} ({})]", cap_text, src),
+                font_size: base_size * 0.9,
+                y_spacing: base_size * 1.4,
+            });
         }
         BlockKind::ThematicBreak => {
             lines.push(TextLine {
@@ -312,6 +326,7 @@ fn inlines_to_text(inlines: &[Inline]) -> String {
                 out.push('`');
             }
             Inline::Link { text, .. } => out.push_str(&inlines_to_text(text)),
+            Inline::Image { alt, .. } => out.push_str(alt),
             Inline::Reference { target } => {
                 out.push_str("[ref:");
                 out.push_str(target);

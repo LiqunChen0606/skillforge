@@ -5,6 +5,31 @@ use aif_core::span::Span;
 use crate::attrs::parse_attrs;
 use crate::inline::parse_inline;
 
+/// Extract known media metadata keys from attrs into a MediaMeta struct,
+/// removing them from attrs.pairs so they don't remain as generic pairs.
+fn extract_media_meta(attrs: &mut Attrs) -> MediaMeta {
+    let mut meta = MediaMeta::default();
+    if let Some(alt) = attrs.pairs.remove("alt") {
+        meta.alt = Some(alt);
+    }
+    if let Some(w) = attrs.pairs.remove("width") {
+        meta.width = w.parse().ok();
+    }
+    if let Some(h) = attrs.pairs.remove("height") {
+        meta.height = h.parse().ok();
+    }
+    if let Some(d) = attrs.pairs.remove("duration") {
+        meta.duration = d.parse().ok();
+    }
+    if let Some(m) = attrs.pairs.remove("mime") {
+        meta.mime = Some(m);
+    }
+    if let Some(p) = attrs.pairs.remove("poster") {
+        meta.poster = Some(p);
+    }
+    meta
+}
+
 fn is_skill_block_type(directive: &str) -> Option<SkillBlockType> {
     match directive {
         "skill" => Some(SkillBlockType::Skill),
@@ -315,11 +340,63 @@ impl<'a> BlockParser<'a> {
                     .get("src")
                     .unwrap_or("")
                     .to_string();
+                let mut attrs = attrs;
+                attrs.pairs.remove("src");
+                let meta = extract_media_meta(&mut attrs);
                 Some(Block {
                     kind: BlockKind::Figure {
                         attrs,
                         caption,
                         src,
+                        meta,
+                    },
+                    span,
+                })
+            }
+
+            "audio" => {
+                let caption = if title_str.is_empty() {
+                    None
+                } else {
+                    Some(parse_inline(title_str))
+                };
+                let src = attrs
+                    .get("src")
+                    .unwrap_or("")
+                    .to_string();
+                let mut attrs = attrs;
+                attrs.pairs.remove("src");
+                let meta = extract_media_meta(&mut attrs);
+                Some(Block {
+                    kind: BlockKind::Audio {
+                        attrs,
+                        caption,
+                        src,
+                        meta,
+                    },
+                    span,
+                })
+            }
+
+            "video" => {
+                let caption = if title_str.is_empty() {
+                    None
+                } else {
+                    Some(parse_inline(title_str))
+                };
+                let src = attrs
+                    .get("src")
+                    .unwrap_or("")
+                    .to_string();
+                let mut attrs = attrs;
+                attrs.pairs.remove("src");
+                let meta = extract_media_meta(&mut attrs);
+                Some(Block {
+                    kind: BlockKind::Video {
+                        attrs,
+                        caption,
+                        src,
+                        meta,
                     },
                     span,
                 })
@@ -943,6 +1020,80 @@ Some free text intro.
             assert_eq!(children.len(), 1);
         } else {
             panic!("expected SkillBlock");
+        }
+    }
+
+    #[test]
+    fn parse_audio_directive() {
+        let input = "@audio[src=file.mp3]: My Audio Caption\n";
+        let mut parser = BlockParser::new(input);
+        let doc = parser.parse().unwrap();
+        assert_eq!(doc.blocks.len(), 1);
+        if let BlockKind::Audio { attrs: _, caption, src, .. } = &doc.blocks[0].kind {
+            assert_eq!(src, "file.mp3");
+            assert!(caption.is_some());
+        } else {
+            panic!("expected Audio, got {:?}", doc.blocks[0].kind);
+        }
+    }
+
+    #[test]
+    fn parse_video_directive() {
+        let input = "@video[src=clip.mp4]: Video Title\n";
+        let mut parser = BlockParser::new(input);
+        let doc = parser.parse().unwrap();
+        assert_eq!(doc.blocks.len(), 1);
+        if let BlockKind::Video { attrs: _, caption, src, .. } = &doc.blocks[0].kind {
+            assert_eq!(src, "clip.mp4");
+            assert!(caption.is_some());
+        } else {
+            panic!("expected Video, got {:?}", doc.blocks[0].kind);
+        }
+    }
+
+    #[test]
+    fn parse_figure_with_media_meta() {
+        let input = "@figure[src=photo.jpg, alt=A nice photo, width=800, height=600]: Caption\n";
+        let mut parser = BlockParser::new(input);
+        let doc = parser.parse().unwrap();
+        assert_eq!(doc.blocks.len(), 1);
+        if let BlockKind::Figure { src, meta, attrs, .. } = &doc.blocks[0].kind {
+            assert_eq!(src, "photo.jpg");
+            assert_eq!(meta.alt.as_deref(), Some("A nice photo"));
+            assert_eq!(meta.width, Some(800));
+            assert_eq!(meta.height, Some(600));
+            // These should have been removed from attrs.pairs
+            assert!(attrs.pairs.get("alt").is_none());
+            assert!(attrs.pairs.get("width").is_none());
+        } else {
+            panic!("expected Figure, got {:?}", doc.blocks[0].kind);
+        }
+    }
+
+    #[test]
+    fn parse_video_with_poster_and_duration() {
+        let input = "@video[src=clip.mp4, poster=thumb.jpg, duration=120.5]: Video\n";
+        let mut parser = BlockParser::new(input);
+        let doc = parser.parse().unwrap();
+        assert_eq!(doc.blocks.len(), 1);
+        if let BlockKind::Video { meta, .. } = &doc.blocks[0].kind {
+            assert_eq!(meta.poster.as_deref(), Some("thumb.jpg"));
+            assert_eq!(meta.duration, Some(120.5));
+        } else {
+            panic!("expected Video");
+        }
+    }
+
+    #[test]
+    fn parse_audio_with_mime() {
+        let input = "@audio[src=song.ogg, mime=audio/ogg]: Song\n";
+        let mut parser = BlockParser::new(input);
+        let doc = parser.parse().unwrap();
+        assert_eq!(doc.blocks.len(), 1);
+        if let BlockKind::Audio { meta, .. } = &doc.blocks[0].kind {
+            assert_eq!(meta.mime.as_deref(), Some("audio/ogg"));
+        } else {
+            panic!("expected Audio");
         }
     }
 }

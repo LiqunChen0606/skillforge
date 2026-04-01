@@ -12,6 +12,10 @@ fn inline_to_text(out: &mut String, inline: &Inline) {
             for i in text { inline_to_text(out, i); }
             out.push_str(url);
         }
+        Inline::Image { alt, src } => {
+            out.push_str(alt);
+            out.push_str(src);
+        }
         Inline::Reference { target } => out.push_str(target),
         Inline::SoftBreak => out.push(' '),
         Inline::HardBreak => out.push('\n'),
