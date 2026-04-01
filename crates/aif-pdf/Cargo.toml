@@ -1,0 +1,21 @@
+[package]
+name = "aif-pdf"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+aif-core = { workspace = true }
+pdf_oxide = "0.3"
+krilla = "0.7"
+serde = { workspace = true }
+serde_json = { workspace = true }
+sha2 = "0.10"
+
+[dev-dependencies]
+aif-parser = { workspace = true }
+pretty_assertions = "1"
+
+[features]
+default = ["import", "export"]
+import = []
+export = []
