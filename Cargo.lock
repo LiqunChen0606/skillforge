@@ -118,6 +118,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "aif-migrate"
+version = "0.1.0"
+dependencies = [
+ "aif-core",
+ "aif-eval",
+ "aif-parser",
+ "aif-skill",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
 name = "aif-parser"
 version = "0.1.0"
 dependencies = [

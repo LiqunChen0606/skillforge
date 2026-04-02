@@ -11,6 +11,7 @@ members = [
     "crates/aif-binary",
     "crates/aif-pdf",
     "crates/aif-eval",
+    "crates/aif-migrate",
 ]
 
 [workspace.package]
@@ -28,5 +29,6 @@ aif-skill = { path = "crates/aif-skill" }
 aif-binary = { path = "crates/aif-binary" }
 aif-pdf = { path = "crates/aif-pdf" }
 aif-eval = { path = "crates/aif-eval" }
+aif-migrate = { path = "crates/aif-migrate" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
