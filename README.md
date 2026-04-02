@@ -20,11 +20,28 @@ Every document format forces a trade-off between structure and token cost:
 
 **The insight:** Plain text extraction (PDF-text, cleaned HTML) is cheapest but gives the LLM zero structure. AIF LML Aggressive costs ~75% more tokens than flat text but carries typed sections, claims, evidence, tables, figures — and the LLM can reason about document structure, not just content. It's **22% cheaper than raw Markdown** while providing far richer semantics.
 
-## Quick Start
+## Install
+
+```bash
+# From source (recommended)
+cargo install --path crates/aif-cli
+
+# Then use anywhere
+aif compile doc.aif --format html
+aif import doc.md --infer-semantics
+aif lint doc.aif
+```
+
+Or build the workspace for development:
 
 ```bash
 cargo build --workspace
+cargo test --workspace
+```
 
+## Quick Start
+
+```bash
 # Compile to any format
 aif compile doc.aif --format html
 aif compile doc.aif --format lml-aggressive
@@ -129,7 +146,7 @@ aif migrate run \
 
 The engine generates a rich AIF report with: executive summary, risk assessment (Low/Medium/High/Critical), verification analysis, per-chunk pass/fail, failure patterns, and actionable recommendations.
 
-**Three production-quality examples included:** Next.js 13→15 (7 steps), ESLint flat config (7 steps), TypeScript strict mode (8 steps). See [examples/](examples/).
+**Three production-quality examples included:** Next.js 13→15 (7 steps), ESLint flat config (7 steps), TypeScript strict mode (8 steps). See [examples/migrations/](examples/migrations/) for skills and [detailed migration guide](examples/migrations/README.md).
 
 ## Semantic Blocks
 
@@ -340,6 +357,41 @@ cargo run -p aif-cli -- --help # CLI usage
 - [Skill Eval Pipeline](docs/plans/2026-04-01-skill-eval-pipeline-design.md)
 - [Migration Skill System](docs/plans/2026-04-02-migration-skill-system-design.md)
 - [HTML Importer](docs/plans/2026-04-02-html-importer.md)
+
+## Roadmap
+
+### Done
+
+- [x] Core parser, AST, 12+ output formats (HTML, MD, LML x5, JSON, binary x2, PDF)
+- [x] Markdown, HTML, PDF import with readability extraction
+- [x] Skill profiles: validation, hashing, versioning, diff, registry, chaining, marketplace
+- [x] Skill eval pipeline (3-stage: structural lint, behavioral compliance, effectiveness)
+- [x] Migration engine with typed skills, static+LLM verification, repair loops
+- [x] Document-level semantic linting (9 checks + evidence linkage)
+- [x] Import provenance tracking (`_aif_source_format`, `_aif_import_mode`)
+- [x] Chunk graph with ParentContext links, transitive dependency queries
+- [x] Semantic inference engine (8 pattern rules, `--infer-semantics` flag)
+- [x] Roundtrip quality benchmarks (AIF→HTML→AIF, AIF→MD→AIF, AIF→JSON→AIF)
+- [x] Chunk graph lint (orphaned chunks, missing continuation, dependency cycles)
+- [x] Cross-language SDKs (Python Pydantic, TypeScript Zod)
+- [x] AIF plugin skills (6 claude-code plugins converted)
+
+### WIP
+
+- [ ] Re-run benchmarks with cleaned HTML baseline for fair comparison
+- [ ] LLM-assisted semantic inference (option C — call LLM for ambiguous blocks)
+- [ ] Async migration engine with real LLM calls (currently placeholder `apply_fn`)
+
+### TBD — Next Phases
+
+- [ ] **Skill execution quality benchmark** — measure whether LLMs follow skills better in AIF LML vs raw Markdown (routing precision, missing-step rate, output-contract adherence)
+- [ ] **Multi-view compilation** — named profiles: `aif compile --view author`, `--view llm`, `--view api`, `--view print`
+- [ ] **Undefined terms lint** — detect terms used in claims/evidence not defined in any `@definition` block
+- [ ] **Reusable skill templates** — `@skill[extends="base-debugging"]` inheritance
+- [ ] **Citation precision benchmark** — measure chunked retrieval accuracy vs raw Markdown chunks with ground-truth Q&A pairs
+- [ ] **Table/figure fidelity benchmark** — cell-for-cell comparison across import→export roundtrips
+- [ ] **LSP / editor integration** — language server for `.aif` files with syntax highlighting, lint-on-save, go-to-definition for `refs`
+- [ ] **crates.io publish** — publish `aif-cli` and library crates for `cargo install aif-cli`
 
 ## License
 

@@ -218,7 +218,7 @@ def compare_ir(original: dict, roundtripped: dict) -> dict:
 # ── Main ─────────────────────────────────────────────────────────────────────
 
 def run_benchmark(examples_dir: Path) -> list[dict]:
-    aif_files = sorted(examples_dir.glob("*.aif"))
+    aif_files = sorted(examples_dir.glob("**/*.aif"))
     if not aif_files:
         print("No .aif files found in", examples_dir, file=sys.stderr)
         sys.exit(1)

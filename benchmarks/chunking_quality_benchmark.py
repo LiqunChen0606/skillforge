@@ -144,7 +144,7 @@ def evaluate_chunking(aif_file: str, strategy: str, max_tokens: int = 2048) -> d
 
 def main():
     examples_dir = Path(__file__).parent.parent / "examples"
-    aif_files = sorted(examples_dir.glob("*.aif"))
+    aif_files = sorted(examples_dir.glob("**/*.aif"))
 
     if not aif_files:
         print("No .aif files found in examples/", file=sys.stderr)
