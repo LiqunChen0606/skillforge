@@ -5,6 +5,8 @@ edition.workspace = true
 
 [dependencies]
 aif-core = { workspace = true }
+ego-tree = "0.10"
+scraper = "0.22"
 
 [dev-dependencies]
 aif-parser = { path = "../aif-parser" }
