@@ -16,3 +16,4 @@ tokio = { version = "1", features = ["rt", "macros"] }
 [dev-dependencies]
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 aif-parser = { path = "../aif-parser" }
+aif-html = { path = "../aif-html" }

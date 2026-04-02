@@ -1,0 +1,34 @@
+#title: Jest to Vitest Migration
+#author: test
+
+@skill[name="jest-to-vitest", version="1.0", profile=migration]
+  @precondition
+    Repository uses Jest as test runner.
+    Test files use describe, it, expect patterns.
+  @end
+
+  @step[order=1]
+    Replace Jest imports with Vitest equivalents.
+  @end
+
+  @step[order=2]
+    Replace jest.fn() with vi.fn().
+    Replace jest.mock() with vi.mock().
+    Replace jest.spyOn() with vi.spyOn().
+  @end
+
+  @verify
+    No remaining `jest.` calls in test files.
+    All test files import from `vitest`.
+  @end
+
+  @fallback
+    If a test file uses Jest-specific timer mocking,
+    preserve the original and flag for manual review.
+  @end
+
+  @output_contract
+    All test files migrated to Vitest API.
+    Test pass rate >= original pass rate.
+  @end
+@end
