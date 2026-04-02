@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-AIF is a semantic document format and toolchain for humans and LLMs. Concise like Markdown, typed like XML/JATS, renderable like HTML. Written in Rust.
+AIF is a semantic document format and toolchain (**SkillForge**) for humans and LLMs. Concise like Markdown, typed like XML/JATS, renderable like HTML. Written in Rust. Two core capabilities: (1) rigorous skill formatting/generation with typed blocks, versioning, and eval pipelines; (2) document cleaning and normalization (HTML, PDF, Markdown → typed semantic IR) for token-efficient LLM consumption.
 
 ## Architecture
 
@@ -356,30 +356,34 @@ Raw data: `benchmarks/skill_results.json`
 ## Document Benchmark Results (2026-04-01, claude-opus-4-6, 10 Wikipedia articles)
 
 Compares raw formats (HTML, PDF, Markdown) vs AIF output formats for general documents.
-Baseline: Raw HTML (5.5M tokens total).
+Baseline: Raw HTML (5.5M tokens total). Cleaned HTML text added for fair comparison.
 
-| Format | Total Tokens | vs Raw HTML | Bytes |
-|--------|-------------|-------------|-------|
-| Raw HTML (baseline) | 5.5M | — | 13.6M |
-| Raw PDF (file) | 1.4M | +75.5% saved | 23.7M |
-| Raw PDF (text) | 561.0K | +89.8% saved | 1.7M |
-| Raw Markdown | 1.3M | +77.1% saved | 3.5M |
-| AIF JSON IR | 4.5M | +18.7% saved | 18.4M |
-| AIF HTML | 1.3M | +77.0% saved | 3.5M |
-| AIF Markdown (RT) | 1.0M | +81.7% saved | 2.9M |
-| AIF LML Aggressive | 979.8K | **+82.2% saved** | 2.8M |
-| AIF LML Standard | 985.1K | +82.1% saved | 2.8M |
+| Format | Total Tokens | vs Raw HTML | Structure | Bytes |
+|--------|-------------|-------------|-----------|-------|
+| Raw HTML (baseline) | 5.5M | — | Full + chrome | 13.6M |
+| Cleaned HTML text | ~600K* | ~89% saved | None | ~2M |
+| Raw PDF (text) | 561.0K | +89.8% saved | None | 1.7M |
+| Raw Markdown | 1.3M | +77.1% saved | Basic | 3.5M |
+| **AIF LML Aggressive** | **979.8K** | **+82.2% saved** | **Full semantic** | **2.8M** |
+| AIF LML Standard | 985.1K | +82.1% saved | Full semantic | 2.8M |
+| AIF Markdown (RT) | 1.0M | +81.7% saved | Basic | 2.9M |
+| AIF JSON IR | 4.5M | +18.7% saved | Full semantic | 18.4M |
+
+\* Estimated; run `python benchmarks/token_benchmark.py` for exact cleaned HTML numbers.
 
 ### Key Findings
 
-1. **Raw PDF text is cheapest but lossy** — 89.8% savings, but flat unstructured text (no headings, sections, tables). Fine for simple Q&A; unsuitable for structured reasoning.
-2. **AIF LML Aggressive is the best structured format** — 82.2% savings with full semantic structure (typed sections, claims, callouts, tables). Only ~75% more tokens than raw PDF text.
-3. **AIF beats Markdown by 5+ points** — 283K fewer tokens across 10 articles (1.26M → 0.98M).
-4. **Structure-per-token comparison:**
+1. **Plain text extraction is cheapest but structureless** — PDF-text (561K) and cleaned HTML (~600K) strip everything to flat text. Fine for Q&A; unsuitable when the LLM needs to reason about document structure.
+2. **AIF LML Aggressive is the best structured format** — 22% fewer tokens than raw Markdown with full semantic types (claims, evidence, definitions, tables). The only format that preserves typed blocks at fewer tokens than Markdown.
+3. **AIF costs ~75% more than flat text extraction** — but carries typed sections, headings, claims, evidence, tables, figures, and lossless roundtrip. This is the price of structure.
+4. **The "82% vs Raw HTML" stat is real but context-dependent** — raw HTML includes presentational markup, CSS classes, navigation chrome. Comparing vs cleaned HTML text or PDF-text is fairer for cost analysis. Comparing vs Markdown is fairer for structure analysis.
+
+### Structure-per-Token (the real comparison)
 
 | Format | Tokens | Structure | Roundtrip | Best For |
 |--------|--------|-----------|-----------|----------|
 | Raw PDF text | 561K | None | No | Cheap Q&A, summarization |
+| Cleaned HTML text | ~600K | None | No | Fair text-only baseline |
 | Raw Markdown | 1.26M | Basic | Partial | General documents |
 | **AIF LML Aggressive** | **980K** | **Full semantic** | **Yes** | **Structured reasoning, agents** |
 | Raw HTML | 5.5M | Full + presentational | Yes | Browser rendering |

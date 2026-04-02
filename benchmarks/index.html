@@ -82,12 +82,12 @@
 <!-- Executive Summary -->
 <div class="exec-summary">
   <h2>Executive Summary</h2>
-  <p>AIF delivers dramatic token savings on documents while preserving 100% semantic compliance on skills. Tested across 10 Wikipedia articles and 10 real-world AI coding skills.</p>
+  <p>AIF delivers the best structure-per-token ratio: full semantic types at fewer tokens than Markdown. Tested across 10 Wikipedia articles and 10 real-world AI coding skills.</p>
   <div class="stat-row">
     <div class="stat">
-      <div class="stat-value">82.2%</div>
-      <div class="stat-label">Document Savings</div>
-      <div class="stat-sub">LML Aggressive vs Raw HTML</div>
+      <div class="stat-value">22%</div>
+      <div class="stat-label">Cheaper than Markdown</div>
+      <div class="stat-sub">LML Aggressive vs Raw MD</div>
     </div>
     <div class="stat">
       <div class="stat-value">100%</div>
@@ -118,7 +118,7 @@
 </div>
 
 <div class="winner">
-  <strong>Overall winner: AIF LML Aggressive</strong> &mdash; 82.2% fewer tokens than HTML for documents, near-identical token count to SKILL.md for skills, with full semantic structure and lossless roundtrip in both cases.
+  <strong>Best structure-per-token: AIF LML Aggressive</strong> &mdash; 22% fewer tokens than raw Markdown with full semantic types. ~75% more than flat text extraction, but the only format that preserves typed blocks and lossless roundtrip.
 </div>
 
 <!-- Side-by-Side Comparison -->
@@ -130,6 +130,7 @@
       <thead><tr><th style="text-align:left">Format</th><th>Tokens</th><th>vs HTML</th></tr></thead>
       <tbody>
         <tr><td>Raw HTML (baseline)</td><td>5,515,206</td><td>&mdash;</td></tr>
+        <tr><td>Cleaned HTML text</td><td>~600K*</td><td class="positive">~89%</td></tr>
         <tr><td>Raw Markdown</td><td>1,262,755</td><td class="positive">+77.1%</td></tr>
         <tr style="background:#e8f5e9"><td><strong>AIF LML Aggressive</strong></td><td><strong>979,838</strong></td><td class="positive"><strong>+82.2%</strong></td></tr>
         <tr><td>AIF LML Standard</td><td>985,090</td><td class="positive">+82.1%</td></tr>
@@ -160,6 +161,7 @@
   <div class="legend-item"><div class="legend-swatch" style="background:#0d6efd"></div> Raw Markdown</div>
   <div class="legend-item"><div class="legend-swatch" style="background:#155724"></div> AIF LML Aggressive</div>
   <div class="legend-item"><div class="legend-swatch" style="background:#16213e"></div> Raw PDF text</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#6c757d"></div> Cleaned HTML text</div>
 </div>
 <div class="bar-chart">
   <div class="bar-wrapper">
@@ -178,6 +180,11 @@
     <div class="bar-label"><strong>AIF LML Aggr.</strong></div>
   </div>
   <div class="bar-wrapper">
+    <div class="bar-value" style="color:#6c757d">~600K</div>
+    <div class="bar" style="height:22px; background: linear-gradient(180deg, #6c757d, #adb5bd);"></div>
+    <div class="bar-label">Cleaned HTML</div>
+  </div>
+  <div class="bar-wrapper">
     <div class="bar-value" style="color:var(--navy)">561K</div>
     <div class="bar bar-navy" style="height:20px"></div>
     <div class="bar-label">Raw PDF text</div>
@@ -186,20 +193,20 @@
 
 <div class="card">
   <table>
-    <thead><tr><th style="text-align:left">Capability</th><th>Raw HTML</th><th>Raw Markdown</th><th>AIF LML Aggressive</th><th>Raw PDF text</th></tr></thead>
+    <thead><tr><th style="text-align:left">Capability</th><th>Raw HTML</th><th>Cleaned HTML</th><th>Raw Markdown</th><th>AIF LML Aggressive</th><th>Raw PDF text</th></tr></thead>
     <tbody>
-      <tr><td>Tokens (10 articles)</td><td>5.5M</td><td>1.26M</td><td class="best">980K</td><td>561K</td></tr>
-      <tr><td>Semantic structure</td><td>Full + presentational</td><td>Basic (headings, lists)</td><td class="best">Full semantic</td><td class="negative">None</td></tr>
-      <tr><td>Typed blocks</td><td class="negative">No</td><td class="negative">No</td><td class="best">@claim, @evidence, @definition...</td><td class="negative">No</td></tr>
-      <tr><td>Lossless roundtrip</td><td>Yes</td><td>Partial</td><td class="best">Yes</td><td class="negative">No</td></tr>
-      <tr><td>Skill compliance</td><td>N/A</td><td>N/A</td><td class="best">100%</td><td>N/A</td></tr>
-      <tr><td>Machine-checkable</td><td class="negative">No</td><td class="negative">No</td><td class="best">Yes (lint, eval)</td><td class="negative">No</td></tr>
+      <tr><td>Tokens (10 articles)</td><td>5.5M</td><td>~600K</td><td>1.26M</td><td class="best">980K</td><td>561K</td></tr>
+      <tr><td>Semantic structure</td><td>Full + presentational</td><td class="negative">None</td><td>Basic (headings, lists)</td><td class="best">Full semantic</td><td class="negative">None</td></tr>
+      <tr><td>Typed blocks</td><td class="negative">No</td><td class="negative">No</td><td class="negative">No</td><td class="best">@claim, @evidence, @definition...</td><td class="negative">No</td></tr>
+      <tr><td>Lossless roundtrip</td><td>Yes</td><td class="negative">No</td><td>Partial</td><td class="best">Yes</td><td class="negative">No</td></tr>
+      <tr><td>Skill compliance</td><td>N/A</td><td>N/A</td><td>N/A</td><td class="best">100%</td><td>N/A</td></tr>
+      <tr><td>Machine-checkable</td><td class="negative">No</td><td class="negative">No</td><td class="negative">No</td><td class="best">Yes (lint, eval)</td><td class="negative">No</td></tr>
     </tbody>
   </table>
 </div>
 
 <div class="note">
-  <strong>Key insight:</strong> Raw PDF text is cheapest (561K tokens) but carries zero structure &mdash; no headings, sections, tables, or semantic blocks. AIF LML Aggressive costs 75% more tokens but gives the LLM a fully typed, navigable document it can reason about structurally. For structured reasoning tasks, the extra tokens pay for themselves in output quality.
+  <strong>Key insight:</strong> Plain text extraction (PDF-text 561K, cleaned HTML ~600K) is cheapest but carries zero structure. AIF LML Aggressive (980K) costs ~75% more tokens but is the <strong>only format that preserves full semantic types at fewer tokens than raw Markdown</strong> (1.26M). The real comparison isn't AIF vs HTML (unfair) &mdash; it's AIF vs Markdown (22% cheaper) and AIF vs flat text (~75% more, but with typed blocks).
 </div>
 
 <!-- Format Decision Matrix -->

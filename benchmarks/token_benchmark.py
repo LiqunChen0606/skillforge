@@ -44,6 +44,7 @@ AIF_CLI = PROJECT_ROOT / "target" / "release" / "aif-cli"
 # (key, label, type)  type: "raw" = direct content, "aif" = compiled from JSON IR
 FORMATS = [
     ("raw_html",         "Raw HTML",         "raw"),
+    ("clean_html_text",  "Cleaned HTML",     "raw"),
     ("raw_pdf",          "Raw PDF (file)",    "raw"),
     ("raw_pdf_text",     "Raw PDF (text)",    "raw"),
     ("raw_md",           "Raw Markdown",      "raw"),
@@ -98,6 +99,39 @@ def html_to_markdown(html: str) -> str:
     h.protect_links = True
     h.unicode_snob = True
     return h.handle(html)
+
+
+def clean_html_to_text(html: str) -> str:
+    """Strip HTML to clean text content — analogous to PDF text extraction.
+
+    Removes: scripts, styles, nav, header, footer, sidebars, infoboxes,
+    reference lists, edit links, and all HTML tags. Preserves paragraph
+    structure as double-newlines. This gives a fair comparison baseline:
+    "what if you just extracted the text from HTML like you do from PDF?"
+    """
+    import re
+    # Remove script and style blocks entirely
+    text = re.sub(r'<script[^>]*>.*?</script>', '', html, flags=re.DOTALL | re.IGNORECASE)
+    text = re.sub(r'<style[^>]*>.*?</style>', '', html, flags=re.DOTALL | re.IGNORECASE)
+    # Remove nav, header, footer, sidebar elements
+    for tag in ['nav', 'header', 'footer', 'aside']:
+        text = re.sub(rf'<{tag}[^>]*>.*?</{tag}>', '', text, flags=re.DOTALL | re.IGNORECASE)
+    # Remove Wikipedia-specific chrome: infoboxes, reference lists, edit links
+    text = re.sub(r'<table[^>]*class="[^"]*infobox[^"]*"[^>]*>.*?</table>', '', text, flags=re.DOTALL | re.IGNORECASE)
+    text = re.sub(r'<div[^>]*class="[^"]*reflist[^"]*"[^>]*>.*?</div>', '', text, flags=re.DOTALL | re.IGNORECASE)
+    text = re.sub(r'<span[^>]*class="[^"]*mw-editsection[^"]*"[^>]*>.*?</span>', '', text, flags=re.DOTALL | re.IGNORECASE)
+    # Replace block elements with newlines
+    text = re.sub(r'<(?:p|div|br|h[1-6]|li|tr|td|th)[^>]*/?>', '\n', text, flags=re.IGNORECASE)
+    # Remove all remaining tags
+    text = re.sub(r'<[^>]+>', '', text)
+    # Decode HTML entities
+    import html as html_mod
+    text = html_mod.unescape(text)
+    # Collapse whitespace, preserve paragraph breaks
+    text = re.sub(r'[ \t]+', ' ', text)
+    text = re.sub(r'\n[ \t]*\n', '\n\n', text)
+    text = re.sub(r'\n{3,}', '\n\n', text)
+    return text.strip()
 
 
 def count_tokens(client: anthropic.Anthropic, text: str) -> int:
@@ -423,6 +457,13 @@ def main():
         r["raw_html_tokens"] = html_tokens
         r["raw_html_bytes"] = len(raw_html.encode("utf-8"))
         r["raw_html_save_pct"] = 0.0
+
+        # Cleaned HTML (text extracted, chrome stripped — fair baseline)
+        clean_text = clean_html_to_text(raw_html)
+        clean_tok = count_tokens(client, clean_text)
+        r["clean_html_text_tokens"] = clean_tok
+        r["clean_html_text_bytes"] = len(clean_text.encode("utf-8"))
+        r["clean_html_text_save_pct"] = pct(html_tokens, clean_tok)
 
         # Raw PDF (native file)
         if pdf_bytes:

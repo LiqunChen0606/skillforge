@@ -1,21 +1,24 @@
 # AIF: AI-native Interchange Format
 
-> Write once in concise semantic syntax. Compile to 12+ formats. **Save 82% of tokens.** Migrate codebases with typed skills.
+> Write once in concise semantic syntax. Compile to 12+ formats. The **best structure-per-token ratio** for LLMs. Forge typed skills. Migrate codebases.
 
-AIF is a semantic document format and Rust toolchain that gives LLMs structured documents at a fraction of the token cost — and gives humans a typed authoring syntax that compiles to HTML, PDF, Markdown, JSON, binary, and 5 levels of LLM-optimized output.
+AIF is a semantic document format and Rust toolchain — **SkillForge** — that gives LLMs typed, structured documents while keeping token costs comparable to plain text extraction. Write in concise AIF syntax, compile to HTML, PDF, Markdown, JSON, binary, and 5 levels of LLM-optimized output.
 
-## The Problem
+## The Problem: Structure vs. Tokens
 
-Every time you feed a document to an LLM, you're paying a **token tax**:
+Every document format forces a trade-off between structure and token cost:
 
-| What you send | Tokens (10 articles) | What the LLM gets |
-|---------------|---------------------|-------------------|
-| Raw HTML | **5,515,206** | Structure + presentational bloat |
-| Raw Markdown | 1,262,755 | Basic formatting, no types |
-| JSON IR | 4,483,743 | Typed but 81% overhead |
-| **AIF LML Aggressive** | **979,838** | **Full semantic structure** |
+| What you send | Tokens (10 articles) | Structure | Roundtrip |
+|---------------|---------------------|-----------|-----------|
+| Raw PDF text | 561K | **None** — flat string | No |
+| Cleaned HTML text | ~600K\* | **None** — stripped to text | No |
+| Raw Markdown | 1,263K | Basic (headings, lists) | Partial |
+| **AIF LML Aggressive** | **980K** | **Full semantic** (typed blocks) | **Yes** |
+| Raw HTML | 5,515K | Full + presentational bloat | Yes |
 
-AIF LML Aggressive: **82.2% fewer tokens than HTML**, with typed sections, claims, evidence, callouts, tables, figures — and lossless roundtrip.
+\* Estimated; run `python benchmarks/token_benchmark.py` with your API key for exact numbers.
+
+**The insight:** Plain text extraction (PDF-text, cleaned HTML) is cheapest but gives the LLM zero structure. AIF LML Aggressive costs ~75% more tokens than flat text but carries typed sections, claims, evidence, tables, figures — and the LLM can reason about document structure, not just content. It's **22% cheaper than raw Markdown** while providing far richer semantics.
 
 ## Quick Start
 
@@ -201,21 +204,31 @@ aif skill publish skill.aif                     # Publish to registry
 
 | Format | Tokens | Structure | Roundtrip | Best For |
 |--------|--------|-----------|-----------|----------|
-| Raw PDF text | 561K | None | No | Cheap Q&A, summarization |
+| Raw PDF text | 561K | None — flat string | No | Cheap Q&A, summarization |
+| Cleaned HTML text | ~600K\* | None — stripped to text | No | Fair text-only baseline |
 | Raw Markdown | 1.26M | Basic (headings, lists) | Partial | General documents |
-| **AIF LML Aggressive** | **980K** | **Full semantic** | **Yes** | **Structured reasoning, agents** |
+| **AIF LML Aggressive** | **980K** | **Full semantic types** | **Yes** | **Structured reasoning, agents** |
 | Raw HTML | 5.5M | Full + presentational | Yes | Browser rendering |
+
+\* Run `python benchmarks/token_benchmark.py` for exact numbers on your content.
+
+**Key takeaway:** PDF-text and cleaned HTML are cheapest but carry zero structure. AIF is the **only format that preserves full semantic types at fewer tokens than raw Markdown.**
 
 ### Document Token Efficiency (10 Wikipedia Articles)
 
-| Format | Total Tokens | vs Raw HTML |
-|--------|-------------|-------------|
-| Raw HTML (baseline) | 5,515,206 | — |
-| Raw PDF (text) | 560,950 | +89.8% saved |
-| Raw Markdown | 1,262,755 | +77.1% saved |
-| AIF Markdown (RT) | 1,009,181 | +81.7% saved |
-| AIF LML Standard | 985,090 | +82.1% saved |
-| **AIF LML Aggressive** | **979,838** | **+82.2% saved** |
+Baseline: Raw HTML (5.5M tokens). All comparisons are vs Raw HTML.
+
+| Format | Total Tokens | vs Raw HTML | Structure |
+|--------|-------------|-------------|-----------|
+| Raw HTML (baseline) | 5,515,206 | — | Full + chrome |
+| Cleaned HTML text | ~600K\* | ~89% saved | None |
+| Raw PDF (text) | 560,950 | +89.8% saved | None |
+| Raw Markdown | 1,262,755 | +77.1% saved | Basic |
+| AIF Markdown (RT) | 1,009,181 | +81.7% saved | Basic |
+| AIF LML Standard | 985,090 | +82.1% saved | Full semantic |
+| **AIF LML Aggressive** | **979,838** | **+82.2% saved** | **Full semantic** |
+
+> **Honest comparison:** The "82% vs Raw HTML" stat is real but misleading in isolation — raw HTML includes massive presentational markup. The fairer comparison: AIF LML Aggressive uses **22% fewer tokens than raw Markdown** while adding typed semantic blocks, or **~75% more tokens than flat text extraction** in exchange for full document structure.
 
 ### Skill Token Efficiency (10 AI Skills)
 
