@@ -29,13 +29,16 @@ enum Commands {
         #[arg(long, default_value = "aif")]
         input_format: String,
     },
-    /// Import a Markdown or PDF file to AIF IR (JSON)
+    /// Import a Markdown, HTML, or PDF file to AIF IR (JSON)
     Import {
-        /// Input file (Markdown or PDF)
+        /// Input file (Markdown, HTML, or PDF)
         input: PathBuf,
         /// Output file (defaults to stdout)
         #[arg(short, long)]
         output: Option<PathBuf>,
+        /// Strip page chrome (nav, header, footer) for HTML import
+        #[arg(long)]
+        strip_chrome: bool,
     },
     /// Dump the parsed IR as JSON
     DumpIr {
@@ -1051,11 +1054,10 @@ fn main() {
 
             write_output(&result, output.as_ref());
         }
-        Commands::Import { input, output } => {
-            let is_pdf = input
-                .extension()
-                .map(|ext| ext.eq_ignore_ascii_case("pdf"))
-                .unwrap_or(false);
+        Commands::Import { input, output, strip_chrome } => {
+            let ext = input.extension().map(|e| e.to_ascii_lowercase());
+            let is_pdf = ext.as_ref().map(|e| e == "pdf").unwrap_or(false);
+            let is_html = ext.as_ref().map(|e| e == "html" || e == "htm").unwrap_or(false);
 
             if is_pdf {
                 let pdf_bytes = fs::read(&input).unwrap_or_else(|e| {
@@ -1078,6 +1080,19 @@ fn main() {
                         diag.page, diag.kind, diag.message
                     );
                 }
+                let json = serde_json::to_string_pretty(&result.document).unwrap();
+                write_output(&json, output.as_ref());
+            } else if is_html {
+                let source = read_source(&input);
+                let result = aif_html::import_html(&source, strip_chrome);
+                eprintln!(
+                    "Imported HTML ({} mode), {} blocks",
+                    match result.mode {
+                        aif_html::ImportMode::AifRoundtrip => "AIF roundtrip",
+                        aif_html::ImportMode::Generic => "generic",
+                    },
+                    result.document.blocks.len()
+                );
                 let json = serde_json::to_string_pretty(&result.document).unwrap();
                 write_output(&json, output.as_ref());
             } else {

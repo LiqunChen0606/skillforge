@@ -96,6 +96,7 @@ dependencies = [
  "insta",
  "pretty_assertions",
  "scraper",
+ "serde_json",
 ]
 
 [[package]]

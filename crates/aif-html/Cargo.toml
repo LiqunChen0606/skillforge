@@ -12,3 +12,4 @@ scraper = "0.22"
 aif-parser = { path = "../aif-parser" }
 insta = { version = "1", features = ["yaml"] }
 pretty_assertions = "1"
+serde_json = { workspace = true }

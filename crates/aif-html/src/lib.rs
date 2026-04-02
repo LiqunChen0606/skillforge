@@ -1,5 +1,6 @@
 mod emitter;
 pub mod importer;
+pub mod readability;
 
 use aif_core::ast::Document;
 
