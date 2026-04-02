@@ -12,8 +12,10 @@ aif-lml = { path = "../aif-lml" }
 aif-skill = { path = "../aif-skill" }
 aif-binary = { path = "../aif-binary" }
 aif-pdf = { path = "../aif-pdf" }
+aif-eval = { path = "../aif-eval" }
 clap = { version = "4", features = ["derive"] }
 serde_json = { workspace = true }
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 
 [dev-dependencies]
 aif-core = { workspace = true }

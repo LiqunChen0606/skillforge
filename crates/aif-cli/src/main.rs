@@ -54,6 +54,11 @@ enum Commands {
     },
     /// Print JSON Schema for the AIF Document type
     Schema {},
+    /// Manage AIF configuration
+    Config {
+        #[command(subcommand)]
+        action: ConfigAction,
+    },
 }
 
 #[derive(Subcommand)]
@@ -138,6 +143,17 @@ enum SkillAction {
         #[arg(long)]
         version: Option<String>,
     },
+    /// Run the eval pipeline on a skill
+    Eval {
+        /// Input .aif skill file
+        input: PathBuf,
+        /// Run only up to this stage: 1 (lint), 2 (compliance), 3 (all)
+        #[arg(long)]
+        stage: Option<u32>,
+        /// Output format: text (default) or json
+        #[arg(long, default_value = "text")]
+        report: String,
+    },
 }
 
 #[derive(Subcommand)]
@@ -167,6 +183,19 @@ enum ChunkAction {
         #[arg(short, long)]
         output: Option<PathBuf>,
     },
+}
+
+#[derive(Subcommand)]
+enum ConfigAction {
+    /// Set a config value (e.g., llm.provider, llm.api-key, llm.model)
+    Set {
+        /// Config key
+        key: String,
+        /// Config value
+        value: String,
+    },
+    /// Show current configuration
+    List {},
 }
 
 fn find_skill_block(blocks: &[Block]) -> Option<&Block> {
@@ -714,6 +743,204 @@ fn handle_skill(action: SkillAction) {
                 }
             }
         }
+        SkillAction::Eval {
+            input,
+            stage,
+            report,
+        } => {
+            let source = read_source(&input);
+            let doc = parse_aif(&source);
+
+            let skill_block = find_skill_block(&doc.blocks).unwrap_or_else(|| {
+                eprintln!("No skill block found in {}", input.display());
+                std::process::exit(1);
+            });
+
+            let stage_filter = stage
+                .and_then(aif_eval::pipeline::StageFilter::from_stage_number)
+                .unwrap_or(aif_eval::pipeline::StageFilter::All);
+
+            let llm_config = if matches!(
+                stage_filter,
+                aif_eval::pipeline::StageFilter::UpToCompliance
+                    | aif_eval::pipeline::StageFilter::All
+            ) {
+                let config_path = dirs_or_default().join("config.toml");
+                let config = aif_core::config::AifConfig::load_with_env(&config_path);
+                Some(config.llm)
+            } else {
+                None
+            };
+
+            let pipeline_config = aif_eval::pipeline::PipelineConfig {
+                stages: stage_filter,
+                llm: llm_config,
+                compliance_task: None,
+            };
+
+            let pipeline = aif_eval::pipeline::EvalPipeline::new(pipeline_config);
+
+            let eval_report = if matches!(stage_filter, aif_eval::pipeline::StageFilter::LintOnly)
+            {
+                pipeline.run_lint(skill_block)
+            } else {
+                let rt = tokio::runtime::Runtime::new().unwrap();
+                rt.block_on(pipeline.run(skill_block, &source))
+            };
+
+            match report.as_str() {
+                "json" => {
+                    print_eval_report_json(&eval_report);
+                }
+                _ => {
+                    print_eval_report_text(&eval_report);
+                }
+            }
+
+            if !eval_report.all_passed() {
+                std::process::exit(1);
+            }
+        }
+    }
+}
+
+fn print_eval_report_text(report: &aif_skill::eval::EvalReport) {
+    println!("Skill: {}\n", report.skill_name);
+    for stage in &report.stages {
+        let status = if stage.passed { "PASS" } else { "FAIL" };
+        let stage_name = match stage.stage {
+            aif_skill::eval::EvalStage::StructuralLint => "STAGE 1: STRUCTURAL LINT",
+            aif_skill::eval::EvalStage::BehavioralCompliance => "STAGE 2: BEHAVIORAL COMPLIANCE",
+            aif_skill::eval::EvalStage::EffectivenessEval => "STAGE 3: EFFECTIVENESS EVAL",
+        };
+        println!(
+            "{} {} {} ({}ms)",
+            stage_name,
+            ".".repeat(40usize.saturating_sub(stage_name.len())),
+            status,
+            stage.duration_ms
+        );
+
+        match &stage.details {
+            aif_skill::eval::StageDetails::Lint(results) => {
+                for r in results {
+                    if !r.passed {
+                        println!("  x {:?}: {}", r.check, r.message);
+                    }
+                }
+            }
+            aif_skill::eval::StageDetails::Compliance(results) => {
+                for r in results {
+                    let mark = if r.passed { "+" } else { "x" };
+                    println!("  {} {}: {}", mark, r.check_name, r.evidence);
+                }
+            }
+            aif_skill::eval::StageDetails::Effectiveness(results) => {
+                for r in results {
+                    let mark = if r.passed { "+" } else { "x" };
+                    println!(
+                        "  {} {} ({:?}): {}",
+                        mark, r.name, r.scenario_type, r.evidence
+                    );
+                }
+            }
+            aif_skill::eval::StageDetails::Skipped => {
+                println!("  SKIPPED (previous stage failed)");
+            }
+        }
+    }
+
+    let passed = report.stages.iter().filter(|s| s.passed).count();
+    let total = report.stages.len();
+    println!("\n{} of {} stages passed.", passed, total);
+}
+
+fn print_eval_report_json(report: &aif_skill::eval::EvalReport) {
+    let mut stages = Vec::new();
+    for stage in &report.stages {
+        let stage_json = serde_json::json!({
+            "stage": format!("{:?}", stage.stage),
+            "passed": stage.passed,
+            "duration_ms": stage.duration_ms,
+        });
+        stages.push(stage_json);
+    }
+    let output = serde_json::json!({
+        "skill_name": report.skill_name,
+        "all_passed": report.all_passed(),
+        "stages": stages,
+    });
+    println!("{}", serde_json::to_string_pretty(&output).unwrap());
+}
+
+fn handle_config(action: ConfigAction) {
+    let config_path = dirs_or_default().join("config.toml");
+
+    match action {
+        ConfigAction::Set { key, value } => {
+            let mut config = aif_core::config::AifConfig::load(&config_path);
+
+            match key.as_str() {
+                "llm.provider" => match aif_core::config::LlmProvider::from_str(&value) {
+                    Some(p) => config.llm.provider = p,
+                    None => {
+                        eprintln!(
+                            "Unknown provider: {}. Supported: anthropic, openai, google, local",
+                            value
+                        );
+                        std::process::exit(1);
+                    }
+                },
+                "llm.api-key" | "llm.api_key" => {
+                    config.llm.api_key = Some(value);
+                }
+                "llm.model" => {
+                    config.llm.model = Some(value);
+                }
+                "llm.base-url" | "llm.base_url" => {
+                    config.llm.base_url = Some(value);
+                }
+                _ => {
+                    eprintln!(
+                        "Unknown config key: {}. Supported: llm.provider, llm.api-key, llm.model, llm.base-url",
+                        key
+                    );
+                    std::process::exit(1);
+                }
+            }
+
+            config.save(&config_path).unwrap_or_else(|e| {
+                eprintln!("Error saving config: {}", e);
+                std::process::exit(1);
+            });
+            println!("Set {} in {}", key, config_path.display());
+        }
+        ConfigAction::List {} => {
+            let config = aif_core::config::AifConfig::load_with_env(&config_path);
+            println!("Config (from {}):", config_path.display());
+            println!("  llm.provider: {:?}", config.llm.provider);
+            println!(
+                "  llm.api-key: {}",
+                config
+                    .llm
+                    .api_key
+                    .as_ref()
+                    .map(|k| format!("{}...", &k[..k.len().min(8)]))
+                    .unwrap_or_else(|| "(not set)".into())
+            );
+            println!(
+                "  llm.model: {} {}",
+                config.llm.resolved_model(),
+                if config.llm.model.is_some() {
+                    "(explicit)"
+                } else {
+                    "(default)"
+                }
+            );
+            if let Some(url) = &config.llm.base_url {
+                println!("  llm.base-url: {}", url);
+            }
+        }
     }
 }
 
@@ -839,6 +1066,9 @@ fn main() {
         }
         Commands::Schema {} => {
             println!("{}", aif_core::schema::generate_schema());
+        }
+        Commands::Config { action } => {
+            handle_config(action);
         }
     }
 }
