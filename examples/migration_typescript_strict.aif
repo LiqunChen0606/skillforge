@@ -202,6 +202,55 @@
     (e.g., zod schemas) over non-null assertions to catch actual null values.
   @end
 
+  @example
+    Before (implicit any in function parameter):
+      function processUser(user) {
+        return user.name.toUpperCase();
+      }
+
+    After (explicit type annotation):
+      interface User { name: string; email: string; }
+      function processUser(user: User): string {
+        return user.name.toUpperCase();
+      }
+
+    Before (unsafe null access):
+      const el = document.getElementById('root');
+      el.innerHTML = 'Hello'; // el might be null!
+
+    After (null-safe):
+      const el = document.getElementById('root');
+      if (!el) throw new Error('Root element not found');
+      el.innerHTML = 'Hello';
+
+    Before (any in catch clause):
+      try { JSON.parse(input); }
+      catch (e) { console.log(e.message); }
+
+    After (unknown in catch clause):
+      try { JSON.parse(input); }
+      catch (e) {
+        if (e instanceof SyntaxError) console.log(e.message);
+        else throw e;
+      }
+  @end
+
+  @decision
+    If a file has more than 100 type errors after enabling a strict flag,
+    defer that file to a later phase rather than adding bulk type assertions.
+
+    If a class uses property injection (e.g., Angular @Input decorators),
+    use the definite assignment assertion (!) since the framework guarantees
+    initialization. Do not add unnecessary constructor assignments.
+
+    If a codebase uses `any` extensively in API response types, prefer
+    creating proper interface types from the API schema rather than
+    converting each `any` to `unknown` — proper types provide more value.
+
+    When fixing strictNullChecks, prefer early-return guard clauses over
+    deeply nested if-else chains for null checking.
+  @end
+
   @red_flag
     Do not add `as any` type assertions to silence errors — this defeats
     the purpose of strict mode. Each error must be resolved with proper types.

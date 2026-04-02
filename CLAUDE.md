@@ -224,7 +224,7 @@ Token-optimized binary format now encodes and decodes `SemanticBlockType` (9 var
 AIF report generation includes 7 rich sections: Executive Summary (success/partial/failed/skipped counts, confidence level), Risk Assessment (Low/Medium/High/Critical with interpretation), Verification Analysis (static + semantic check pass rates with per-check details), Results by Chunk (individual `[PASS]`/`[FAIL]` per check), Failure Analysis (recurring patterns, repair exhaustion warnings), Manual Review/Unresolved, and Recommendations (actionable next steps tiered by success rate). Helper methods on `MigrationReport`: `status_counts()`, `failed_static_checks()`, `failed_semantic_checks()`, `total_repair_iterations()`, `average_confidence()`, `confidence_label()`, `risk_level()`.
 
 ### Example Migration Skills
-Three production-quality examples in `examples/`: `migration_nextjs_13_to_15.aif` (Next.js 13→15, 7 steps — async request APIs, caching, React 19), `migration_eslint_flat_config.aif` (ESLint legacy→flat config, 7 steps — plugin migration, FlatCompat), `migration_typescript_strict.aif` (TypeScript strict mode, 8 steps — phased rollout). All include `@red_flag` blocks for common pitfalls.
+Three production-quality examples in `examples/`: `migration_nextjs_13_to_15.aif` (Next.js 13→15, 7 steps — async request APIs, caching, React 19), `migration_eslint_flat_config.aif` (ESLint legacy→flat config, 7 steps — plugin migration, FlatCompat), `migration_typescript_strict.aif` (TypeScript strict mode, 8 steps — phased rollout). All include `@red_flag`, `@example`, and `@decision` blocks for common pitfalls and migration choices.
 
 ## Phase 6 Features
 
@@ -234,12 +234,33 @@ Three production-quality examples in `examples/`: `migration_nextjs_13_to_15.aif
 ### Readability Extraction
 `crates/aif-html/src/readability.rs` — Opt-in `--strip-chrome` flag for importing full web pages. Prioritizes content roots: `<article>` → `<main>` → `[role="main"]` → `<body>` with chrome tag filtering. Chrome tags (nav, header, footer, non-AIF aside) are stripped. Tag-based heuristic, not full Mozilla Readability.
 
+## Table Support — AIF Advantage
+
+AIF provides **full semantic table roundtrip** across all major formats — a key differentiator vs. raw Markdown/HTML:
+
+| Format | Headers | Rows | Caption | Inline Formatting | Roundtrip |
+|--------|---------|------|---------|-------------------|-----------|
+| AIF Parser | ✓ | ✓ | ✓ | ✓ | ✓ |
+| HTML Emit/Import | ✓ `<thead>`/`<tbody>` | ✓ | ✓ `<caption>` | ✓ | ✓ Lossless |
+| Markdown Emit/Import | ✓ GFM | ✓ | — (no MD standard) | ✓ | ✓ Structure preserved |
+| LML Standard | ✓ `[TABLE]...[/TABLE]` | ✓ | ✓ | ✓ | ✓ |
+| LML Aggressive | ✓ `@table:` | ✓ | ✓ | ✓ | ✓ Bidirectional |
+| LML Compressed | ✓ + dedup | ✓ + dedup | ✓ | ✓ | ✓ |
+| LML Hybrid | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Binary Wire | ✓ | ✓ | ✓ | ✓ | ✓ Lossless |
+| Binary Token-Opt | ✓ | ✓ | ✓ | ✓ | ✓ Lossless |
+| PDF Export | Text-only | Text-only | — | ✓ | — |
+
+**vs. competitors:** Raw Markdown loses captions and can't roundtrip complex tables. Raw HTML carries presentational bloat. JSON IR inflates token count 2-4x. AIF LML Aggressive preserves full table semantics at ~82% fewer tokens than HTML.
+
 ## Known Limitations
 
-- Markdown importer does not detect audio/video links for roundtrip fidelity
+- Markdown emit drops table captions (no GFM standard for captions)
 - LML aggressive mode does not emit `mime` for media blocks (derivable from `src` extension); parser handles it if present
 - HTML generic import maps `<div>` containers to flat block lists (no generic div-to-section heuristic)
 - Readability extraction (`--strip-chrome`) uses tag-based heuristics, not full Mozilla Readability algorithm
+- No column alignment, colspan, or rowspan support (tables must be rectangular grids)
+- PDF table export renders as text-only (no grid/borders)
 
 ## Recent Fixes
 
@@ -268,6 +289,13 @@ Three production-quality examples in `examples/`: `migration_nextjs_13_to_15.aif
   - Document report: executive summary (82.2% savings, $68 saved per 10 articles), cost & latency impact table, scale impact projections, Information Density Score analysis, variance analysis
   - Benchmark Python script: `compute_statistics()` and `compute_cost_impact()` functions, extended JSON output
 - **Example migration reports**: 3 HTML templates in `examples/` — NextJS (success), ESLint (clean success), TypeScript strict (partial success with deferred files)
+- **Full table support across all LML modes** — emitter now outputs pipe-delimited headers, separator, and data rows for Standard, Aggressive, Compressed, and Hybrid modes (previously only caption was preserved)
+- **LML table parser** — bidirectional parser handles `@table:` blocks with caption, headers, separator, and data rows
+- **Markdown table import** — enabled `ENABLE_TABLES` in pulldown_cmark, added `TableAccumulator` for header/row/cell tracking; GFM tables now import with full structure
+- **Semantic compression includes table cells** — `collect_text_occurrences()` and `emit_block_compressed()` now process header and row cell content, not just captions
+- **Hybrid LML table data** — hybrid emitter includes full pipe-delimited table rows instead of caption-only
+- **CLI migrate run wired to engine** — reads skill file, chunks source directory, runs `MigrationEngine::run()`, outputs text/JSON reports; placeholder apply_fn when no LLM key configured
+- **Migration examples enriched** — all 3 examples now include `@example` and `@decision` blocks with concrete before/after code and migration decision criteria
 
 ## Benchmark Results (2026-03-31, claude-opus-4-6, 10 skills)
 

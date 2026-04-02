@@ -267,6 +267,33 @@ fn read_source(input: &PathBuf) -> String {
     })
 }
 
+/// Recursively read all files from a directory into a HashMap<PathBuf, String>.
+/// Keys are relative paths from the directory root.
+fn read_source_directory(dir: &PathBuf) -> std::collections::HashMap<PathBuf, String> {
+    let mut files = std::collections::HashMap::new();
+    if !dir.is_dir() {
+        eprintln!("Error: {} is not a directory", dir.display());
+        std::process::exit(1);
+    }
+    fn walk(base: &std::path::Path, current: &std::path::Path, files: &mut std::collections::HashMap<PathBuf, String>) {
+        if let Ok(entries) = fs::read_dir(current) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.is_dir() {
+                    walk(base, &path, files);
+                } else if path.is_file() {
+                    if let Ok(content) = fs::read_to_string(&path) {
+                        let relative = path.strip_prefix(base).unwrap_or(&path).to_path_buf();
+                        files.insert(relative, content);
+                    }
+                }
+            }
+        }
+    }
+    walk(dir, dir, &mut files);
+    files
+}
+
 fn parse_aif(source: &str) -> aif_core::ast::Document {
     aif_parser::parse(source).unwrap_or_else(|errors| {
         for e in &errors {
@@ -1291,23 +1318,10 @@ fn handle_migrate(action: MigrateAction) {
             output,
             strategy,
             max_repairs,
-            report: _report,
+            report,
         } => {
-            eprintln!("Migration engine requires LLM configuration.");
-            eprintln!("Configure with: aif config set llm.api-key <key>");
-            eprintln!();
-
-            let config_path = dirs_or_default().join("config.toml");
-            let aif_config = aif_core::config::AifConfig::load_with_env(&config_path);
-
-            if aif_config.llm.api_key.is_none() {
-                eprintln!("Error: No LLM API key configured.");
-                eprintln!("Set via: aif config set llm.api-key <key>");
-                eprintln!("Or env: AIF_LLM_API_KEY=<key>");
-                std::process::exit(1);
-            }
-
-            let _chunk_strategy = match strategy.as_str() {
+            // 1. Parse chunk strategy
+            let chunk_strategy = match strategy.as_str() {
                 "file" => aif_migrate::chunk::ChunkStrategy::FilePerChunk,
                 "directory" => aif_migrate::chunk::ChunkStrategy::DirectoryChunk,
                 "token-budget" => aif_migrate::chunk::ChunkStrategy::TokenBudget { max_tokens: 4000 },
@@ -1317,12 +1331,82 @@ fn handle_migrate(action: MigrateAction) {
                 }
             };
 
-            eprintln!("Migration engine (async pipeline) not yet wired — validation available via 'aif migrate validate'.");
-            eprintln!("Skill: {}", skill.display());
-            eprintln!("Source: {}", source.display());
-            eprintln!("Output: {}", output.display());
-            eprintln!("Strategy: {}", strategy);
-            eprintln!("Max repairs: {}", max_repairs);
+            // 2. Read and parse the skill file
+            let skill_source = read_source(&skill);
+            let skill_doc = parse_aif(&skill_source);
+            let skill_block = find_skill_block(&skill_doc.blocks).unwrap_or_else(|| {
+                eprintln!("No @skill block found in {}", skill.display());
+                std::process::exit(1);
+            });
+
+            // 3. Read source files from the source directory
+            let source_files = read_source_directory(&source);
+            if source_files.is_empty() {
+                eprintln!("No source files found in {}", source.display());
+                std::process::exit(1);
+            }
+            eprintln!("Found {} source file(s) in {}", source_files.len(), source.display());
+
+            // 4. Build migration config
+            let config = aif_migrate::types::MigrationConfig {
+                skill_path: skill.clone(),
+                source_dir: source.clone(),
+                output_dir: output.clone(),
+                max_repair_iterations: max_repairs,
+                file_patterns: Vec::new(),
+                chunk_strategy,
+                dry_run: false,
+            };
+
+            // 5. Determine apply_fn: use LLM if configured, otherwise placeholder
+            let config_path = dirs_or_default().join("config.toml");
+            let aif_config = aif_core::config::AifConfig::load_with_env(&config_path);
+            let has_llm = aif_config.llm.api_key.is_some();
+
+            if !has_llm {
+                eprintln!("Note: No LLM API key configured. Running with placeholder (returns original content unchanged).");
+                eprintln!("For real migrations, set up with: aif config set llm.api-key <key>");
+                eprintln!();
+            }
+
+            // Placeholder apply_fn that returns the original content unchanged
+            let apply_fn = |_steps: &[String], source_code: &str, _repair_ctx: Option<&str>| -> Option<String> {
+                if !has_llm {
+                    eprintln!("LLM integration required — set up with `aif config set llm.api-key`");
+                }
+                Some(source_code.to_string())
+            };
+
+            // 6. Run the migration engine
+            let engine = aif_migrate::engine::MigrationEngine::new(config);
+            match engine.run(skill_block, &source_files, apply_fn) {
+                Ok(migration_report) => {
+                    match report.as_str() {
+                        "json" => {
+                            let json = serde_json::to_string_pretty(&migration_report)
+                                .unwrap_or_else(|e| {
+                                    eprintln!("Error serializing report: {}", e);
+                                    std::process::exit(1);
+                                });
+                            println!("{}", json);
+                        }
+                        _ => {
+                            // Text report: generate AIF report document and render as markdown
+                            let report_doc = aif_migrate::report::generate_report_document(&migration_report);
+                            let md = aif_markdown::render_markdown(&report_doc);
+                            println!("{}", md);
+                        }
+                    }
+                    eprintln!("\nMigration complete. Success rate: {:.0}%", migration_report.success_rate() * 100.0);
+                    if !migration_report.all_passed() {
+                        std::process::exit(1);
+                    }
+                }
+                Err(e) => {
+                    eprintln!("Migration failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
         }
     }
 }

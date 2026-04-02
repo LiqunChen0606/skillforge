@@ -115,6 +115,11 @@ impl<'a> LmlParser<'a> {
             return self.parse_media_block();
         }
 
+        // Table block (@table:)
+        if line.starts_with("@table:") {
+            return self.parse_table_block();
+        }
+
         // Skill directive (@step, @verify, etc.)
         if line.starts_with('@') {
             return self.parse_skill_directive();
@@ -415,6 +420,66 @@ impl<'a> LmlParser<'a> {
 
         Ok(Block {
             kind,
+            span: Span::empty(),
+        })
+    }
+
+    fn parse_table_block(&mut self) -> Result<Block, String> {
+        let line = self.advance().unwrap();
+        // Parse "@table: Optional caption" or "@table:"
+        let rest = line.strip_prefix("@table:").unwrap();
+        let caption_text = rest.trim();
+        let caption = if caption_text.is_empty() {
+            None
+        } else {
+            Some(vec![Inline::Text { text: caption_text.to_string() }])
+        };
+
+        let mut headers = Vec::new();
+        let mut rows = Vec::new();
+        let mut is_header = true;
+
+        while let Some(peeked) = self.peek() {
+            let trimmed = peeked.trim();
+            if trimmed.is_empty() {
+                break;
+            }
+            if !trimmed.starts_with('|') {
+                break;
+            }
+            self.advance();
+
+            // Separator line (e.g. | --- | --- |)
+            if trimmed.contains("---") {
+                is_header = false;
+                continue;
+            }
+
+            let cells: Vec<&str> = trimmed
+                .trim_start_matches('|')
+                .trim_end_matches('|')
+                .split('|')
+                .map(|s| s.trim())
+                .collect();
+
+            if is_header {
+                headers = cells.iter().map(|c| vec![Inline::Text { text: c.to_string() }]).collect();
+                is_header = false;
+            } else {
+                let row: Vec<Vec<Inline>> = cells.iter().map(|c| vec![Inline::Text { text: c.to_string() }]).collect();
+                rows.push(row);
+            }
+        }
+
+        self.skip_blank_lines();
+
+        Ok(Block {
+            kind: BlockKind::Table {
+                attrs: Attrs::new(),
+                caption,
+                headers,
+                rows,
+            },
             span: Span::empty(),
         })
     }

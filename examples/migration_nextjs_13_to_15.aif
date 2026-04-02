@@ -109,6 +109,39 @@
     them as requiring package upgrades before migration can proceed.
   @end
 
+  @example
+    Before (Next.js 13 page component):
+      export default function UserPage({ params }) {
+        const { id } = params;
+        return <div>User {id}</div>;
+      }
+
+    After (Next.js 15 page component):
+      export default async function UserPage({ params }) {
+        const { id } = await params;
+        return <div>User {id}</div>;
+      }
+
+    Before (Next.js 13 cached fetch):
+      const data = await fetch('https://api.example.com/data');
+
+    After (Next.js 15 explicit cache):
+      const data = await fetch('https://api.example.com/data', { cache: 'force-cache' });
+  @end
+
+  @decision
+    If a file uses both Pages Router (`getServerSideProps`) and App Router
+    patterns, skip the file entirely — mixed paradigms require manual migration.
+
+    If a client component uses `useEffect` for simple data fetching and the
+    component tree supports Suspense, prefer migrating to `React.use()`.
+    Otherwise, keep `useEffect` as-is.
+
+    If `next.config.js` has complex plugin chains (e.g., `withBundleAnalyzer`,
+    `withPWA`), convert to `next.config.ts` only if all plugins support TS config.
+    Otherwise, keep `.js` and only update the deprecated options.
+  @end
+
   @red_flag
     Do not migrate files that import from Next.js internal modules
     (paths starting with `next/dist/`). These are private APIs and

@@ -156,6 +156,43 @@
     with rules property).
   @end
 
+  @example
+    Before (.eslintrc.json with TypeScript):
+      {
+        "parser": "@typescript-eslint/parser",
+        "extends": ["plugin:@typescript-eslint/recommended"],
+        "plugins": ["@typescript-eslint"],
+        "rules": {
+          "@typescript-eslint/no-explicit-any": "error"
+        }
+      }
+
+    After (eslint.config.js):
+      import tseslint from 'typescript-eslint';
+      export default [
+        ...tseslint.configs.recommended,
+        {
+          files: ['**/*.ts', '**/*.tsx'],
+          rules: {
+            '@typescript-eslint/no-explicit-any': 'error',
+          },
+        },
+      ];
+  @end
+
+  @decision
+    If a plugin has both flat config and legacy exports, prefer the native
+    flat config export over wrapping with FlatCompat.
+
+    If the project uses eslint-config-prettier alongside eslint-plugin-prettier,
+    migrate to flat config format for both. If only eslint-config-prettier is used,
+    it can be placed last in the config array (same behavior as extends ordering).
+
+    If the project has more than 5 overrides blocks, consider grouping related
+    overrides into separate config files and importing them, rather than having
+    a single monolithic eslint.config.js.
+  @end
+
   @red_flag
     Do not delete legacy config files until the new flat config has been
     verified to produce identical lint results. Premature deletion can

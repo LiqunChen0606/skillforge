@@ -158,8 +158,8 @@ fn emit_block_mode(out: &mut String, block: &Block, depth: usize, mode: LmlMode)
         BlockKind::Table {
             attrs,
             caption,
-            headers: _,
-            rows: _,
+            headers,
+            rows,
         } => {
             out.push_str("[TABLE");
             emit_attrs(out, attrs);
@@ -168,7 +168,9 @@ fn emit_block_mode(out: &mut String, block: &Block, depth: usize, mode: LmlMode)
                 out.push(' ');
                 emit_inlines_plain(out, cap);
             }
-            out.push_str("\n\n");
+            out.push('\n');
+            emit_table_rows(out, headers, rows);
+            out.push_str("[/TABLE]\n\n");
         }
         BlockKind::Figure {
             attrs,
@@ -375,15 +377,15 @@ fn emit_block_aggressive(out: &mut String, block: &Block, depth: usize) {
                 }
             }
         }
-        BlockKind::Table { attrs, caption, headers: _, rows: _ } => {
-            out.push_str("[TABLE");
-            emit_attrs(out, attrs);
-            out.push(']');
+        BlockKind::Table { attrs: _, caption, headers, rows } => {
+            out.push_str("@table:");
             if let Some(cap) = caption {
                 out.push(' ');
                 emit_inlines_plain(out, cap);
             }
-            out.push_str("\n\n");
+            out.push('\n');
+            emit_table_rows(out, headers, rows);
+            out.push('\n');
         }
         BlockKind::Figure { attrs, caption, src, meta } => {
             out.push_str("@fig(src=");
@@ -619,6 +621,35 @@ fn emit_media_meta_aggressive(out: &mut String, meta: &MediaMeta) {
         } else {
             out.push_str(p);
         }
+    }
+}
+
+// ── Table helpers ────────────────────────────────────────────────────
+
+fn emit_table_rows(out: &mut String, headers: &[Vec<Inline>], rows: &[Vec<Vec<Inline>>]) {
+    // Header row
+    out.push('|');
+    for header in headers {
+        out.push(' ');
+        emit_inlines_plain(out, header);
+        out.push_str(" |");
+    }
+    out.push('\n');
+    // Separator row
+    out.push('|');
+    for _ in headers {
+        out.push_str(" --- |");
+    }
+    out.push('\n');
+    // Data rows
+    for row in rows {
+        out.push('|');
+        for cell in row {
+            out.push(' ');
+            emit_inlines_plain(out, cell);
+            out.push_str(" |");
+        }
+        out.push('\n');
     }
 }
 

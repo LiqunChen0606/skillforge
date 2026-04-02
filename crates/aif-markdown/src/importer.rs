@@ -2,6 +2,15 @@ use aif_core::ast::{Attrs, Block, BlockKind, Document, Inline, ListItem};
 use aif_core::span::Span;
 use pulldown_cmark::{CodeBlockKind, Event, HeadingLevel, Options, Parser, Tag, TagEnd};
 
+/// Accumulates table rows during parsing.
+/// The first row seen inside TableHead becomes headers; subsequent rows become data rows.
+#[derive(Debug, Default)]
+struct TableAccumulator {
+    headers: Vec<Vec<Inline>>,
+    rows: Vec<Vec<Vec<Inline>>>,
+    current_row: Vec<Vec<Inline>>,
+}
+
 /// What kind of block is currently being built.
 #[derive(Debug)]
 enum BuilderKind {
@@ -25,6 +34,14 @@ enum BuilderKind {
     Strong,
     /// Link with destination URL.
     Link(String),
+    /// A GFM table.
+    Table,
+    /// Table head section.
+    TableHead,
+    /// A table row (header or body).
+    TableRow,
+    /// A single table cell.
+    TableCell,
 }
 
 /// Accumulator pushed onto the stack while processing pulldown-cmark events.
@@ -35,6 +52,7 @@ struct BlockBuilder {
     children: Vec<Block>,
     items: Vec<ListItem>,
     code: String,
+    table: TableAccumulator,
 }
 
 impl BlockBuilder {
@@ -45,12 +63,14 @@ impl BlockBuilder {
             children: Vec::new(),
             items: Vec::new(),
             code: String::new(),
+            table: TableAccumulator::default(),
         }
     }
 }
 
 pub fn import(input: &str) -> Document {
-    let opts = Options::empty();
+    let mut opts = Options::empty();
+    opts.insert(Options::ENABLE_TABLES);
     let parser = Parser::new_ext(input, opts);
 
     let mut doc = Document::new();
@@ -81,13 +101,17 @@ pub fn import(input: &str) -> Document {
                     Tag::Strong => BuilderKind::Strong,
                     Tag::Link { dest_url, .. } => BuilderKind::Link(dest_url.to_string()),
                     Tag::Image { dest_url, .. } => BuilderKind::Link(format!("!img:{}", dest_url)),
+                    Tag::Table(_alignments) => BuilderKind::Table,
+                    Tag::TableHead => BuilderKind::TableHead,
+                    Tag::TableRow => BuilderKind::TableRow,
+                    Tag::TableCell => BuilderKind::TableCell,
                     _ => BuilderKind::Root,
                 };
                 stack.push(BlockBuilder::new(kind));
             }
 
             Event::End(tag_end) => {
-                let builder = stack.pop().expect("stack underflow");
+                let mut builder = stack.pop().expect("stack underflow");
                 let parent = stack.last_mut().expect("stack underflow on parent");
 
                 match tag_end {
@@ -208,6 +232,40 @@ pub fn import(input: &str) -> Document {
                         };
                         let alt = inlines_to_plain_text(&builder.inlines);
                         parent.inlines.push(Inline::Image { alt, src });
+                    }
+
+                    TagEnd::TableCell => {
+                        // Cell finished: push its inlines as a complete cell
+                        // into the parent row builder's current_row accumulator.
+                        parent.table.current_row.push(builder.inlines);
+                    }
+
+                    TagEnd::TableRow => {
+                        // Row finished: take all accumulated cells and push as a complete row
+                        // into the parent (TableHead or Table builder).
+                        let row_cells = std::mem::take(&mut builder.table.current_row);
+                        parent.table.rows.push(row_cells);
+                    }
+
+                    TagEnd::TableHead => {
+                        // The header section is done. In pulldown_cmark 0.12, cells are
+                        // directly inside TableHead (no TableRow wrapper), so header cells
+                        // are accumulated in builder.table.current_row.
+                        let headers = std::mem::take(&mut builder.table.current_row);
+                        parent.table.headers = headers;
+                    }
+
+                    TagEnd::Table => {
+                        let block = Block {
+                            kind: BlockKind::Table {
+                                attrs: Attrs::new(),
+                                caption: None,
+                                headers: builder.table.headers,
+                                rows: builder.table.rows,
+                            },
+                            span: Span::empty(),
+                        };
+                        parent.children.push(block);
                     }
 
                     _ => {

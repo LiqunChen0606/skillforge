@@ -221,7 +221,7 @@ fn emit_block(out: &mut String, block: &Block, depth: usize) {
                 }
             }
         }
-        BlockKind::Table { attrs, caption, headers: _, rows: _ } => {
+        BlockKind::Table { attrs, caption, headers, rows } => {
             out.push_str("[TABLE");
             emit_attrs_inline(out, attrs);
             out.push(']');
@@ -229,7 +229,34 @@ fn emit_block(out: &mut String, block: &Block, depth: usize) {
                 out.push(' ');
                 emit_content_maybe_binary(out, cap);
             }
-            out.push_str("\n\n");
+            out.push('\n');
+            // Header row
+            out.push('|');
+            for header in headers {
+                out.push(' ');
+                let text = inlines_to_plain(header);
+                out.push_str(&text);
+                out.push_str(" |");
+            }
+            out.push('\n');
+            // Separator
+            out.push('|');
+            for _ in headers {
+                out.push_str(" --- |");
+            }
+            out.push('\n');
+            // Data rows
+            for row in rows {
+                out.push('|');
+                for cell in row {
+                    out.push(' ');
+                    let text = inlines_to_plain(cell);
+                    out.push_str(&text);
+                    out.push_str(" |");
+                }
+                out.push('\n');
+            }
+            out.push_str("[/TABLE]\n\n");
         }
         BlockKind::Figure { attrs, caption, src, meta } => {
             out.push_str("![");

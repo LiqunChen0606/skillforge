@@ -73,9 +73,17 @@ fn collect_text_occurrences(block: &Block, counts: &mut HashMap<String, usize>) 
             collect_inlines(content, counts);
         }
         BlockKind::Callout { content, .. } => collect_inlines(content, counts),
-        BlockKind::Table { caption, .. } => {
+        BlockKind::Table { caption, headers, rows, .. } => {
             if let Some(cap) = caption {
                 collect_inlines(cap, counts);
+            }
+            for header in headers {
+                collect_inlines(header, counts);
+            }
+            for row in rows {
+                for cell in row {
+                    collect_inlines(cell, counts);
+                }
             }
         }
         BlockKind::Figure { caption, .. } => {
@@ -196,7 +204,7 @@ fn emit_block_compressed(
                 }
             }
         }
-        BlockKind::Table { attrs, caption, .. } => {
+        BlockKind::Table { attrs, caption, headers, rows } => {
             out.push_str("[TABLE");
             emit_attrs(out, attrs);
             out.push(']');
@@ -204,7 +212,32 @@ fn emit_block_compressed(
                 out.push(' ');
                 emit_inlines_compressed(out, cap, dict);
             }
-            out.push_str("\n\n");
+            out.push('\n');
+            // Header row
+            out.push('|');
+            for header in headers {
+                out.push(' ');
+                emit_inlines_compressed(out, header, dict);
+                out.push_str(" |");
+            }
+            out.push('\n');
+            // Separator
+            out.push('|');
+            for _ in headers {
+                out.push_str(" --- |");
+            }
+            out.push('\n');
+            // Data rows
+            for row in rows {
+                out.push('|');
+                for cell in row {
+                    out.push(' ');
+                    emit_inlines_compressed(out, cell, dict);
+                    out.push_str(" |");
+                }
+                out.push('\n');
+            }
+            out.push_str("[/TABLE]\n\n");
         }
         BlockKind::Figure { attrs, caption, src, meta } => {
             out.push_str("[FIGURE");

@@ -118,3 +118,74 @@ fn import_empty_markdown() {
     assert!(doc.blocks.is_empty());
     assert!(doc.metadata.is_empty());
 }
+
+#[test]
+fn import_gfm_table_with_headers_and_rows() {
+    let md = "| Name | Age | City |\n| --- | --- | --- |\n| Alice | 30 | NYC |\n| Bob | 25 | LA |\n";
+    let doc = import_markdown(md);
+
+    let table = doc.blocks.iter().find(|b| matches!(&b.kind, BlockKind::Table { .. }));
+    assert!(table.is_some(), "Expected a Table block from GFM table");
+    match &table.unwrap().kind {
+        BlockKind::Table { headers, rows, .. } => {
+            assert_eq!(headers.len(), 3, "Expected 3 header cells");
+            assert_eq!(rows.len(), 2, "Expected 2 data rows");
+            // Check header content
+            let header_texts: Vec<String> = headers.iter()
+                .map(|h| aif_core::text::inlines_to_text(h, aif_core::text::TextMode::Plain))
+                .collect();
+            assert_eq!(header_texts, vec!["Name", "Age", "City"]);
+            // Check first row content
+            let row0_texts: Vec<String> = rows[0].iter()
+                .map(|c| aif_core::text::inlines_to_text(c, aif_core::text::TextMode::Plain))
+                .collect();
+            assert_eq!(row0_texts, vec!["Alice", "30", "NYC"]);
+        }
+        _ => unreachable!(),
+    }
+}
+
+#[test]
+fn import_table_with_inline_formatting() {
+    let md = "| Header |\n| --- |\n| **bold** and *italic* |\n";
+    let doc = import_markdown(md);
+
+    let table = doc.blocks.iter().find(|b| matches!(&b.kind, BlockKind::Table { .. }));
+    assert!(table.is_some(), "Expected a Table block");
+    match &table.unwrap().kind {
+        BlockKind::Table { rows, .. } => {
+            assert_eq!(rows.len(), 1);
+            // The cell should contain inline formatting (Strong, Emphasis)
+            let cell = &rows[0][0];
+            let has_strong = cell.iter().any(|i| matches!(i, aif_core::ast::Inline::Strong { .. }));
+            let has_emphasis = cell.iter().any(|i| matches!(i, aif_core::ast::Inline::Emphasis { .. }));
+            assert!(has_strong, "Expected Strong inline in table cell");
+            assert!(has_emphasis, "Expected Emphasis inline in table cell");
+        }
+        _ => unreachable!(),
+    }
+}
+
+#[test]
+fn roundtrip_aif_markdown_table() {
+    // Parse an AIF document with a table
+    let aif_src = "@table\n| Name | Score |\n| Alice | 95 |\n| Bob | 87 |\n@end\n";
+    let doc = aif_parser::parse(aif_src).unwrap();
+
+    // Render to Markdown
+    let md = aif_markdown::render_markdown(&doc);
+
+    // Re-import from Markdown
+    let doc2 = import_markdown(&md);
+
+    // Find table in re-imported doc
+    let table = doc2.blocks.iter().find(|b| matches!(&b.kind, BlockKind::Table { .. }));
+    assert!(table.is_some(), "Roundtrip should preserve table");
+    match &table.unwrap().kind {
+        BlockKind::Table { headers, rows, .. } => {
+            assert_eq!(headers.len(), 2, "Expected 2 header columns");
+            assert_eq!(rows.len(), 2, "Expected 2 data rows");
+        }
+        _ => unreachable!(),
+    }
+}
