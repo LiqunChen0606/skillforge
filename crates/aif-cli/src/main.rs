@@ -39,6 +39,9 @@ enum Commands {
         /// Strip page chrome (nav, header, footer) for HTML import
         #[arg(long)]
         strip_chrome: bool,
+        /// Run semantic inference on imported document
+        #[arg(long)]
+        infer_semantics: bool,
     },
     /// Dump the parsed IR as JSON
     DumpIr {
@@ -1089,7 +1092,7 @@ fn main() {
 
             write_output(&result, output.as_ref());
         }
-        Commands::Import { input, output, strip_chrome } => {
+        Commands::Import { input, output, strip_chrome, infer_semantics } => {
             let ext = input.extension().map(|e| e.to_ascii_lowercase());
             let is_pdf = ext.as_ref().map(|e| e == "pdf").unwrap_or(false);
             let is_html = ext.as_ref().map(|e| e == "html" || e == "htm").unwrap_or(false);
@@ -1121,6 +1124,15 @@ fn main() {
                 result.document.metadata.insert("_aif_source_format".into(), "pdf".into());
                 result.document.metadata.insert("_aif_source_file".into(), source_file);
                 result.document.metadata.insert("_aif_import_confidence".into(), format!("{:.2}", result.avg_confidence));
+                if infer_semantics {
+                    aif_core::infer::annotate_semantics(&mut result.document, &aif_core::infer::InferConfig::default());
+                    let inferred_count = result.document.blocks.iter()
+                        .filter(|b| matches!(&b.kind, aif_core::ast::BlockKind::SemanticBlock { attrs, .. } if attrs.pairs.contains_key("_aif_inferred")))
+                        .count();
+                    if inferred_count > 0 {
+                        eprintln!("Inferred {} semantic block(s)", inferred_count);
+                    }
+                }
                 let json = serde_json::to_string_pretty(&result.document).unwrap();
                 write_output(&json, output.as_ref());
             } else if is_html {
@@ -1136,6 +1148,15 @@ fn main() {
                 );
                 // Provenance (source_format and import_mode already set by importer)
                 result.document.metadata.insert("_aif_source_file".into(), source_file);
+                if infer_semantics {
+                    aif_core::infer::annotate_semantics(&mut result.document, &aif_core::infer::InferConfig::default());
+                    let inferred_count = result.document.blocks.iter()
+                        .filter(|b| matches!(&b.kind, aif_core::ast::BlockKind::SemanticBlock { attrs, .. } if attrs.pairs.contains_key("_aif_inferred")))
+                        .count();
+                    if inferred_count > 0 {
+                        eprintln!("Inferred {} semantic block(s)", inferred_count);
+                    }
+                }
                 let json = serde_json::to_string_pretty(&result.document).unwrap();
                 write_output(&json, output.as_ref());
             } else {
@@ -1143,6 +1164,15 @@ fn main() {
                 let mut doc = aif_markdown::import_markdown(&source);
                 // Provenance (source_format already set by importer)
                 doc.metadata.insert("_aif_source_file".into(), source_file);
+                if infer_semantics {
+                    aif_core::infer::annotate_semantics(&mut doc, &aif_core::infer::InferConfig::default());
+                    let inferred_count = doc.blocks.iter()
+                        .filter(|b| matches!(&b.kind, aif_core::ast::BlockKind::SemanticBlock { attrs, .. } if attrs.pairs.contains_key("_aif_inferred")))
+                        .count();
+                    if inferred_count > 0 {
+                        eprintln!("Inferred {} semantic block(s)", inferred_count);
+                    }
+                }
                 let json = serde_json::to_string_pretty(&doc).unwrap();
                 write_output(&json, output.as_ref());
             }
