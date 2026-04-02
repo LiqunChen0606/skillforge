@@ -20,6 +20,7 @@ AIF is a semantic document format and toolchain for humans and LLMs. Concise lik
 | `aif-binary` | Binary serialization — wire (postcard) and token-optimized formats with full encode/decode roundtrip, media metadata, semantic/callout type preservation |
 | `aif-skill` | Skill profiles — validation, hashing, versioning, diff, registry, delta transport, format recommender, chaining, marketplace |
 | `aif-pdf` | PDF export (krilla) + import (pdf_oxide) + document chunking (4 strategies) + chunk graphs |
+| `aif-eval` | Eval pipeline — Anthropic LLM client, behavioral compliance, scenario tests, pipeline orchestrator |
 | `aif-cli` | CLI tool: `compile`, `import`, `dump-ir`, `skill`, `schema`, `chunk` subcommands |
 
 ### Key Types
@@ -125,6 +126,15 @@ aif skill info name [--version v]           # Show remote metadata
 aif chunk split input.aif --strategy section|token-budget|semantic|fixed-blocks [--max-tokens N] [-o dir]
 aif chunk graph input1.aif input2.aif [-o graph.json]
 
+# Eval pipeline
+aif skill eval <skill.aif> [--stage 1|2|3] [--report text|json]
+
+# Configuration
+aif config set llm.provider <provider>   # anthropic, openai, google, local
+aif config set llm.api-key <key>
+aif config set llm.model <model>
+aif config list
+
 # Benchmarks
 python benchmarks/skill_token_benchmark.py  # Skill format comparison (requires ANTHROPIC_API_KEY)
 python benchmarks/token_benchmark.py        # Document format comparison: raw HTML/PDF/MD vs AIF formats (Wikipedia articles)
@@ -183,6 +193,14 @@ Token-optimized binary format now encodes and decodes `SemanticBlockType` (9 var
 `sdks/python/` — Pydantic v2 models with Literal discriminators and StrEnum for tagged unions.
 `sdks/typescript/` — TypeScript interfaces + Zod schemas (z.discriminatedUnion, z.lazy for recursive types).
 `scripts/generate_sdks.py` — Codegen from JSON Schema with `--check` mode for CI validation.
+
+## Phase 4 Features
+
+### Skill Eval Pipeline
+`crates/aif-eval/` — Three-stage quality pipeline for coding-agent skills. Stage 1: Structural lint (7 deterministic checks, no LLM). Stage 2: Behavioral compliance (LLM simulates agent with skill, checks 3 default rules). Stage 3: Effectiveness eval (scenario tests extracted from @verify blocks). Pipeline orchestrator stops on first stage failure. MVP supports Anthropic as LLM provider.
+
+### LLM Configuration
+`~/.aif/config.toml` with `[llm]` section: provider, api_key, model, base_url. Environment variable overrides: AIF_LLM_PROVIDER, AIF_LLM_API_KEY, AIF_LLM_MODEL. CLI: `aif config set/list`.
 
 ## Known Limitations
 
