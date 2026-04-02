@@ -1,6 +1,8 @@
-# AIF Plugin Skills
+# AIF Skills & Plugins
 
-Claude Code plugins re-expressed in AIF format — demonstrating how AIF's typed semantic blocks create more rigorous, verifiable skills than plain SKILL.md files.
+Example skills and Claude Code plugins in AIF format — demonstrating how typed semantic blocks create more rigorous, verifiable, and LLM-effective skills than plain SKILL.md files.
+
+**Benchmark result:** LLMs follow AIF LML skills **10 percentage points better** than raw Markdown (0.97 vs 0.87 overall compliance) at 5% fewer tokens. See [skill execution benchmark](../../benchmarks/skill_execution_results.json).
 
 ## Why AIF for Skills?
 
@@ -13,17 +15,18 @@ Claude Code plugins re-expressed in AIF format — demonstrating how AIF's typed
 | Quality checks | No | 7 structural lint checks + 3-stage eval pipeline |
 | Multi-format output | Markdown only | HTML, LML (5 modes), JSON, binary, PDF |
 | Bidirectional | One-way | AIF ↔ Markdown roundtrip |
+| LLM compliance | Baseline | +10 percentage points (benchmark verified) |
 
-## Plugins Included
+## Skills Included
 
-| Plugin | Description |
-|--------|-------------|
-| [code-review](code-review/) | Automated PR code review with confidence scoring |
-| [frontend-design](frontend-design/) | Distinctive UI design that avoids generic AI aesthetics |
-| [feature-dev](feature-dev/) | 7-phase guided feature development workflow |
-| [commit-commands](commit-commands/) | Git workflow automation (commit, push, PR) |
-| [security-guidance](security-guidance/) | Detect 6 categories of security vulnerabilities |
-| [claude-opus-4-5-migration](claude-opus-4-5-migration/) | Model migration from Sonnet/Opus 4.x to Opus 4.5 |
+| Skill | Description |
+|-------|-------------|
+| [code_review.aif](code_review.aif) | Automated PR code review with confidence scoring and @example blocks |
+| [frontend-design.aif](frontend-design.aif) | Distinctive UI design that avoids generic AI aesthetics |
+| [feature-dev.aif](feature-dev.aif) | 7-phase guided feature development workflow |
+| [commit-commands.aif](commit-commands.aif) | Git workflow automation (commit, push, PR) |
+| [security-guidance.aif](security-guidance.aif) | Detect 6 categories of security vulnerabilities |
+| [claude-opus-4-5-migration.aif](claude-opus-4-5-migration.aif) | Model migration from Sonnet/Opus 4.x to Opus 4.5 |
 
 ---
 

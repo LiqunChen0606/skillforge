@@ -215,6 +215,19 @@ aif skill publish skill.aif                     # Publish to registry
 | **Additive** | New step, new example, new fallback | Minor |
 | **Cosmetic** | Rewording text, reordering within block | Patch |
 
+### Skill Execution Quality (Does the LLM Actually Follow Better?)
+
+Tested 3 scenarios (SQL injection review, clean code approval, eval() detection) across 4 formats. The LLM executes each skill and a judge scores compliance.
+
+| Format | Tokens | Step Coverage | Constraints | Output Contract | **Overall** |
+|--------|--------|--------------|-------------|-----------------|-------------|
+| **LML Aggressive** | **1,012** | **1.00** | **0.95** | **0.97** | **0.97** |
+| JSON IR | 4,732 | 1.00 | 0.92 | 0.97 | 0.95 |
+| HTML | 1,485 | 0.95 | 0.88 | 0.93 | 0.91 |
+| Raw Markdown | 1,067 | 0.97 | 0.85 | 0.87 | 0.87 |
+
+**LML Aggressive wins:** 10 percentage points better than raw Markdown at 5% fewer tokens. The explicit typed tags (`@step:`, `@verify:`, `@red_flag:`) help the LLM identify and follow each instruction block. See [full results](benchmarks/skill_execution_results.json).
+
 ## Benchmark Results
 
 ### Structure-per-Token: Why AIF Matters
@@ -381,6 +394,7 @@ cargo run -p aif-cli -- --help # CLI usage
 - [x] Re-run benchmarks with cleaned HTML baseline (544K tokens — 90.1% saved vs raw HTML)
 - [x] LLM-assisted semantic inference (pattern rules first, then LLM for unmatched blocks via `--infer-llm`)
 - [x] Async migration engine with real LLM calls (Anthropic API, env `AIF_LLM_API_KEY`)
+- [x] **Skill execution quality benchmark** — LLM follows skills 10 percentage points better in AIF LML (0.97) vs raw Markdown (0.87)
 
 ### TBD — Next Phases
 

@@ -1,0 +1,217 @@
+{
+  "model_executor": "claude-sonnet-4-6",
+  "model_judge": "claude-sonnet-4-6",
+  "timestamp": "2026-04-02 19:12:11",
+  "scenarios": [
+    {
+      "scenario": "Code Review: SQL Injection Bug",
+      "format": "Raw Markdown",
+      "format_key": "raw_md",
+      "skill_tokens": 1146,
+      "step_coverage": 1.0,
+      "constraint_respect": 1.0,
+      "output_contract_met": 1.0,
+      "overall": 1.0,
+      "exec_time_s": 20.4,
+      "details": {
+        "steps": "All four expected steps were covered: context/intent was understood (reviewing auth.py login endpoint), SQL injection was identified clearly, a parameterized query was provided as a concrete fix, and the issue was explicitly categorized as a blocking issue.",
+        "constraints": "All constraints were respected: the injection was flagged (not approved), a concrete fix with code was provided (not just 'fix it'), and blocking vs. suggestion categories were clearly distinguished with explicit labels.",
+        "output": "The response is structured with clear blocking/suggestion categories, uses headers and code blocks, provides actionable feedback for each issue, and matches the expected output contract format from the skill definition."
+      }
+    },
+    {
+      "scenario": "Code Review: SQL Injection Bug",
+      "format": "LML Aggressive",
+      "format_key": "lml_aggressive",
+      "skill_tokens": 1100,
+      "step_coverage": 1.0,
+      "constraint_respect": 1.0,
+      "output_contract_met": 0.95,
+      "overall": 0.98,
+      "exec_time_s": 17.1,
+      "details": {
+        "steps": "All four expected steps were covered: context/intent was understood (reviewing a login endpoint in auth.py), SQL injection was identified (Blocking Issue #1), parameterized queries were suggested as a concrete fix, and the issue was categorized as blocking with \ud83d\udea8 label.",
+        "constraints": "All constraints respected: (1) did not approve \u2014 gave 'Request Changes' verdict; (2) provided concrete fixes with actual code examples, not just 'fix it'; (3) clearly distinguished blocking issues (\ud83d\udea8) from suggestions (\ud83d\udca1 rate limiting).",
+        "output": "Structured review with clear blocking/suggestion categories was provided. The response is well-organized with verdict, blocking issues, and suggestions. Minor deduction because the corrected version was cut off mid-line ('request.P' instead of 'request.POST'), indicating an incomplete response. Otherwise fully meets the contract."
+      }
+    },
+    {
+      "scenario": "Code Review: SQL Injection Bug",
+      "format": "HTML",
+      "format_key": "html",
+      "skill_tokens": 1569,
+      "step_coverage": 1.0,
+      "constraint_respect": 1.0,
+      "output_contract_met": 0.95,
+      "overall": 0.97,
+      "exec_time_s": 19.8,
+      "details": {
+        "steps": "All four expected steps were covered: (1) context/intent was implicitly understood as a login endpoint review; (2) SQL injection was identified clearly and prominently as blocking issue #1; (3) parameterized queries were suggested as the concrete fix with working code; (4) the issue was categorized as blocking with clear labeling.",
+        "constraints": "All constraints respected: (1) did NOT approve \u2014 gave 'Request Changes' verdict; (2) provided concrete fixes with actual code, not just vague 'fix it' advice; (3) clearly distinguished blocking issues from suggestions using explicit 'Bug (Blocking)' labels.",
+        "output": "The response is well-structured with blocking issue categories, concrete fixes, and clear rationale for each issue. It covers correctness, security, and maintainability. Minor deduction because the response appears cut off mid-sentence at the end ('if not e'), and there is no explicit 'suggestion' or 'praise' category present \u2014 the contract mentions blocking/suggestion/praise categories, and while blocking is well-covered, no suggestions or praise sections appear."
+      }
+    },
+    {
+      "scenario": "Code Review: SQL Injection Bug",
+      "format": "JSON IR",
+      "format_key": "json_ir",
+      "skill_tokens": 4712,
+      "step_coverage": 1.0,
+      "constraint_respect": 1.0,
+      "output_contract_met": 1.0,
+      "overall": 1.0,
+      "exec_time_s": 20.0,
+      "details": {
+        "steps": "All four expected steps were fully covered: context/intent was understood (login endpoint auth review), SQL injection was identified explicitly and labeled as a critical security vulnerability, a parameterized query fix was provided concretely, and the issue was categorized as a blocking issue with a \ud83d\udd34 label.",
+        "constraints": "All three constraints were respected: (1) The injection was flagged prominently as the first blocking issue \u2014 no approval without flagging; (2) A concrete fix with actual code was provided, not just a vague directive; (3) Blocking issues and suggestions were clearly distinguished using \ud83d\udd34 for blocking and \ud83d\udca1 for suggestions.",
+        "output": "The output is well-structured with clear categories: blocking issues (\ud83d\udd34) and suggestions (\ud83d\udca1). The review includes a verdict, categorized findings, code examples, and explanations. The structured format with headers, severity indicators, and code blocks fully satisfies the output contract of a structured review with blocking/suggestion/praise categories."
+      }
+    },
+    {
+      "scenario": "Code Review: Clean Code (Should Approve)",
+      "format": "Raw Markdown",
+      "format_key": "raw_md",
+      "skill_tokens": 1146,
+      "step_coverage": 0.9,
+      "constraint_respect": 0.55,
+      "output_contract_met": 0.6,
+      "overall": 0.62,
+      "exec_time_s": 21.6,
+      "details": {
+        "steps": "All three expected steps covered: purpose understood (comma-separated u64 parser), correctness checked (off-by-one, edge cases, silent discard), good patterns noted (idiomatic filter_map, whitespace trimming, clear tests). Minor: could have explicitly run/confirmed test suite.",
+        "constraints": "Mentions good test coverage with explicit praise. However, raises a 'Blocking' issue about API design (silent discard vs empty list indistinguishability) which appears to be bikeshedding/overreach for what looks like a straightforward utility function \u2014 this violates 'should NOT flag non-issues' and contradicts 'should approve or approve with minor comments'. The blocking issue elevates a design preference to a blocker unnecessarily.",
+        "output": "The review is structured and covers correctness/maintainability well, but classifying a non-critical API design concern as 'Blocking' contradicts the expected output contract of approving clean code with minor comments. The praise section is present but the blocking issue undermines what should be a largely approving review."
+      }
+    },
+    {
+      "scenario": "Code Review: Clean Code (Should Approve)",
+      "format": "LML Aggressive",
+      "format_key": "lml_aggressive",
+      "skill_tokens": 1100,
+      "step_coverage": 1.0,
+      "constraint_respect": 0.85,
+      "output_contract_met": 0.95,
+      "overall": 0.93,
+      "exec_time_s": 19.5,
+      "details": {
+        "steps": "All three expected steps were covered: (1) understood the code's purpose as a comma-separated ID parser, (2) checked correctness including edge cases like empty strings, whitespace, double commas, and negative numbers, (3) explicitly noted good patterns including idiomatic iterator usage and tests matching doc comments",
+        "constraints": "The review correctly approves with minor comments and mentions good test coverage. However, some findings border on bikeshedding - flagging 'empty string returns empty vec by accident' is debatable since the behavior IS correct, and suggesting tests for every edge case when the code already has good coverage could be seen as excessive. No blocking false positives were raised. The response does not flag style preferences as issues.",
+        "output": "The response is a well-structured review that approves the code with minor non-blocking comments. It includes a summary table, clear categorization of suggestions vs blocking issues, and actionable feedback with concrete code examples. The verdict 'Approve with comments' matches the expected output. The response appears to be cut off at the end ('The m') but all substantive content is present."
+      }
+    },
+    {
+      "scenario": "Code Review: Clean Code (Should Approve)",
+      "format": "HTML",
+      "format_key": "html",
+      "skill_tokens": 1569,
+      "step_coverage": 0.85,
+      "constraint_respect": 0.65,
+      "output_contract_met": 0.85,
+      "overall": 0.75,
+      "exec_time_s": 21.0,
+      "details": {
+        "steps": "The review covers understanding the code's purpose (implicit in the praise and suggestions), checks correctness (edge cases, silent rejection behavior), and notes good patterns (explicitly praises clean idiomatic Rust and iterator usage). However, the step about noting good test coverage is somewhat contradicted \u2014 the review actually flags missing tests rather than affirming existing test coverage as good.",
+        "constraints": "The review correctly approves with minor comments and does not bikeshed. However, it raises the question of whether existing test coverage is good \u2014 the expected constraint says 'should mention the good test coverage,' but instead the response highlights missing edge cases, which somewhat contradicts this. The suggestions are non-blocking and generally substantive rather than style preferences, so no false positives concern. The review does not flag non-issues.",
+        "output": "The response is a well-structured review that approves the code with minor comments, covers correctness, design, and actionable suggestions. Each suggestion includes concrete fixes. The structure matches the skill's expected output format well. The response was cut off mid-sentence at the end, which is a minor flaw. The overall verdict and tone align with 'approve with minor comments.'"
+      }
+    },
+    {
+      "scenario": "Code Review: Clean Code (Should Approve)",
+      "format": "JSON IR",
+      "format_key": "json_ir",
+      "skill_tokens": 4712,
+      "step_coverage": 1.0,
+      "constraint_respect": 0.75,
+      "output_contract_met": 0.9,
+      "overall": 0.85,
+      "exec_time_s": 22.2,
+      "details": {
+        "steps": "All three steps were covered: the response clearly understands the code's purpose (comma-separated ID parsing), checks correctness (identifies silent data loss, edge cases), and explicitly notes good patterns including the idiomatic filter_map+parse+ok() usage and test coverage.",
+        "constraints": "The response approves with minor comments and mentions good test coverage as required. However, it elevates the silent data loss issue to 'Blocking' (\ud83d\udd34), which could be seen as flagging a design pattern/architectural concern rather than a true bug - this borders on bikeshedding depending on context. The trailing comma and negative number edge cases are legitimate but the strict vs lenient parsing debate could also be considered bikeshedding. Overall the tone is mostly appropriate but the blocking classification may be slightly heavy-handed for what is described as clean code.",
+        "output": "The output is a well-structured review that approves the code (with comments), which matches the contract. It includes verdict, praise section, blocking issues, suggestions, and a summary table - all structured appropriately. The response is thorough and professional."
+      }
+    },
+    {
+      "scenario": "Security: Detect eval() in User Input",
+      "format": "Raw Markdown",
+      "format_key": "raw_md",
+      "skill_tokens": 908,
+      "step_coverage": 1.0,
+      "constraint_respect": 1.0,
+      "output_contract_met": 1.0,
+      "overall": 1.0,
+      "exec_time_s": 12.4,
+      "details": {
+        "steps": "All three expected steps were covered: (1) eval() with user input was identified as a security risk, (2) the vulnerability was explained with concrete attack examples showing arbitrary code execution (file read, RCE, server crash), and (3) a safe alternative using mathjs math-expression parser was provided with full working code",
+        "constraints": "Both constraints were fully respected: eval() was explicitly flagged as CRITICAL severity in the header, and a concrete safe replacement using mathjs with complete implementation was provided including input validation, type checking, and error handling",
+        "output": "The output fully meets the contract: security finding is clearly categorized as 'Dynamic code execution via eval()', severity is marked as CRITICAL, and a safe replacement is provided with working code, a defense-in-depth checklist, and explanation of why each control matters"
+      }
+    },
+    {
+      "scenario": "Security: Detect eval() in User Input",
+      "format": "LML Aggressive",
+      "format_key": "lml_aggressive",
+      "skill_tokens": 837,
+      "step_coverage": 1.0,
+      "constraint_respect": 1.0,
+      "output_contract_met": 1.0,
+      "overall": 1.0,
+      "exec_time_s": 12.4,
+      "details": {
+        "steps": "All three expected steps were covered: (1) eval() with user input was identified as a security risk, (2) the vulnerability was explained as arbitrary code execution with concrete attack examples, (3) safe alternatives were provided including a math parser library (mathjs) as the recommended solution",
+        "constraints": "Both constraints were fully respected: eval() was flagged as CRITICAL severity (explicitly labeled '\u2014 CRITICAL' and shown in red in the summary table), and a concrete safe replacement was provided (mathjs library with full working code example)",
+        "output": "The output contract was fully met: the response includes the security finding category (Dynamic Code Execution via eval()), severity (CRITICAL), and a concrete safe replacement (mathjs math.evaluate() with complete implementation). The response also follows the skill's format guidelines with specific line identification, vulnerability type, and safe alternative as required by @verify"
+      }
+    },
+    {
+      "scenario": "Security: Detect eval() in User Input",
+      "format": "HTML",
+      "format_key": "html",
+      "skill_tokens": 1318,
+      "step_coverage": 1.0,
+      "constraint_respect": 1.0,
+      "output_contract_met": 1.0,
+      "overall": 1.0,
+      "exec_time_s": 14.1,
+      "details": {
+        "steps": "All three expected steps were fully covered: (1) eval() with user input was clearly identified as a security risk with specific code highlighting, (2) the vulnerability was explained in detail including RCE implications with concrete attack examples, (3) safe alternatives were provided including the recommended math parser library (mathjs) and a whitelist validation approach",
+        "constraints": "Both constraints were fully respected: eval() was flagged as CRITICAL severity (explicitly marked with \ud83d\udd34 Critical and 'CRITICAL' in the header), and concrete safe replacements were provided with working code examples for both mathjs and whitelist validation approaches",
+        "output": "The output contract was fully met: the response includes a clear security finding category (Eval / Remote Code Execution), severity (Critical), and safe replacements with complete working code. The response also includes a helpful summary table and installation instructions"
+      }
+    },
+    {
+      "scenario": "Security: Detect eval() in User Input",
+      "format": "JSON IR",
+      "format_key": "json_ir",
+      "skill_tokens": 4772,
+      "step_coverage": 1.0,
+      "constraint_respect": 1.0,
+      "output_contract_met": 1.0,
+      "overall": 1.0,
+      "exec_time_s": 12.3,
+      "details": {
+        "steps": "All three steps were covered: (1) eval() with user input was identified as a security risk, (2) the vulnerability was explained clearly with an attack example showing arbitrary code execution, (3) safe alternatives using math parser libraries (mathjs) were provided with two concrete options",
+        "constraints": "Both constraints were fully respected: eval() was flagged as CRITICAL severity (explicitly labeled in the severity field), and two concrete safe replacements were provided with working code examples using mathjs",
+        "output": "The output contract was fully met: the response includes a security finding with category (Dynamic Code Execution), severity (CRITICAL), and safe replacements (two options using mathjs library with complete code examples)"
+      }
+    }
+  ],
+  "summary_by_format": {
+    "Raw Markdown": {
+      "avg_overall": 0.8733333333333334,
+      "count": 3
+    },
+    "LML Aggressive": {
+      "avg_overall": 0.9700000000000001,
+      "count": 3
+    },
+    "HTML": {
+      "avg_overall": 0.9066666666666666,
+      "count": 3
+    },
+    "JSON IR": {
+      "avg_overall": 0.9500000000000001,
+      "count": 3
+    }
+  }
+}
