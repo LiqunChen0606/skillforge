@@ -42,6 +42,7 @@ fn is_skill_block_type(directive: &str) -> Option<SkillBlockType> {
         "fallback" => Some(SkillBlockType::Fallback),
         "red_flag" => Some(SkillBlockType::RedFlag),
         "example" => Some(SkillBlockType::Example),
+        "scenario" => Some(SkillBlockType::Scenario),
         _ => None,
     }
 }
@@ -491,7 +492,7 @@ impl<'a> BlockParser<'a> {
         title_str: &str,
         start: usize,
     ) -> Option<Block> {
-        let is_container = matches!(skill_type, SkillBlockType::Skill);
+        let is_container = matches!(skill_type, SkillBlockType::Skill | SkillBlockType::Verify | SkillBlockType::Scenario);
         let title = if title_str.is_empty() {
             None
         } else {

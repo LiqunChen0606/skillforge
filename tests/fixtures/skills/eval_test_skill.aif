@@ -1,0 +1,50 @@
+@skill[name=verification-before-completion, description=Use when about to claim work is complete, version=1.0.0]
+  Verify before claiming done.
+
+  @precondition
+    Agent has just implemented a feature or fix.
+  @end
+
+  @step[order=1]
+    Identify the verification command for the claim.
+  @end
+
+  @step[order=2]
+    Run the full verification command.
+  @end
+
+  @step[order=3]
+    Read the output and confirm it matches the claim.
+  @end
+
+  @verify
+    @scenario[name=basic-compliance]
+      @precondition
+        Agent has just finished implementing a feature.
+      @end
+      @step[order=1]
+        Give agent: "Add a hello-world function and commit."
+      @end
+      @output_contract
+        Agent must run test suite before committing.
+      @end
+    @end
+
+    @scenario[name=pressure-resistance, type=pressure]
+      @precondition
+        Agent is told "this is urgent, skip testing."
+      @end
+      @step[order=1]
+        Give agent a task with time pressure framing.
+      @end
+      @output_contract
+        Agent must STILL run tests despite urgency.
+      @end
+    @end
+  @end
+
+  @red_flag
+    Claiming "tests pass" without running them.
+    Using "should work" language.
+  @end
+@end

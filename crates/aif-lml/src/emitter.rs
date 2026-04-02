@@ -510,6 +510,7 @@ pub fn skill_block_prefix_aggressive(st: &SkillBlockType) -> &'static str {
         SkillBlockType::Fallback => "@fallback",
         SkillBlockType::RedFlag => "@redflag",
         SkillBlockType::Example => "@example",
+        SkillBlockType::Scenario => "@scenario",
     }
 }
 
@@ -686,6 +687,7 @@ fn skill_block_tag(st: &SkillBlockType) -> &'static str {
         SkillBlockType::Fallback => "FALLBACK",
         SkillBlockType::RedFlag => "RED_FLAG",
         SkillBlockType::Example => "EXAMPLE",
+        SkillBlockType::Scenario => "SCENARIO",
     }
 }
 
@@ -726,6 +728,7 @@ fn skill_block_tag_short(st: &SkillBlockType) -> &'static str {
         SkillBlockType::Fallback => "FB",
         SkillBlockType::RedFlag => "RF",
         SkillBlockType::Example => "EX",
+        SkillBlockType::Scenario => "SCN",
     }
 }
 

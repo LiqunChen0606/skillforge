@@ -33,6 +33,7 @@ fn skill_type_tag(st: &SkillBlockType) -> &'static str {
         SkillBlockType::Fallback => "fallback",
         SkillBlockType::RedFlag => "red_flag",
         SkillBlockType::Example => "example",
+        SkillBlockType::Scenario => "scenario",
     }
 }
 

@@ -141,6 +141,7 @@ fn skill_prefix(st: &SkillBlockType) -> &'static str {
         SkillBlockType::Fallback => "@fallback",
         SkillBlockType::RedFlag => "@redflag",
         SkillBlockType::Example => "@example",
+        SkillBlockType::Scenario => "@scenario",
     }
 }
 

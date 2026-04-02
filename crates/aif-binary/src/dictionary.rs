@@ -54,6 +54,7 @@ pub const SK_TOOL: u8 = 0x46;
 pub const SK_FALLBACK: u8 = 0x47;
 pub const SK_RED_FLAG: u8 = 0x48;
 pub const SK_EXAMPLE: u8 = 0x49;
+pub const SK_SCENARIO: u8 = 0x4A;
 
 /// Encode a usize as a varint (LEB128).
 pub fn encode_varint(mut n: usize, out: &mut Vec<u8>) {

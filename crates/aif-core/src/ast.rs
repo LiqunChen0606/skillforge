@@ -130,6 +130,7 @@ pub enum SkillBlockType {
     Fallback,
     RedFlag,
     Example,
+    Scenario,
 }
 
 /// Shared metadata for media blocks (Figure, Audio, Video).

@@ -353,6 +353,7 @@ fn skill_block_class(st: &SkillBlockType) -> &'static str {
         SkillBlockType::Fallback => "aif-fallback",
         SkillBlockType::RedFlag => "aif-red-flag",
         SkillBlockType::Example => "aif-example",
+        SkillBlockType::Scenario => "aif-scenario",
     }
 }
 

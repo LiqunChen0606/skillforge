@@ -299,6 +299,7 @@ fn skill_type_id(st: &SkillBlockType) -> u8 {
         SkillBlockType::Fallback => SK_FALLBACK,
         SkillBlockType::RedFlag => SK_RED_FLAG,
         SkillBlockType::Example => SK_EXAMPLE,
+        SkillBlockType::Scenario => SK_SCENARIO,
     }
 }
 
@@ -826,6 +827,7 @@ fn decode_skill_type(byte: u8) -> SkillBlockType {
         SK_FALLBACK => SkillBlockType::Fallback,
         SK_RED_FLAG => SkillBlockType::RedFlag,
         SK_EXAMPLE => SkillBlockType::Example,
+        SK_SCENARIO => SkillBlockType::Scenario,
         _ => SkillBlockType::Skill, // fallback
     }
 }

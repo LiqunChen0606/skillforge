@@ -293,6 +293,7 @@ fn skill_type_heading(st: &SkillBlockType) -> &'static str {
         SkillBlockType::Fallback => "Fallback",
         SkillBlockType::RedFlag => "Anti-patterns",
         SkillBlockType::Example => "Examples",
+        SkillBlockType::Scenario => "Scenario",
     }
 }
 

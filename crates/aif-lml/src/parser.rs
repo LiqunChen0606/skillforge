@@ -551,6 +551,7 @@ fn match_skill_type(name: &str) -> Option<SkillBlockType> {
         "fallback" => Some(SkillBlockType::Fallback),
         "redflag" => Some(SkillBlockType::RedFlag),
         "example" => Some(SkillBlockType::Example),
+        "scenario" => Some(SkillBlockType::Scenario),
         _ => None,
     }
 }

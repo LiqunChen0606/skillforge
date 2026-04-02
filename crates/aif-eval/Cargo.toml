@@ -13,3 +13,4 @@ serde_json = { workspace = true }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+aif-parser = { path = "../aif-parser" }
