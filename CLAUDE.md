@@ -287,8 +287,14 @@ All importers now set `_aif_source_format` ("html", "markdown", "pdf") and `_aif
 ### Chunk Graph Lint
 `lint_chunk_graph()` in `aif-core::lint` — 3 structural checks on chunk graphs: OrphanedChunks (isolated nodes in multi-chunk docs), MissingContinuation (sequential chunks without Continuation link), DependencyCycle (circular Dependency/ParentContext links via 3-color DFS). CLI: `aif chunk lint graph.json [--format text|json]`.
 
-### AIF Plugin Skills
-`plugins/` — 6 claude-code plugins re-expressed in AIF format: code-review, security-guidance, feature-dev, frontend-design, commit-commands, claude-opus-4-5-migration. Demonstrates AIF skill syntax with typed blocks (@step, @verify, @example, @red_flag, @decision, @fallback, @output_contract).
+### Skill Execution Quality Benchmark
+`benchmarks/skill_execution_benchmark.py` — Measures whether LLMs follow skills better in AIF LML vs raw Markdown. 3 scenarios (SQL injection review, clean code approval, eval detection) x 4 formats. Judge LLM scores step coverage, constraint respect, output contract adherence. Results: LML Aggressive 0.97 overall vs Raw Markdown 0.87 (+10 percentage points at 5% fewer tokens). Explicit typed tags help LLMs identify instruction blocks.
+
+### AIF Skills & Plugins
+`examples/skills/` — 7 AIF skills including 6 claude-code plugins: code-review, security-guidance, feature-dev, frontend-design, commit-commands, claude-opus-4-5-migration. Comprehensive authoring guide with bidirectional AIF↔Markdown conversion, validation workflows, and deployment instructions for Claude Code / Codex.
+
+### Rich Content Examples
+`examples/rich-content/` — Demonstrates AIF handling of tables (captioned, cross-linked), SVG figures (width/height/mime metadata), audio (duration), video (poster frame), cross-references (`refs` attribute), and document metadata. Includes roundtrip fidelity comparison across formats.
 
 ## Known Limitations
 

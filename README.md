@@ -398,7 +398,6 @@ cargo run -p aif-cli -- --help # CLI usage
 
 ### TBD — Next Phases
 
-- [ ] **Skill execution quality benchmark** — measure whether LLMs follow skills better in AIF LML vs raw Markdown (routing precision, missing-step rate, output-contract adherence)
 - [ ] **Multi-view compilation** — named profiles: `aif compile --view author`, `--view llm`, `--view api`, `--view print`
 - [ ] **Undefined terms lint** — detect terms used in claims/evidence not defined in any `@definition` block
 - [ ] **Reusable skill templates** — `@skill[extends="base-debugging"]` inheritance

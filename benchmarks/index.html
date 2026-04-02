@@ -225,21 +225,44 @@
   </table>
 </div>
 
+<!-- Skill Execution Quality -->
+<h2>Skill Execution Quality: Does the LLM Actually Follow Better?</h2>
+<div class="card">
+  <p>3 test scenarios &times; 4 formats. An executor LLM follows each skill, a judge LLM scores compliance.</p>
+  <table>
+    <thead><tr><th style="text-align:left">Format</th><th>Tokens</th><th>Step Coverage</th><th>Constraints</th><th>Output Contract</th><th>Overall</th></tr></thead>
+    <tbody>
+      <tr style="background:#e8f5e9"><td style="text-align:left"><strong>LML Aggressive</strong></td><td><strong>1,012</strong></td><td><strong>1.00</strong></td><td><strong>0.95</strong></td><td><strong>0.97</strong></td><td><strong>0.97</strong></td></tr>
+      <tr><td style="text-align:left">JSON IR</td><td>4,732</td><td>1.00</td><td>0.92</td><td>0.97</td><td>0.95</td></tr>
+      <tr><td style="text-align:left">HTML</td><td>1,485</td><td>0.95</td><td>0.88</td><td>0.93</td><td>0.91</td></tr>
+      <tr><td style="text-align:left">Raw Markdown</td><td>1,067</td><td>0.97</td><td>0.85</td><td>0.87</td><td>0.87</td></tr>
+    </tbody>
+  </table>
+  <div class="note">
+    <strong>Key finding:</strong> LML Aggressive scores <strong>10 percentage points higher</strong> than raw Markdown (0.97 vs 0.87) at 5% fewer tokens. The explicit typed tags (<code>@step:</code>, <code>@verify:</code>, <code>@red_flag:</code>) help the LLM identify and follow each instruction block &mdash; especially for constraint respect and output contract adherence.
+  </div>
+</div>
+
 <!-- Navigation -->
 <h2>Detailed Reports</h2>
-<div class="nav-grid">
+<div class="nav-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
   <a href="results.html" class="nav-card">
     <h3>Document Token Benchmark</h3>
-    <p>10 Wikipedia articles &bull; 12 formats &bull; per-article breakdowns, cost projections, information density analysis</p>
+    <p>10 Wikipedia articles &bull; 13 formats (incl. cleaned HTML) &bull; per-article breakdowns</p>
     <div class="arrow">View Full Report &rarr;</div>
   </a>
   <a href="skill_benchmark_report.html" class="nav-card">
     <h3>Skill Token Benchmark</h3>
-    <p>10 AI skills &bull; 11 formats &bull; per-skill comparison, TNO heatmap, cost impact analysis</p>
+    <p>10 AI skills &bull; 11 formats &bull; per-skill TNO comparison</p>
     <div class="arrow">View Full Report &rarr;</div>
+  </a>
+  <a href="skill_execution_results.json" class="nav-card">
+    <h3>Skill Execution Quality</h3>
+    <p>3 scenarios &bull; 4 formats &bull; LLM compliance scoring (JSON data)</p>
+    <div class="arrow">View Results &rarr;</div>
   </a>
 </div>
 
-<p class="timestamp">Generated: 2026-04-02 | Source: benchmarks/token_benchmark.py, benchmarks/skill_token_benchmark.py</p>
+<p class="timestamp">Generated: 2026-04-02 | Source: benchmarks/token_benchmark.py, benchmarks/skill_token_benchmark.py, benchmarks/skill_execution_benchmark.py</p>
 </body>
 </html>
