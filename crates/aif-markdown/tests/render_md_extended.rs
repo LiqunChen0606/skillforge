@@ -103,7 +103,7 @@ fn render_md_figure() {
 #[test]
 fn render_md_wiki_article() {
     let input = std::fs::read_to_string(
-        concat!(env!("CARGO_MANIFEST_DIR"), "/../../examples/wiki_article.aif")
+        concat!(env!("CARGO_MANIFEST_DIR"), "/../../examples/documents/wiki_article.aif")
     ).unwrap();
     let doc = parse(&input).unwrap();
     let md = render_markdown(&doc);

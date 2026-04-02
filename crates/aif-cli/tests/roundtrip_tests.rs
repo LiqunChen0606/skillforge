@@ -12,7 +12,7 @@ macro_rules! workspace_path {
 
 #[test]
 fn roundtrip_wiki_article_to_all_formats() {
-    let input = std::fs::read_to_string(workspace_path!("examples/wiki_article.aif")).unwrap();
+    let input = std::fs::read_to_string(workspace_path!("examples/documents/wiki_article.aif")).unwrap();
     let doc = parse(&input).unwrap();
 
     let html = render_html(&doc);
@@ -37,7 +37,7 @@ fn roundtrip_wiki_article_to_all_formats() {
 
 #[test]
 fn roundtrip_simple_example_to_all_formats() {
-    let input = std::fs::read_to_string(workspace_path!("examples/simple.aif")).unwrap();
+    let input = std::fs::read_to_string(workspace_path!("examples/documents/simple.aif")).unwrap();
     let doc = parse(&input).unwrap();
 
     let html = render_html(&doc);
@@ -53,7 +53,7 @@ fn roundtrip_simple_example_to_all_formats() {
 
 #[test]
 fn roundtrip_markdown_import_then_export() {
-    let md_input = std::fs::read_to_string(workspace_path!("examples/wiki_source.md")).unwrap();
+    let md_input = std::fs::read_to_string(workspace_path!("examples/documents/wiki_source.md")).unwrap();
     let doc = import_markdown(&md_input);
 
     assert_eq!(doc.metadata.get("title").unwrap(), "Photosynthesis");
@@ -116,7 +116,7 @@ fn roundtrip_all_blocks_fixture() {
 
 #[test]
 fn json_roundtrip_preserves_structure() {
-    let input = std::fs::read_to_string(workspace_path!("examples/wiki_article.aif")).unwrap();
+    let input = std::fs::read_to_string(workspace_path!("examples/documents/wiki_article.aif")).unwrap();
     let doc = parse(&input).unwrap();
 
     // Serialize to JSON

@@ -1,7 +1,7 @@
 use std::process::Command;
 
 fn aif_cli() -> Command {
-    Command::new(env!("CARGO_BIN_EXE_aif-cli"))
+    Command::new(env!("CARGO_BIN_EXE_aif"))
 }
 
 #[test]

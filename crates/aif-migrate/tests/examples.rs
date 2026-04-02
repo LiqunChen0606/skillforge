@@ -61,25 +61,25 @@ fn jest_to_vitest_fixture_validates() {
 
 #[test]
 fn nextjs_13_to_15_example_validates() {
-    let source = include_str!("../../../examples/migration_nextjs_13_to_15.aif");
+    let source = include_str!("../../../examples/migrations/migration_nextjs_13_to_15.aif");
     load_and_validate(source, "nextjs-13-to-15", 7);
 }
 
 #[test]
 fn eslint_flat_config_example_validates() {
-    let source = include_str!("../../../examples/migration_eslint_flat_config.aif");
+    let source = include_str!("../../../examples/migrations/migration_eslint_flat_config.aif");
     load_and_validate(source, "eslint-legacy-to-flat", 7);
 }
 
 #[test]
 fn typescript_strict_example_validates() {
-    let source = include_str!("../../../examples/migration_typescript_strict.aif");
+    let source = include_str!("../../../examples/migrations/migration_typescript_strict.aif");
     load_and_validate(source, "typescript-strict-mode", 8);
 }
 
 #[test]
 fn nextjs_skill_has_rich_steps() {
-    let source = include_str!("../../../examples/migration_nextjs_13_to_15.aif");
+    let source = include_str!("../../../examples/migrations/migration_nextjs_13_to_15.aif");
     let doc = aif_parser::parse(source).unwrap();
     let skill = doc.blocks.into_iter()
         .find(|b| matches!(b.kind, aif_core::ast::BlockKind::SkillBlock { .. }))
@@ -115,7 +115,7 @@ fn nextjs_skill_has_rich_steps() {
 
 #[test]
 fn typescript_strict_has_phased_steps() {
-    let source = include_str!("../../../examples/migration_typescript_strict.aif");
+    let source = include_str!("../../../examples/migrations/migration_typescript_strict.aif");
     let doc = aif_parser::parse(source).unwrap();
     let skill = doc.blocks.into_iter()
         .find(|b| matches!(b.kind, aif_core::ast::BlockKind::SkillBlock { .. }))

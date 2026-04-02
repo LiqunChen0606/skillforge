@@ -10,15 +10,13 @@ Every document format forces a trade-off between structure and token cost:
 
 | What you send | Tokens (10 articles) | Structure | Roundtrip |
 |---------------|---------------------|-----------|-----------|
+| Cleaned HTML text | **544K** | **None** — stripped to text | No |
 | Raw PDF text | 561K | **None** — flat string | No |
-| Cleaned HTML text | ~600K\* | **None** — stripped to text | No |
+| **AIF LML Aggressive** | **981K** | **Full semantic** (typed blocks) | **Yes** |
 | Raw Markdown | 1,263K | Basic (headings, lists) | Partial |
-| **AIF LML Aggressive** | **980K** | **Full semantic** (typed blocks) | **Yes** |
-| Raw HTML | 5,515K | Full + presentational bloat | Yes |
+| Raw HTML | 5,500K | Full + presentational bloat | Yes |
 
-\* Estimated; run `python benchmarks/token_benchmark.py` with your API key for exact numbers.
-
-**The insight:** Plain text extraction (PDF-text, cleaned HTML) is cheapest but gives the LLM zero structure. AIF LML Aggressive costs ~75% more tokens than flat text but carries typed sections, claims, evidence, tables, figures — and the LLM can reason about document structure, not just content. It's **22% cheaper than raw Markdown** while providing far richer semantics.
+**The insight:** Plain text extraction (cleaned HTML 544K, PDF-text 561K) is cheapest but gives the LLM zero structure — no headings, sections, tables, or typed blocks. AIF LML Aggressive costs **80% more tokens than flat text** but carries typed sections, claims, evidence, tables, figures — and the LLM can reason about document structure, not just content. It's **22% cheaper than raw Markdown** while providing far richer semantics.
 
 ## Install
 
@@ -237,15 +235,15 @@ Baseline: Raw HTML (5.5M tokens). All comparisons are vs Raw HTML.
 
 | Format | Total Tokens | vs Raw HTML | Structure |
 |--------|-------------|-------------|-----------|
-| Raw HTML (baseline) | 5,515,206 | — | Full + chrome |
-| Cleaned HTML text | ~600K\* | ~89% saved | None |
-| Raw PDF (text) | 560,950 | +89.8% saved | None |
-| Raw Markdown | 1,262,755 | +77.1% saved | Basic |
-| AIF Markdown (RT) | 1,009,181 | +81.7% saved | Basic |
-| AIF LML Standard | 985,090 | +82.1% saved | Full semantic |
-| **AIF LML Aggressive** | **979,838** | **+82.2% saved** | **Full semantic** |
+| Raw HTML (baseline) | 5,500,132 | — | Full + chrome |
+| **Cleaned HTML text** | **543,584** | **+90.1% saved** | **None** |
+| Raw PDF (text) | 561,449 | +89.8% saved | None |
+| Raw Markdown | 1,263,434 | +77.0% saved | Basic |
+| AIF Markdown (RT) | 1,010,020 | +81.6% saved | Basic + provenance |
+| AIF LML Standard | 985,864 | +82.1% saved | Full semantic |
+| **AIF LML Aggressive** | **980,626** | **+82.2% saved** | **Full semantic** |
 
-> **Honest comparison:** The "82% vs Raw HTML" stat is real but misleading in isolation — raw HTML includes massive presentational markup. The fairer comparison: AIF LML Aggressive uses **22% fewer tokens than raw Markdown** while adding typed semantic blocks, or **~75% more tokens than flat text extraction** in exchange for full document structure.
+> **Honest comparison:** Cleaned HTML text (544K) and PDF text (561K) are cheapest — but carry zero structure. AIF LML Aggressive uses **80% more tokens than flat text** in exchange for typed sections, claims, evidence, tables, and lossless roundtrip. It uses **22% fewer tokens than raw Markdown** while providing far richer semantics. The "82% vs raw HTML" stat is real but raw HTML includes massive presentational markup — compare against cleaned HTML or Markdown for a fairer picture.
 
 ### Skill Token Efficiency (10 AI Skills)
 
@@ -376,11 +374,11 @@ cargo run -p aif-cli -- --help # CLI usage
 - [x] Cross-language SDKs (Python Pydantic, TypeScript Zod)
 - [x] AIF plugin skills (6 claude-code plugins converted)
 
-### WIP
+### Recently Completed
 
-- [ ] Re-run benchmarks with cleaned HTML baseline for fair comparison
-- [ ] LLM-assisted semantic inference (option C — call LLM for ambiguous blocks)
-- [ ] Async migration engine with real LLM calls (currently placeholder `apply_fn`)
+- [x] Re-run benchmarks with cleaned HTML baseline (544K tokens — 90.1% saved vs raw HTML)
+- [x] LLM-assisted semantic inference (pattern rules first, then LLM for unmatched blocks via `--infer-llm`)
+- [x] Async migration engine with real LLM calls (Anthropic API, env `AIF_LLM_API_KEY`)
 
 ### TBD — Next Phases
 

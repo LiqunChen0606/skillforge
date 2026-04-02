@@ -361,22 +361,20 @@ Baseline: Raw HTML (5.5M tokens total). Cleaned HTML text added for fair compari
 | Format | Total Tokens | vs Raw HTML | Structure | Bytes |
 |--------|-------------|-------------|-----------|-------|
 | Raw HTML (baseline) | 5.5M | — | Full + chrome | 13.6M |
-| Cleaned HTML text | ~600K* | ~89% saved | None | ~2M |
-| Raw PDF (text) | 561.0K | +89.8% saved | None | 1.7M |
-| Raw Markdown | 1.3M | +77.1% saved | Basic | 3.5M |
-| **AIF LML Aggressive** | **979.8K** | **+82.2% saved** | **Full semantic** | **2.8M** |
-| AIF LML Standard | 985.1K | +82.1% saved | Full semantic | 2.8M |
-| AIF Markdown (RT) | 1.0M | +81.7% saved | Basic | 2.9M |
-| AIF JSON IR | 4.5M | +18.7% saved | Full semantic | 18.4M |
-
-\* Estimated; run `python benchmarks/token_benchmark.py` for exact cleaned HTML numbers.
+| **Cleaned HTML text** | **543.6K** | **+90.1% saved** | **None** | **1.8M** |
+| Raw PDF (text) | 561.4K | +89.8% saved | None | 1.7M |
+| Raw Markdown | 1.3M | +77.0% saved | Basic | 3.5M |
+| **AIF LML Aggressive** | **980.6K** | **+82.2% saved** | **Full semantic** | **2.8M** |
+| AIF LML Standard | 985.9K | +82.1% saved | Full semantic | 2.8M |
+| AIF Markdown (RT) | 1.0M | +81.6% saved | Basic + provenance | 2.9M |
+| AIF JSON IR | 4.5M | +18.4% saved | Full semantic | 18.4M |
 
 ### Key Findings
 
-1. **Plain text extraction is cheapest but structureless** — PDF-text (561K) and cleaned HTML (~600K) strip everything to flat text. Fine for Q&A; unsuitable when the LLM needs to reason about document structure.
+1. **Plain text extraction is cheapest but structureless** — Cleaned HTML (544K) and PDF-text (561K) strip everything to flat text. Fine for Q&A; unsuitable when the LLM needs to reason about document structure.
 2. **AIF LML Aggressive is the best structured format** — 22% fewer tokens than raw Markdown with full semantic types (claims, evidence, definitions, tables). The only format that preserves typed blocks at fewer tokens than Markdown.
-3. **AIF costs ~75% more than flat text extraction** — but carries typed sections, headings, claims, evidence, tables, figures, and lossless roundtrip. This is the price of structure.
-4. **The "82% vs Raw HTML" stat is real but context-dependent** — raw HTML includes presentational markup, CSS classes, navigation chrome. Comparing vs cleaned HTML text or PDF-text is fairer for cost analysis. Comparing vs Markdown is fairer for structure analysis.
+3. **AIF costs 80% more than flat text extraction** — but carries typed sections, headings, claims, evidence, tables, figures, and lossless roundtrip. This is the price of structure.
+4. **The "82% vs Raw HTML" stat is real but context-dependent** — raw HTML includes presentational markup, CSS classes, navigation chrome. Comparing vs cleaned HTML (544K) or Markdown (1.3M) is fairer.
 
 ### Structure-per-Token (the real comparison)
 

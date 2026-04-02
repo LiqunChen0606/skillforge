@@ -132,7 +132,7 @@ fn html_escapes_special_chars() {
 #[test]
 fn html_wiki_article_fixture() {
     let input = std::fs::read_to_string(
-        concat!(env!("CARGO_MANIFEST_DIR"), "/../../examples/wiki_article.aif")
+        concat!(env!("CARGO_MANIFEST_DIR"), "/../../examples/documents/wiki_article.aif")
     ).unwrap();
     let doc = parse(&input).unwrap();
     let html = render_html(&doc);
