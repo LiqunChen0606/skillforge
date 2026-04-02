@@ -2,6 +2,7 @@ pub mod ast;
 pub mod chunk;
 pub mod span;
 pub mod error;
+pub mod infer;
 pub mod lint;
 pub mod schema;
 pub mod text;
