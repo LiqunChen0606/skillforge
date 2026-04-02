@@ -18,6 +18,15 @@ examples/
 ├── skills/             # AI agent skill definitions
 │   └── code_review.aif         # Code review skill with @example blocks
 │
+├── plugins/            # Claude Code plugins in AIF format
+│   ├── README.md               # Detailed guide: creating, converting, deploying skills
+│   ├── code-review/            # PR review with confidence scoring
+│   ├── feature-dev/            # 7-phase development workflow
+│   ├── frontend-design/        # UI design guidance
+│   ├── commit-commands/        # Git workflow automation
+│   ├── security-guidance/      # Vulnerability detection
+│   └── claude-opus-4-5-migration/  # Model migration
+│
 └── migrations/         # Codebase migration skills
     ├── README.md               # Detailed migration guide
     ├── migration_nextjs_13_to_15.aif
