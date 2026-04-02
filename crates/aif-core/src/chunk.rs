@@ -42,6 +42,15 @@ pub struct ChunkMetadata {
     pub depth: usize,
     pub sequence: usize,
     pub total_chunks: usize,
+    /// Auto-generated summary of the chunk's content (first sentence or heading).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub summary: Option<String>,
+    /// If true, this chunk requires reading the preceding chunk for full context.
+    #[serde(default)]
+    pub requires_parent_context: bool,
+    /// Semantic block types present in this chunk (e.g., Claim, Evidence).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub semantic_types: Vec<String>,
 }
 
 /// A directed link between chunks.
@@ -60,6 +69,8 @@ pub enum LinkType {
     Continuation,
     CrossReference,
     Refutation,
+    /// Target chunk must be read before source for full understanding.
+    ParentContext,
 }
 
 /// The chunk graph: nodes are chunks, edges are links.
@@ -107,6 +118,48 @@ impl ChunkGraph {
     /// Get all links pointing to a chunk.
     pub fn incoming_links(&self, id: &ChunkId) -> Vec<&ChunkLink> {
         self.links.iter().filter(|l| &l.target == id).collect()
+    }
+
+    /// Get the minimum set of chunks needed to understand `id`:
+    /// follows ParentContext and Dependency links transitively.
+    pub fn required_context(&self, id: &ChunkId) -> Vec<ChunkId> {
+        let mut visited = std::collections::BTreeSet::new();
+        let mut stack = vec![id.clone()];
+        let mut result = Vec::new();
+
+        while let Some(current) = stack.pop() {
+            if !visited.insert(current.clone()) {
+                continue;
+            }
+            // Find links where current is the source and type is ParentContext or Dependency
+            for link in &self.links {
+                if &link.source == &current
+                    && matches!(
+                        link.link_type,
+                        LinkType::ParentContext | LinkType::Dependency
+                    )
+                {
+                    if !visited.contains(&link.target) {
+                        stack.push(link.target.clone());
+                    }
+                }
+            }
+            if &current != id {
+                result.push(current);
+            }
+        }
+        result
+    }
+
+    /// Get all chunk IDs from a single document, ordered by sequence.
+    pub fn chunks_for_doc(&self, doc_path: &str) -> Vec<&Chunk> {
+        let mut chunks: Vec<_> = self
+            .chunks
+            .values()
+            .filter(|c| c.source_doc == doc_path)
+            .collect();
+        chunks.sort_by_key(|c| c.metadata.sequence);
+        chunks
     }
 }
 
@@ -166,6 +219,9 @@ mod tests {
                 depth: 0,
                 sequence: 0,
                 total_chunks: 1,
+                summary: None,
+                requires_parent_context: false,
+                semantic_types: vec![],
             },
         };
         let id = chunk.id.clone();
@@ -195,6 +251,52 @@ mod tests {
         let json = serde_json::to_string(&graph).unwrap();
         assert!(json.contains("\"chunks\""));
         assert!(json.contains("\"links\""));
+    }
+
+    #[test]
+    fn required_context_follows_parent() {
+        let mut graph = ChunkGraph::new();
+        let a = ChunkId::new("doc", &[0]);
+        let b = ChunkId::new("doc", &[1]);
+        let c = ChunkId::new("doc", &[2]);
+        graph.add_link(ChunkLink {
+            source: b.clone(),
+            target: a.clone(),
+            link_type: LinkType::ParentContext,
+            label: None,
+        });
+        graph.add_link(ChunkLink {
+            source: c.clone(),
+            target: b.clone(),
+            link_type: LinkType::ParentContext,
+            label: None,
+        });
+        let context = graph.required_context(&c);
+        assert!(context.contains(&b));
+        assert!(context.contains(&a));
+        assert!(!context.contains(&c));
+    }
+
+    #[test]
+    fn required_context_handles_cycles() {
+        let mut graph = ChunkGraph::new();
+        let a = ChunkId::new("doc", &[0]);
+        let b = ChunkId::new("doc", &[1]);
+        graph.add_link(ChunkLink {
+            source: a.clone(),
+            target: b.clone(),
+            link_type: LinkType::Dependency,
+            label: None,
+        });
+        graph.add_link(ChunkLink {
+            source: b.clone(),
+            target: a.clone(),
+            link_type: LinkType::Dependency,
+            label: None,
+        });
+        let context = graph.required_context(&a);
+        // Should not infinite loop; b is reachable
+        assert!(context.contains(&b));
     }
 
     #[test]

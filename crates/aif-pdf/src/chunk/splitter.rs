@@ -84,6 +84,9 @@ fn chunk_by_section(doc: &Document, doc_path: &str, doc_hash: &str) -> Vec<Chunk
                     depth: 0,
                     sequence,
                     total_chunks: 0, // filled in later
+                    summary: None,
+                    requires_parent_context: false,
+                    semantic_types: vec![],
                 },
             });
             sequence += 1;
@@ -109,6 +112,9 @@ fn chunk_by_section(doc: &Document, doc_path: &str, doc_hash: &str) -> Vec<Chunk
                         depth: 0,
                         sequence,
                         total_chunks: 0,
+                        summary: None,
+                        requires_parent_context: false,
+                        semantic_types: vec![],
                     },
                 });
                 sequence += 1;
@@ -262,6 +268,9 @@ fn make_chunk(
             depth: 0,
             sequence,
             total_chunks: 0,
+            summary: None,
+            requires_parent_context: false,
+            semantic_types: vec![],
         },
     }
 }

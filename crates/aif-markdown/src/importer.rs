@@ -324,6 +324,13 @@ pub fn import(input: &str) -> Document {
     // Collect blocks from the root builder.
     let root = stack.pop().expect("root missing");
     doc.blocks = root.children;
+
+    // Provenance: record import source metadata
+    doc.metadata
+        .insert("_aif_source_format".into(), "markdown".into());
+    doc.metadata
+        .insert("_aif_import_mode".into(), "generic".into());
+
     doc
 }
 

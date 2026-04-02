@@ -67,6 +67,14 @@ enum Commands {
         #[command(subcommand)]
         action: MigrateAction,
     },
+    /// Run document-level semantic lint checks
+    Lint {
+        /// Input .aif file
+        input: PathBuf,
+        /// Output format: text (default) or json
+        #[arg(long, default_value = "text")]
+        format: String,
+    },
 }
 
 #[derive(Subcommand)]
@@ -1086,12 +1094,14 @@ fn main() {
             let is_pdf = ext.as_ref().map(|e| e == "pdf").unwrap_or(false);
             let is_html = ext.as_ref().map(|e| e == "html" || e == "htm").unwrap_or(false);
 
+            let source_file = input.display().to_string();
+
             if is_pdf {
                 let pdf_bytes = fs::read(&input).unwrap_or_else(|e| {
                     eprintln!("Error reading {}: {}", input.display(), e);
                     std::process::exit(1);
                 });
-                let result = aif_pdf::import::import_pdf(&pdf_bytes).unwrap_or_else(|e| {
+                let mut result = aif_pdf::import::import_pdf(&pdf_bytes).unwrap_or_else(|e| {
                     eprintln!("PDF import error: {}", e);
                     std::process::exit(1);
                 });
@@ -1107,11 +1117,15 @@ fn main() {
                         diag.page, diag.kind, diag.message
                     );
                 }
+                // Provenance
+                result.document.metadata.insert("_aif_source_format".into(), "pdf".into());
+                result.document.metadata.insert("_aif_source_file".into(), source_file);
+                result.document.metadata.insert("_aif_import_confidence".into(), format!("{:.2}", result.avg_confidence));
                 let json = serde_json::to_string_pretty(&result.document).unwrap();
                 write_output(&json, output.as_ref());
             } else if is_html {
                 let source = read_source(&input);
-                let result = aif_html::import_html(&source, strip_chrome);
+                let mut result = aif_html::import_html(&source, strip_chrome);
                 eprintln!(
                     "Imported HTML ({} mode), {} blocks",
                     match result.mode {
@@ -1120,11 +1134,15 @@ fn main() {
                     },
                     result.document.blocks.len()
                 );
+                // Provenance (source_format and import_mode already set by importer)
+                result.document.metadata.insert("_aif_source_file".into(), source_file);
                 let json = serde_json::to_string_pretty(&result.document).unwrap();
                 write_output(&json, output.as_ref());
             } else {
                 let source = read_source(&input);
-                let doc = aif_markdown::import_markdown(&source);
+                let mut doc = aif_markdown::import_markdown(&source);
+                // Provenance (source_format already set by importer)
+                doc.metadata.insert("_aif_source_file".into(), source_file);
                 let json = serde_json::to_string_pretty(&doc).unwrap();
                 write_output(&json, output.as_ref());
             }
@@ -1149,6 +1167,63 @@ fn main() {
         }
         Commands::Migrate { action } => {
             handle_migrate(action);
+        }
+        Commands::Lint { input, format } => {
+            let source = read_source(&input);
+            let doc = parse_aif(&source);
+            let results = aif_core::lint::lint_document(&doc);
+            let (total, passed, failed) = aif_core::lint::lint_summary(&results);
+
+            if format == "json" {
+                let json_results: Vec<_> = results
+                    .iter()
+                    .map(|r| {
+                        serde_json::json!({
+                            "check": format!("{:?}", r.check),
+                            "passed": r.passed,
+                            "severity": format!("{:?}", r.severity),
+                            "message": r.message,
+                            "block_id": r.block_id,
+                        })
+                    })
+                    .collect();
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&serde_json::json!({
+                        "file": input.display().to_string(),
+                        "total": total,
+                        "passed": passed,
+                        "failed": failed,
+                        "results": json_results,
+                    }))
+                    .unwrap()
+                );
+            } else {
+                println!("Document Lint: {}", input.display());
+                println!("{}", "=".repeat(60));
+                for r in &results {
+                    let icon = if r.passed { "+" } else { "x" };
+                    let sev = match r.severity {
+                        aif_core::lint::DocLintSeverity::Error => "ERROR",
+                        aif_core::lint::DocLintSeverity::Warning => "WARN",
+                    };
+                    if r.passed {
+                        println!("  [{}] {:?}", icon, r.check);
+                    } else {
+                        let loc = r
+                            .block_id
+                            .as_ref()
+                            .map(|id| format!(" ({})", id))
+                            .unwrap_or_default();
+                        println!("  [{}] {:?} [{}]{}: {}", icon, r.check, sev, loc, r.message);
+                    }
+                }
+                println!("{}", "-".repeat(60));
+                println!("{} checks: {} passed, {} failed", total, passed, failed);
+                if failed > 0 {
+                    std::process::exit(1);
+                }
+            }
         }
     }
 }

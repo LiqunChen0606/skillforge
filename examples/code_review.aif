@@ -1,0 +1,108 @@
+#title: Code Review Skill
+#summary: A structured skill for AI-assisted code review
+
+@skill[name="code-review", version="1.0", priority="high", description="Use when a user requests code review or when reviewing changes before merge"]
+
+  @precondition
+    A pull request, diff, or set of changed files is available for review. The reviewer has access to the codebase and can run tests.
+  @end
+
+  @tool
+    `git diff` to view changes, `cargo test` / `npm test` to run tests, `grep` to search for related usage, `git log` to understand change history.
+  @end
+
+  @step[order=1]
+    **Understand context.** Read the PR description, linked issues, and recent commits. Identify the *intent* of the change before evaluating the code. Run `git log --oneline -10` on the affected files to understand recent history.
+  @end
+
+  @step[order=2]
+    **Check correctness.** Verify the code does what it claims. Look for off-by-one errors, null/undefined handling, race conditions, resource leaks, and missing error propagation. Run the test suite to confirm nothing is broken.
+  @end
+
+  @step[order=3]
+    **Assess design quality.** Evaluate naming, separation of concerns, and API surface. Check that new abstractions earn their complexity. Flag functions over 50 lines or files over 500 lines for potential splitting.
+  @end
+
+  @step[order=4]
+    **Provide actionable feedback.** For each issue, state what is wrong, why it matters, and suggest a concrete fix. Distinguish blocking issues from suggestions. Group related comments.
+  @end
+
+  @verify
+    - Every blocking issue includes a suggested fix or alternative approach.
+    - No false positives: each flagged issue is a genuine concern, not a style preference.
+    - The review covers correctness, security, performance, and maintainability.
+    - The author can act on the feedback without a follow-up conversation.
+  @end
+
+  @example
+    **Bug: Off-by-one in pagination**
+
+    Before (problematic):
+    ```rust
+    fn paginate(items: &[Item], page: usize, per_page: usize) -> &[Item] {
+        let start = page * per_page;
+        let end = start + per_page;
+        &items[start..end]  // panics if end > items.len()
+    }
+    ```
+
+    Review comment:
+    > **Bug (blocking):** This panics when `end` exceeds `items.len()`. Use `end.min(items.len())` to clamp the slice bound. Also consider returning an empty slice for out-of-range pages instead of panicking.
+
+    After (fixed):
+    ```rust
+    fn paginate(items: &[Item], page: usize, per_page: usize) -> &[Item] {
+        let start = (page * per_page).min(items.len());
+        let end = (start + per_page).min(items.len());
+        &items[start..end]
+    }
+    ```
+  @end
+
+  @example
+    **Design: Extracting duplicated validation logic**
+
+    Before (code smell):
+    ```python
+    def create_user(data):
+        if not data.get("email") or "@" not in data["email"]:
+            raise ValueError("Invalid email")
+        if not data.get("name") or len(data["name"]) < 2:
+            raise ValueError("Invalid name")
+        # ... create user
+
+    def update_user(user_id, data):
+        if not data.get("email") or "@" not in data["email"]:
+            raise ValueError("Invalid email")
+        if not data.get("name") or len(data["name"]) < 2:
+            raise ValueError("Invalid name")
+        # ... update user
+    ```
+
+    Review comment:
+    > **Suggestion:** Validation logic is duplicated between `create_user` and `update_user`. Extract a `validate_user_data(data)` function. This prevents the two paths from diverging silently when validation rules change.
+  @end
+
+  @decision
+    **When to request changes vs. approve with comments:**
+    - **Request changes** if there are correctness bugs, security vulnerabilities, or data loss risks.
+    - **Approve with comments** if issues are style preferences, minor naming improvements, or optional optimizations the author can address in a follow-up.
+    - When in doubt, approve with comments and trust the author's judgment.
+  @end
+
+  @red_flag
+    - Reviewing only the diff without understanding the broader context or intent.
+    - Bikeshedding on style while missing logic errors.
+    - Approving without running tests because "it looks fine."
+    - Blocking a PR over subjective preferences that aren't in the team's style guide.
+  @end
+
+  @fallback
+    If the change is in an unfamiliar part of the codebase, read the module-level docs and recent git history before reviewing. If still unsure, flag specific concerns with "I'm not certain about this area" rather than guessing.
+  @end
+
+  @output_contract
+    The review produces a structured list of findings, each categorized as **blocking**, **suggestion**, or **praise**. All blocking items include a concrete fix. The overall verdict is one of: approve, approve with comments, or request changes.
+  @end
+
+@end

@@ -128,6 +128,20 @@ pub fn import_html(input: &str, strip_chrome: bool) -> HtmlImportResult {
 
     doc.blocks = blocks;
 
+    // Provenance: record import source metadata
+    doc.metadata.insert(
+        "_aif_source_format".into(),
+        "html".into(),
+    );
+    doc.metadata.insert(
+        "_aif_import_mode".into(),
+        match mode {
+            ImportMode::AifRoundtrip => "aif-roundtrip",
+            ImportMode::Generic => if strip_chrome { "readability" } else { "generic" },
+        }
+        .into(),
+    );
+
     HtmlImportResult {
         document: doc,
         mode,

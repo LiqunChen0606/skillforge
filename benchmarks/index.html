@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>AIF Benchmark Dashboard</title>
+<style>
+  :root {
+    --navy: #16213e;
+    --navy-light: #1a2744;
+    --accent: #0f3460;
+    --green: #28a745;
+    --green-bg: #d4edda;
+    --green-border: #c3e6cb;
+    --red: #dc3545;
+    --red-bg: #f8d7da;
+    --blue: #0d6efd;
+    --blue-bg: #cfe2ff;
+    --yellow-bg: #fff3cd;
+    --yellow-border: #ffc107;
+    --gray-50: #f8f9fa;
+    --gray-200: #e9ecef;
+    --gray-600: #6c757d;
+    --gray-900: #1a1a2e;
+    --shadow: 0 1px 3px rgba(0,0,0,0.1);
+    --shadow-md: 0 4px 6px rgba(0,0,0,0.07);
+    --radius: 8px;
+  }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 1400px; margin: 0 auto; padding: 2rem 1.5rem; background: var(--gray-50); color: var(--gray-900); line-height: 1.6; }
+  h1 { color: var(--navy); border-bottom: 3px solid var(--accent); padding-bottom: 0.5rem; margin-bottom: 0.5rem; font-size: 1.8rem; }
+  h2 { color: var(--navy); margin-top: 2.5rem; font-size: 1.35rem; }
+  h3 { color: var(--navy-light); margin-top: 1.5rem; font-size: 1.1rem; }
+  .meta { color: var(--gray-600); font-size: 0.9rem; margin-bottom: 2rem; }
+  .card { background: white; border-radius: var(--radius); padding: 1.5rem; box-shadow: var(--shadow); margin: 1rem 0; }
+  .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 1.5rem; margin: 1.5rem 0; }
+  .exec-summary { background: linear-gradient(135deg, #16213e, #0f3460); color: white; border-radius: var(--radius); padding: 2rem; margin: 1.5rem 0; }
+  .exec-summary h2 { color: white; margin-top: 0; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 0.5rem; }
+  .exec-summary p { opacity: 0.9; }
+  .stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1.5rem; margin-top: 1.5rem; }
+  .stat { text-align: center; }
+  .stat-value { font-size: 2.2rem; font-weight: 800; color: #7dffb3; }
+  .stat-label { font-size: 0.85rem; opacity: 0.85; margin-top: 0.25rem; }
+  .stat-sub { font-size: 0.75rem; opacity: 0.6; }
+  .winner { background: linear-gradient(135deg, var(--green-bg), var(--green-border)); border: 1px solid var(--green); border-radius: var(--radius); padding: 1rem 1.5rem; margin: 1rem 0; font-size: 1.05rem; }
+  .winner strong { color: #155724; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; background: white; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+  th { background: var(--navy); color: white; padding: 10px 12px; font-size: 0.85rem; text-align: center; }
+  td { padding: 8px 12px; text-align: center; border-bottom: 1px solid #eee; font-size: 0.85rem; }
+  td:first-child { text-align: left; font-weight: 600; }
+  .positive { background: var(--green-bg); }
+  .negative { background: var(--red-bg); }
+  .bar-chart { display: flex; align-items: flex-end; gap: 12px; height: 220px; margin: 1rem 0; padding: 1rem 1.5rem; background: white; border-radius: var(--radius); box-shadow: var(--shadow); }
+  .bar-wrapper { display: flex; flex-direction: column; align-items: center; flex: 1; }
+  .bar { width: 100%; border-radius: 4px 4px 0 0; min-height: 2px; transition: height 0.3s; }
+  .bar-label { font-size: 0.75rem; margin-top: 6px; text-align: center; color: var(--gray-600); font-weight: 600; }
+  .bar-value { font-size: 0.8rem; font-weight: bold; margin-bottom: 4px; }
+  .bar-green { background: linear-gradient(180deg, #155724, #28a745); }
+  .bar-red { background: linear-gradient(180deg, #dc3545, #e74c6c); }
+  .bar-blue { background: linear-gradient(180deg, #0d6efd, #6ea8fe); }
+  .bar-navy { background: linear-gradient(180deg, #16213e, #0f3460); }
+  .legend { display: flex; gap: 2rem; margin: 0.5rem 0 1rem; font-size: 0.85rem; }
+  .legend-item { display: flex; align-items: center; gap: 0.4rem; }
+  .legend-swatch { width: 16px; height: 16px; border-radius: 3px; }
+  .nav-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 2rem 0; }
+  .nav-card { background: white; border-radius: var(--radius); padding: 1.5rem; box-shadow: var(--shadow-md); text-decoration: none; color: var(--gray-900); border: 2px solid transparent; transition: border-color 0.2s, transform 0.2s; display: block; }
+  .nav-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .nav-card h3 { margin-top: 0; color: var(--navy); }
+  .nav-card p { color: var(--gray-600); margin: 0.5rem 0 0; font-size: 0.9rem; }
+  .nav-card .arrow { color: var(--blue); font-weight: 700; font-size: 1.1rem; }
+  .best { background: var(--green-bg); font-weight: 700; }
+  .good { background: #e8f5e9; }
+  .ok { background: var(--yellow-bg); }
+  .note { background: var(--yellow-bg); border: 1px solid var(--yellow-border); border-radius: 6px; padding: 0.8rem 1rem; margin: 1rem 0; font-size: 0.9rem; }
+  .timestamp { text-align: right; color: #999; font-size: 0.8rem; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--gray-200); }
+</style>
+</head>
+<body>
+
+<h1>AIF Benchmark Dashboard</h1>
+<p class="meta">Unified results across document and skill benchmarks &bull; claude-opus-4-6 &bull; April 2026</p>
+
+<!-- Executive Summary -->
+<div class="exec-summary">
+  <h2>Executive Summary</h2>
+  <p>AIF delivers dramatic token savings on documents while preserving 100% semantic compliance on skills. Tested across 10 Wikipedia articles and 10 real-world AI coding skills.</p>
+  <div class="stat-row">
+    <div class="stat">
+      <div class="stat-value">82.2%</div>
+      <div class="stat-label">Document Savings</div>
+      <div class="stat-sub">LML Aggressive vs Raw HTML</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">100%</div>
+      <div class="stat-label">Semantic Compliance</div>
+      <div class="stat-sub">All skill formats, all skills</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">1.05</div>
+      <div class="stat-label">Best Skill TNO</div>
+      <div class="stat-sub">Markdown (RT)</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">283K</div>
+      <div class="stat-label">Fewer Tokens vs MD</div>
+      <div class="stat-sub">10 articles, LML Aggressive</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">20</div>
+      <div class="stat-label">Test Artifacts</div>
+      <div class="stat-sub">10 documents + 10 skills</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">$68</div>
+      <div class="stat-label">Saved per 10 Articles</div>
+      <div class="stat-sub">@ $15/MTok vs Raw HTML</div>
+    </div>
+  </div>
+</div>
+
+<div class="winner">
+  <strong>Overall winner: AIF LML Aggressive</strong> &mdash; 82.2% fewer tokens than HTML for documents, near-identical token count to SKILL.md for skills, with full semantic structure and lossless roundtrip in both cases.
+</div>
+
+<!-- Side-by-Side Comparison -->
+<h2>Side-by-Side: Documents vs Skills</h2>
+<div class="card-grid">
+  <div class="card">
+    <h3>Document Efficiency (10 Wikipedia Articles)</h3>
+    <table>
+      <thead><tr><th style="text-align:left">Format</th><th>Tokens</th><th>vs HTML</th></tr></thead>
+      <tbody>
+        <tr><td>Raw HTML (baseline)</td><td>5,515,206</td><td>&mdash;</td></tr>
+        <tr><td>Raw Markdown</td><td>1,262,755</td><td class="positive">+77.1%</td></tr>
+        <tr style="background:#e8f5e9"><td><strong>AIF LML Aggressive</strong></td><td><strong>979,838</strong></td><td class="positive"><strong>+82.2%</strong></td></tr>
+        <tr><td>AIF LML Standard</td><td>985,090</td><td class="positive">+82.1%</td></tr>
+        <tr><td>AIF Markdown (RT)</td><td>1,009,181</td><td class="positive">+81.7%</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="card">
+    <h3>Skill Efficiency (10 AI Skills)</h3>
+    <table>
+      <thead><tr><th style="text-align:left">Format</th><th>Tokens</th><th>TNO</th></tr></thead>
+      <tbody>
+        <tr><td>SKILL.md (baseline)</td><td>39,506</td><td>&mdash;</td></tr>
+        <tr style="background:#e8f5e9"><td><strong>Markdown (RT)</strong></td><td><strong>38,755</strong></td><td><strong>1.05</strong></td></tr>
+        <tr><td>LML Aggressive</td><td>39,514</td><td>0.99</td></tr>
+        <tr><td>LML Compact</td><td>40,586</td><td>0.98</td></tr>
+        <tr><td>HTML</td><td>44,427</td><td>0.82</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- The AIF Advantage -->
+<h2>The AIF Advantage</h2>
+<p>Token count comparison for 10 Wikipedia articles across format families:</p>
+<div class="legend">
+  <div class="legend-item"><div class="legend-swatch" style="background:#dc3545"></div> Raw HTML</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#0d6efd"></div> Raw Markdown</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#155724"></div> AIF LML Aggressive</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#16213e"></div> Raw PDF text</div>
+</div>
+<div class="bar-chart">
+  <div class="bar-wrapper">
+    <div class="bar-value" style="color:var(--red)">5.5M</div>
+    <div class="bar bar-red" style="height:200px"></div>
+    <div class="bar-label">Raw HTML</div>
+  </div>
+  <div class="bar-wrapper">
+    <div class="bar-value" style="color:var(--blue)">1.26M</div>
+    <div class="bar bar-blue" style="height:46px"></div>
+    <div class="bar-label">Raw Markdown</div>
+  </div>
+  <div class="bar-wrapper">
+    <div class="bar-value" style="color:#155724; font-weight:800">980K</div>
+    <div class="bar bar-green" style="height:36px"></div>
+    <div class="bar-label"><strong>AIF LML Aggr.</strong></div>
+  </div>
+  <div class="bar-wrapper">
+    <div class="bar-value" style="color:var(--navy)">561K</div>
+    <div class="bar bar-navy" style="height:20px"></div>
+    <div class="bar-label">Raw PDF text</div>
+  </div>
+</div>
+
+<div class="card">
+  <table>
+    <thead><tr><th style="text-align:left">Capability</th><th>Raw HTML</th><th>Raw Markdown</th><th>AIF LML Aggressive</th><th>Raw PDF text</th></tr></thead>
+    <tbody>
+      <tr><td>Tokens (10 articles)</td><td>5.5M</td><td>1.26M</td><td class="best">980K</td><td>561K</td></tr>
+      <tr><td>Semantic structure</td><td>Full + presentational</td><td>Basic (headings, lists)</td><td class="best">Full semantic</td><td class="negative">None</td></tr>
+      <tr><td>Typed blocks</td><td class="negative">No</td><td class="negative">No</td><td class="best">@claim, @evidence, @definition...</td><td class="negative">No</td></tr>
+      <tr><td>Lossless roundtrip</td><td>Yes</td><td>Partial</td><td class="best">Yes</td><td class="negative">No</td></tr>
+      <tr><td>Skill compliance</td><td>N/A</td><td>N/A</td><td class="best">100%</td><td>N/A</td></tr>
+      <tr><td>Machine-checkable</td><td class="negative">No</td><td class="negative">No</td><td class="best">Yes (lint, eval)</td><td class="negative">No</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="note">
+  <strong>Key insight:</strong> Raw PDF text is cheapest (561K tokens) but carries zero structure &mdash; no headings, sections, tables, or semantic blocks. AIF LML Aggressive costs 75% more tokens but gives the LLM a fully typed, navigable document it can reason about structurally. For structured reasoning tasks, the extra tokens pay for themselves in output quality.
+</div>
+
+<!-- Format Decision Matrix -->
+<h2>Format Decision Matrix</h2>
+<div class="card">
+  <table>
+    <thead><tr><th style="text-align:left">Goal</th><th>Best Format</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td>Cheapest LLM context (docs)</td><td class="best">LML Aggressive</td><td style="text-align:left">82.2% savings, full semantic structure, lossless roundtrip</td></tr>
+      <tr><td>Cheapest LLM context (skills)</td><td class="best">Markdown (RT)</td><td style="text-align:left">1.9% savings, TNO 1.05, human-readable</td></tr>
+      <tr><td>Agent skill execution</td><td class="good">LML Aggressive</td><td style="text-align:left">Explicit typed tags (@step:, @verify:) for programmatic parsing</td></tr>
+      <tr><td>Wire transport / storage</td><td class="good">Binary Wire</td><td style="text-align:left">45% smaller than JSON in bytes, postcard-encoded</td></tr>
+      <tr><td>Human authoring</td><td class="ok">AIF source (.aif)</td><td style="text-align:left">Concise Markdown-like syntax with semantic block types</td></tr>
+      <tr><td>Cross-language SDK</td><td class="ok">JSON IR</td><td style="text-align:left">Typed AST with generated Python/TypeScript models</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Navigation -->
+<h2>Detailed Reports</h2>
+<div class="nav-grid">
+  <a href="results.html" class="nav-card">
+    <h3>Document Token Benchmark</h3>
+    <p>10 Wikipedia articles &bull; 12 formats &bull; per-article breakdowns, cost projections, information density analysis</p>
+    <div class="arrow">View Full Report &rarr;</div>
+  </a>
+  <a href="skill_benchmark_report.html" class="nav-card">
+    <h3>Skill Token Benchmark</h3>
+    <p>10 AI skills &bull; 11 formats &bull; per-skill comparison, TNO heatmap, cost impact analysis</p>
+    <div class="arrow">View Full Report &rarr;</div>
+  </a>
+</div>
+
+<p class="timestamp">Generated: 2026-04-02 | Source: benchmarks/token_benchmark.py, benchmarks/skill_token_benchmark.py</p>
+</body>
+</html>

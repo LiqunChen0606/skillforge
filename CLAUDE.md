@@ -253,6 +253,29 @@ AIF provides **full semantic table roundtrip** across all major formats — a ke
 
 **vs. competitors:** Raw Markdown loses captions and can't roundtrip complex tables. Raw HTML carries presentational bloat. JSON IR inflates token count 2-4x. AIF LML Aggressive preserves full table semantics at ~82% fewer tokens than HTML.
 
+## Phase 7 Features
+
+### Document-Level Semantic Linting
+`crates/aif-core/src/lint.rs` — 9 structural checks for any AIF document (not just skills): ClaimsWithoutEvidence, BrokenReferences, BrokenEvidenceLinks, OrphanedMedia, DuplicateIds, EmptySections (nested only), MissingMetadata, EmptyFootnotes, MalformedTables. `DocLintResult` includes optional `block_id` for precise error location. CLI: `aif lint doc.aif [--format text|json]`.
+
+### Evidence Linkage
+Claim-to-evidence linking via `refs` attribute on any block: `@claim[id=c1, refs=e1,e2]` declares that claim `c1` is supported by evidence blocks `e1` and `e2`. Comma-separated target IDs. The `BrokenEvidenceLinks` lint check validates all ref targets exist. Works on any block type with `Attrs` (semantic blocks, figures, tables, sections).
+
+### Import Provenance
+All importers now set `_aif_source_format` ("html", "markdown", "pdf") and `_aif_import_mode` ("aif-roundtrip", "generic", "readability") in document metadata. CLI additionally sets `_aif_source_file` (original path) and `_aif_import_confidence` (PDF only, avg confidence score). Metadata keys prefixed with `_aif_` are reserved for provenance.
+
+### Chunk Graph Enrichment
+`ChunkMetadata` extended with: `summary` (optional auto-generated text), `requires_parent_context` (bool), `semantic_types` (list of semantic block types in chunk). New `LinkType::ParentContext` variant for "must read before" relationships. `ChunkGraph::required_context(id)` follows ParentContext + Dependency links transitively. `ChunkGraph::chunks_for_doc(path)` returns ordered chunks for a document.
+
+### Chunking Quality Benchmark
+`benchmarks/chunking_quality_benchmark.py` — evaluates 4 chunking strategies across all example documents. Metrics: self-containment (% chunks with titles), token budget compliance, size coefficient of variation, blocks per chunk. Outputs text summary + JSON.
+
+### Cross-Benchmark Dashboard
+`benchmarks/index.html` — unified landing page linking both document and skill benchmark reports with executive summary, side-by-side comparison, AIF advantage visualization, and format decision matrix.
+
+### General-Purpose Skill Example
+`examples/code_review.aif` — code review skill showcasing all AIF skill block types: @precondition, @step (4), @verify, @fallback, @example (2 with before/after code), @decision, @red_flag, @output_contract, @tool.
+
 ## Known Limitations
 
 - Markdown emit drops table captions (no GFM standard for captions)

@@ -1,8 +1,11 @@
 ---
 source: crates/aif-markdown/tests/import_md.rs
+assertion_line: 22
 expression: doc
 ---
 metadata:
+  _aif_import_mode: generic
+  _aif_source_format: markdown
   title: Code
 blocks:
   - kind:

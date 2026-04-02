@@ -116,7 +116,9 @@ fn import_multiple_headings_become_sections() {
 fn import_empty_markdown() {
     let doc = import_markdown("");
     assert!(doc.blocks.is_empty());
-    assert!(doc.metadata.is_empty());
+    // Provenance metadata is always set; verify no content metadata
+    assert!(!doc.metadata.contains_key("title"));
+    assert_eq!(doc.metadata.get("_aif_source_format").map(|s| s.as_str()), Some("markdown"));
 }
 
 #[test]
