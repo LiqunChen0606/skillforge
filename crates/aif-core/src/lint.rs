@@ -5,6 +5,7 @@
 //! duplicate IDs, empty sections, and missing metadata.
 
 use crate::ast::*;
+use crate::chunk::*;
 use std::collections::{BTreeMap, BTreeSet};
 
 /// Categories of document-level lint checks.
@@ -28,6 +29,12 @@ pub enum DocLintCheck {
     EmptyFootnotes,
     /// Tables should have at least one header and one data row.
     MalformedTables,
+    /// Chunk has no incoming or outgoing links (isolated node).
+    OrphanedChunks,
+    /// Sequential chunks from the same document lack a Continuation link.
+    MissingContinuation,
+    /// Circular Dependency or ParentContext links detected.
+    DependencyCycle,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -450,6 +457,140 @@ pub fn lint_summary(results: &[DocLintResult]) -> (usize, usize, usize) {
     let passed = results.iter().filter(|r| r.passed).count();
     let failed = total - passed;
     (total, passed, failed)
+}
+
+/// Run structural lint checks on a chunk graph.
+pub fn lint_chunk_graph(graph: &ChunkGraph) -> Vec<DocLintResult> {
+    let mut results = Vec::new();
+
+    // 1. Orphaned chunks (skip single-chunk documents)
+    let mut doc_chunk_counts: BTreeMap<&str, usize> = BTreeMap::new();
+    for chunk in graph.chunks.values() {
+        *doc_chunk_counts.entry(&chunk.source_doc).or_insert(0) += 1;
+    }
+    let mut orphan_found = false;
+    for (id, chunk) in &graph.chunks {
+        let doc_count = doc_chunk_counts
+            .get(chunk.source_doc.as_str())
+            .copied()
+            .unwrap_or(0);
+        if doc_count <= 1 {
+            continue;
+        }
+        let has_outgoing = graph.links.iter().any(|l| &l.source == id);
+        let has_incoming = graph.links.iter().any(|l| &l.target == id);
+        if !has_outgoing && !has_incoming {
+            results.push(DocLintResult::fail(
+                DocLintCheck::OrphanedChunks,
+                DocLintSeverity::Warning,
+                format!("Chunk {} has no links (isolated)", id),
+                Some(id.0.clone()),
+            ));
+            orphan_found = true;
+        }
+    }
+    if !orphan_found {
+        results.push(DocLintResult::pass(DocLintCheck::OrphanedChunks));
+    }
+
+    // 2. Missing continuation links
+    let mut missing_cont = false;
+    for doc_path in doc_chunk_counts.keys() {
+        let mut doc_chunks: Vec<_> = graph
+            .chunks
+            .values()
+            .filter(|c| c.source_doc == *doc_path)
+            .collect();
+        doc_chunks.sort_by_key(|c| c.metadata.sequence);
+        for window in doc_chunks.windows(2) {
+            let a_id = &window[0].id;
+            let b_id = &window[1].id;
+            let has_cont = graph.links.iter().any(|l| {
+                &l.source == a_id
+                    && &l.target == b_id
+                    && l.link_type == LinkType::Continuation
+            });
+            if !has_cont {
+                results.push(DocLintResult::fail(
+                    DocLintCheck::MissingContinuation,
+                    DocLintSeverity::Warning,
+                    format!("No Continuation link from {} to {}", a_id, b_id),
+                    Some(a_id.0.clone()),
+                ));
+                missing_cont = true;
+            }
+        }
+    }
+    if !missing_cont {
+        results.push(DocLintResult::pass(DocLintCheck::MissingContinuation));
+    }
+
+    // 3. Dependency cycles
+    let cycles = detect_dependency_cycles(graph);
+    if cycles.is_empty() {
+        results.push(DocLintResult::pass(DocLintCheck::DependencyCycle));
+    } else {
+        for cycle in &cycles {
+            let cycle_str = cycle
+                .iter()
+                .map(|id| id.0.as_str())
+                .collect::<Vec<_>>()
+                .join(" → ");
+            results.push(DocLintResult::fail(
+                DocLintCheck::DependencyCycle,
+                DocLintSeverity::Error,
+                format!("Dependency cycle: {}", cycle_str),
+                cycle.first().map(|id| id.0.clone()),
+            ));
+        }
+    }
+
+    results
+}
+
+fn detect_dependency_cycles(graph: &ChunkGraph) -> Vec<Vec<ChunkId>> {
+    let mut color: BTreeMap<&ChunkId, u8> = BTreeMap::new();
+    let mut cycles = Vec::new();
+    let mut path: Vec<ChunkId> = Vec::new();
+    for id in graph.chunks.keys() {
+        if color.get(id).copied().unwrap_or(0) == 0 {
+            dfs_cycle(graph, id, &mut color, &mut path, &mut cycles);
+        }
+    }
+    cycles
+}
+
+fn dfs_cycle<'a>(
+    graph: &'a ChunkGraph,
+    node: &'a ChunkId,
+    color: &mut BTreeMap<&'a ChunkId, u8>,
+    path: &mut Vec<ChunkId>,
+    cycles: &mut Vec<Vec<ChunkId>>,
+) {
+    color.insert(node, 1);
+    path.push(node.clone());
+    for link in &graph.links {
+        if &link.source != node {
+            continue;
+        }
+        if !matches!(
+            link.link_type,
+            LinkType::Dependency | LinkType::ParentContext
+        ) {
+            continue;
+        }
+        match color.get(&link.target).copied().unwrap_or(0) {
+            0 => dfs_cycle(graph, &link.target, color, path, cycles),
+            1 => {
+                if let Some(pos) = path.iter().position(|p| p == &link.target) {
+                    cycles.push(path[pos..].to_vec());
+                }
+            }
+            _ => {}
+        }
+    }
+    path.pop();
+    color.insert(node, 2);
 }
 
 #[cfg(test)]
@@ -884,5 +1025,88 @@ mod tests {
         assert_eq!(total, 3);
         assert_eq!(passed, 2);
         assert_eq!(failed, 1);
+    }
+
+    // --- Chunk graph lint tests ---
+
+    fn make_chunk(id: ChunkId, doc: &str, seq: usize, total: usize) -> Chunk {
+        Chunk {
+            id,
+            source_doc: doc.into(),
+            block_path: vec![seq],
+            blocks: vec![],
+            metadata: ChunkMetadata {
+                title: None,
+                block_types: vec![],
+                estimated_tokens: 100,
+                depth: 0,
+                sequence: seq,
+                total_chunks: total,
+                summary: None,
+                requires_parent_context: false,
+                semantic_types: vec![],
+            },
+        }
+    }
+
+    #[test]
+    fn orphaned_chunk_detected() {
+        let mut graph = ChunkGraph::new();
+        graph.add_chunk(make_chunk(ChunkId::new("doc", &[0]), "doc.aif", 0, 2));
+        graph.add_chunk(make_chunk(ChunkId::new("doc", &[1]), "doc.aif", 1, 2));
+        let results = lint_chunk_graph(&graph);
+        let orphaned: Vec<_> = results
+            .iter()
+            .filter(|r| r.check == DocLintCheck::OrphanedChunks && !r.passed)
+            .collect();
+        assert_eq!(orphaned.len(), 2);
+    }
+
+    #[test]
+    fn single_chunk_not_orphaned() {
+        let mut graph = ChunkGraph::new();
+        graph.add_chunk(make_chunk(ChunkId::new("doc", &[0]), "doc.aif", 0, 1));
+        let results = lint_chunk_graph(&graph);
+        assert!(results.iter().all(|r| r.passed));
+    }
+
+    #[test]
+    fn missing_continuation_detected() {
+        let mut graph = ChunkGraph::new();
+        graph.add_chunk(make_chunk(ChunkId::new("doc", &[0]), "doc.aif", 0, 2));
+        graph.add_chunk(make_chunk(ChunkId::new("doc", &[1]), "doc.aif", 1, 2));
+        let results = lint_chunk_graph(&graph);
+        let missing: Vec<_> = results
+            .iter()
+            .filter(|r| r.check == DocLintCheck::MissingContinuation && !r.passed)
+            .collect();
+        assert_eq!(missing.len(), 1);
+    }
+
+    #[test]
+    fn dependency_cycle_detected() {
+        let mut graph = ChunkGraph::new();
+        let a = ChunkId::new("doc", &[0]);
+        let b = ChunkId::new("doc", &[1]);
+        graph.add_chunk(make_chunk(a.clone(), "doc.aif", 0, 2));
+        graph.add_chunk(make_chunk(b.clone(), "doc.aif", 1, 2));
+        graph.add_link(ChunkLink {
+            source: a.clone(),
+            target: b.clone(),
+            link_type: LinkType::Dependency,
+            label: None,
+        });
+        graph.add_link(ChunkLink {
+            source: b.clone(),
+            target: a.clone(),
+            link_type: LinkType::Dependency,
+            label: None,
+        });
+        let results = lint_chunk_graph(&graph);
+        let cycles: Vec<_> = results
+            .iter()
+            .filter(|r| r.check == DocLintCheck::DependencyCycle && !r.passed)
+            .collect();
+        assert!(!cycles.is_empty());
     }
 }

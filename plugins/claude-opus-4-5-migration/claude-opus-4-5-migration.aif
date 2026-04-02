@@ -1,0 +1,102 @@
+#title: Claude Opus 4.5 Migration Skill
+#summary: Migrate from Sonnet 4.0/4.5 or Opus 4.1 to Opus 4.5
+#author: AIF Project
+
+@skill[name="claude-opus-4-5-migration", version="1.0", priority="high", profile="migration", description="Use when migrating API calls, SDK usage, or prompts from older Claude models to Opus 4.5"]
+
+  @precondition
+    Codebase uses Anthropic API, AWS Bedrock, Google Vertex AI, or Azure with Claude model strings targeting Sonnet 4.0, Sonnet 4.5, or Opus 4.1. User wants to upgrade to Opus 4.5.
+  @end
+
+  @tool
+    `grep -r` for model string search, file edit tools, `git diff` for review.
+  @end
+
+  @step[order=1]
+    **Find all model references.** Search for model ID strings across the codebase:
+    - Anthropic API: `claude-sonnet-4-0`, `claude-sonnet-4-5`, `claude-opus-4-1`
+    - AWS Bedrock: `anthropic.claude-sonnet-4-*`, `anthropic.claude-opus-4-1*`
+    - Vertex AI: `claude-sonnet-4-*@*`, `claude-opus-4-1@*`
+    - Azure: check deployment names referencing old models
+  @end
+
+  @step[order=2]
+    **Update model strings per platform.**
+    - Anthropic API: replace with `claude-opus-4-6` (or `claude-opus-4-5-20251001` for pinned)
+    - AWS Bedrock: replace with `anthropic.claude-opus-4-6-v1:0`
+    - Vertex AI: replace with `claude-opus-4-6@20251001`
+    - Azure: update deployment configuration to target Opus 4.5
+  @end
+
+  @step[order=3]
+    **Remove unsupported beta headers.** Search for and remove:
+    - `anthropic-beta: token-efficient-tools-2025-02-19` (now default behavior)
+    - `anthropic-beta: interleaved-thinking-2025-05-14` (now standard)
+    - Other deprecated beta headers for features now GA in Opus 4.5
+  @end
+
+  @step[order=4]
+    **Add the effort parameter.** Opus 4.5 supports `effort` for controlling thinking depth:
+    - `effort: "low"` — fast responses, less thinking
+    - `effort: "medium"` — balanced (default)
+    - `effort: "high"` — maximum reasoning
+    Review existing use cases and set appropriate effort levels.
+  @end
+
+  @step[order=5]
+    **Adjust prompts for Opus 4.5 behavioral differences.**
+    - **Tool over-triggering:** If the model calls tools too eagerly, add "Only use tools when necessary" to system prompt
+    - **Over-engineering:** If responses are too elaborate, add "Keep solutions simple and minimal"
+    - **Code exploration:** If the model reads too many files, constrain with "Focus on the specific files mentioned"
+    - **Thinking sensitivity:** Extended thinking may over-index on ambiguous instructions; be more explicit
+  @end
+
+  @verify
+    - No remaining references to old model strings (Sonnet 4.0/4.5, Opus 4.1)
+    - All deprecated beta headers removed
+    - Effort parameter configured appropriately per use case
+    - Application builds and tests pass with new model configuration
+    - API calls succeed with the new model (test with a sample request)
+  @end
+
+  @example
+    **Before (Anthropic API):**
+    ```python
+    response = client.messages.create(
+        model="claude-sonnet-4-5-20241022",
+        max_tokens=1024,
+        extra_headers={"anthropic-beta": "token-efficient-tools-2025-02-19"},
+        messages=[{"role": "user", "content": "Hello"}]
+    )
+    ```
+
+    **After (Opus 4.5):**
+    ```python
+    response = client.messages.create(
+        model="claude-opus-4-6",
+        max_tokens=1024,
+        # beta header removed — token-efficient tools now default
+        messages=[{"role": "user", "content": "Hello"}]
+    )
+    ```
+  @end
+
+  @decision
+    **When to pin vs. use latest model string:**
+    - Use `claude-opus-4-6` (latest) for development and testing
+    - Use `claude-opus-4-5-20251001` (pinned) for production to avoid behavior changes from model updates
+    - Use pinned versions in CI/CD pipelines for reproducibility
+  @end
+
+  @red_flag
+    - Changing model strings without testing that the API accepts them
+    - Removing beta headers that are still required for features not yet GA
+    - Setting `effort: "high"` globally (expensive; use selectively)
+    - Assuming prompt behavior is identical — Opus 4.5 may interpret ambiguous prompts differently
+  @end
+
+  @output_contract
+    All model references updated to Opus 4.5. Deprecated beta headers removed. Effort parameter configured. Application builds, tests pass, and a sample API call succeeds.
+  @end
+
+@end

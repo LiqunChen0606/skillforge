@@ -276,6 +276,20 @@ All importers now set `_aif_source_format` ("html", "markdown", "pdf") and `_aif
 ### General-Purpose Skill Example
 `examples/code_review.aif` — code review skill showcasing all AIF skill block types: @precondition, @step (4), @verify, @fallback, @example (2 with before/after code), @decision, @red_flag, @output_contract, @tool.
 
+## Phase 8 Features
+
+### Semantic Inference Engine
+`crates/aif-core/src/infer.rs` — Pattern-based inference upgrades untyped blocks (Paragraph, BlockQuote, Callout) to typed SemanticBlocks with confidence scoring. 8 rules: blockquote-with-citation→Evidence (0.70), short-blockquote→Claim (0.55), paragraph-definition (0.80), recommendation (0.75), conclusion (0.75), assumption (0.70), result (0.65), callout-requirement (0.60). `InferRule` trait extensible for future LLM inference. Inferred blocks get `_aif_inferred`, `_aif_confidence`, `_aif_infer_rule` metadata. CLI: `aif import doc.md --infer-semantics`.
+
+### Roundtrip Quality Benchmark
+`benchmarks/roundtrip_benchmark.py` — Measures AIF→HTML→AIF, AIF→Markdown→AIF, AIF→JSON→AIF fidelity. 5 metrics: block count ratio, block type preservation, semantic type preservation (2x weight), metadata preservation, inline fidelity. Results: JSON path 1.00 (lossless), HTML 0.93, Markdown 0.57.
+
+### Chunk Graph Lint
+`lint_chunk_graph()` in `aif-core::lint` — 3 structural checks on chunk graphs: OrphanedChunks (isolated nodes in multi-chunk docs), MissingContinuation (sequential chunks without Continuation link), DependencyCycle (circular Dependency/ParentContext links via 3-color DFS). CLI: `aif chunk lint graph.json [--format text|json]`.
+
+### AIF Plugin Skills
+`plugins/` — 6 claude-code plugins re-expressed in AIF format: code-review, security-guidance, feature-dev, frontend-design, commit-commands, claude-opus-4-5-migration. Demonstrates AIF skill syntax with typed blocks (@step, @verify, @example, @red_flag, @decision, @fallback, @output_contract).
+
 ## Known Limitations
 
 - Markdown emit drops table captions (no GFM standard for captions)

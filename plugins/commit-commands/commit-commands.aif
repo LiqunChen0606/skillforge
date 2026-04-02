@@ -1,0 +1,72 @@
+#title: Commit Commands Skill
+#summary: Git workflow automation — commit, push, and PR creation
+
+@skill[name="commit-commands", version="1.0", priority="medium", description="Use when user wants to commit changes, push to remote, or create a pull request"]
+
+  @precondition
+    Working directory is a git repository with staged or unstaged changes. User wants to commit, push, or create a PR.
+  @end
+
+  @tool
+    `git status`, `git diff`, `git add`, `git commit`, `git push`, `gh pr create`, `git log`, `git branch`.
+  @end
+
+  @step[order=1]
+    **Check repository state.** Run `git status` and `git diff --stat` to understand what's changed. Identify untracked, modified, and staged files. Warn if there are untracked files that might need staging.
+  @end
+
+  @step[order=2]
+    **Generate commit message.** Analyze the diff to write a concise message: start with a type prefix (feat, fix, chore, docs, refactor, test), followed by a short description of *why* the change was made, not *what* files changed. Keep the first line under 72 characters.
+  @end
+
+  @step[order=3]
+    **Stage and commit.** Stage specific files (prefer named files over `git add -A` to avoid accidentally committing secrets or binaries). Create the commit. Verify with `git status` that the working tree is clean.
+  @end
+
+  @step[order=4]
+    **Push and create PR (if requested).** Push to the remote branch with `-u` flag. If PR creation is requested, use `gh pr create` with a title (< 70 chars) and body including a Summary section and Test plan checklist.
+  @end
+
+  @verify
+    - Commit message follows conventional commit format (type: description)
+    - No secrets (.env, credentials) are staged
+    - Commit is on the correct branch (not accidentally on main for feature work)
+    - If PR was created, the description includes summary and test plan
+  @end
+
+  @example
+    **Simple commit:**
+    ```bash
+    git add src/auth.rs tests/auth_test.rs
+    git commit -m "fix: prevent SQL injection in login query"
+    ```
+
+    **Commit + push + PR:**
+    ```bash
+    git add -A
+    git commit -m "feat: add dark mode toggle to settings page"
+    git push -u origin feature/dark-mode
+    gh pr create --title "Add dark mode toggle" --body "## Summary
+    - Added ThemeProvider context with useTheme() hook
+    - Dark mode toggle in Settings page
+    - Persists preference to localStorage
+
+    ## Test plan
+    - [ ] Toggle works in settings
+    - [ ] Preference persists across refresh
+    - [ ] Respects system theme as default"
+    ```
+  @end
+
+  @red_flag
+    - Committing with `git add -A` without reviewing what's staged
+    - Force-pushing to main/master
+    - Committing .env files, API keys, or credentials
+    - Using `--no-verify` to skip pre-commit hooks without understanding why they failed
+  @end
+
+  @output_contract
+    Changes are committed with a descriptive conventional-commit message. If push/PR was requested, the branch is pushed and the PR URL is returned. No secrets are committed.
+  @end
+
+@end

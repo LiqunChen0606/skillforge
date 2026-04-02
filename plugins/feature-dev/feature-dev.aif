@@ -1,0 +1,87 @@
+#title: Feature Development Skill
+#summary: 7-phase guided feature development workflow
+
+@skill[name="feature-dev", version="1.0", priority="high", description="Use when user wants to build a new feature, add functionality, or implement a user story from scratch"]
+
+  @precondition
+    User has described a feature to build. The codebase is accessible and buildable. The user is ready for a structured development process, not a quick fix.
+  @end
+
+  @tool
+    `git`, `cargo build`/`npm run build`, `cargo test`/`npm test`, file read/write/edit tools, Agent dispatch for parallel exploration.
+  @end
+
+  @step[order=1]
+    **Phase 1: Discovery.** Understand the feature request. Ask clarifying questions about scope, constraints, success criteria. Identify the user's intent — what problem does this solve? Capture requirements as a brief spec (3-5 bullet points).
+  @end
+
+  @step[order=2]
+    **Phase 2: Codebase Exploration.** Launch parallel `code-explorer` agents (Sonnet-class) to trace relevant execution paths, find related patterns, and map dependencies. Each explorer focuses on one concern: data flow, API surface, test patterns, or configuration.
+  @end
+
+  @step[order=3]
+    **Phase 3: Clarifying Questions.** Based on exploration results, ask targeted questions about edge cases, integration points, and design preferences. One question at a time. Prefer multiple choice when possible.
+  @end
+
+  @step[order=4]
+    **Phase 4: Architecture Design.** Propose 2-3 approaches with trade-offs. Recommend one. Cover: file structure, data flow, error handling, testing strategy. Get user approval before proceeding.
+  @end
+
+  @step[order=5]
+    **Phase 5: Implementation.** Write code following TDD: failing test → minimal implementation → verify → refactor. Commit after each logical unit. Follow existing codebase patterns. Use `code-architect` agent for complex design decisions.
+  @end
+
+  @step[order=6]
+    **Phase 6: Quality Review.** Launch `code-reviewer` agents to check: test coverage, error handling, performance, security, CLAUDE.md compliance. Fix any issues found.
+  @end
+
+  @step[order=7]
+    **Phase 7: Summary.** Present what was built, what tests were added, what design decisions were made and why, and any known limitations or follow-up work.
+  @end
+
+  @verify
+    - Feature works as specified in the requirements captured in Phase 1
+    - All tests pass (both new and existing)
+    - Code follows existing project patterns and conventions
+    - No security vulnerabilities introduced (Phase 6 review passed)
+    - User approved the architecture before implementation began (Phase 4)
+  @end
+
+  @example
+    **User request:** "Add dark mode to the settings page"
+
+    **Phase 1 output:** Requirements: toggle in settings, persist preference to localStorage, apply CSS custom properties, respect system preference as default.
+
+    **Phase 4 output:** Recommended approach: CSS custom properties with `data-theme` attribute on `<html>`. Theme provider context wraps the app. Toggle component reads/writes localStorage.
+
+    **Phase 7 output:**
+    - Added `ThemeProvider` context with `useTheme()` hook
+    - Added `DarkModeToggle` component in Settings
+    - 12 new tests, all passing
+    - Known limitation: does not yet support per-page theme overrides
+  @end
+
+  @decision
+    **When to skip exploration (Phase 2):**
+    - The feature is isolated to a single file/component with no dependencies
+    - The user explicitly says "I know exactly where this goes"
+    - The change is a configuration update, not a code change
+    In these cases, go directly from Discovery to Architecture.
+  @end
+
+  @red_flag
+    - Starting implementation without user approval on the architecture
+    - Skipping the exploration phase for non-trivial features
+    - Adding features beyond what was specified in Phase 1
+    - Not running the full test suite before presenting the summary
+  @end
+
+  @fallback
+    If the codebase is too large or unfamiliar for effective exploration, focus Phase 2 on the specific directory/module the user pointed to. Ask the user to identify the entry point and let exploration expand outward from there.
+  @end
+
+  @output_contract
+    The feature is implemented, tested, committed, and reviewed. The user received a summary of what was built, what decisions were made, and any follow-up items. All phases were completed in order (unless explicitly skipped with user consent).
+  @end
+
+@end

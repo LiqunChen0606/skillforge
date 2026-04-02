@@ -202,6 +202,14 @@ enum ChunkAction {
         #[arg(short, long)]
         output: Option<PathBuf>,
     },
+    /// Lint a chunk graph for structural issues
+    Lint {
+        /// Chunk graph JSON file
+        input: PathBuf,
+        /// Output format: text (default) or json
+        #[arg(long, default_value = "text")]
+        format: String,
+    },
 }
 
 #[derive(Subcommand)]
@@ -1386,6 +1394,69 @@ fn handle_chunk(action: ChunkAction) {
                 );
             } else {
                 println!("{}", json);
+            }
+        }
+        ChunkAction::Lint { input, format } => {
+            let source = read_source(&input);
+            let graph: aif_core::chunk::ChunkGraph = serde_json::from_str(&source)
+                .unwrap_or_else(|e| {
+                    eprintln!("Error parsing chunk graph JSON: {}", e);
+                    std::process::exit(1);
+                });
+            let results = aif_core::lint::lint_chunk_graph(&graph);
+            let (total, passed, failed) = aif_core::lint::lint_summary(&results);
+
+            if format == "json" {
+                let json_results: Vec<_> = results
+                    .iter()
+                    .map(|r| {
+                        serde_json::json!({
+                            "check": format!("{:?}", r.check),
+                            "passed": r.passed,
+                            "severity": format!("{:?}", r.severity),
+                            "message": r.message,
+                            "block_id": r.block_id,
+                        })
+                    })
+                    .collect();
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&serde_json::json!({
+                        "file": input.display().to_string(),
+                        "total": total,
+                        "passed": passed,
+                        "failed": failed,
+                        "results": json_results,
+                    }))
+                    .unwrap()
+                );
+            } else {
+                println!("Chunk Graph Lint: {}", input.display());
+                println!("{}", "=".repeat(60));
+                for r in &results {
+                    if r.passed {
+                        println!("  [+] {:?}", r.check);
+                    } else {
+                        let sev = match r.severity {
+                            aif_core::lint::DocLintSeverity::Error => "ERROR",
+                            aif_core::lint::DocLintSeverity::Warning => "WARN",
+                        };
+                        let loc = r
+                            .block_id
+                            .as_ref()
+                            .map(|id| format!(" ({})", id))
+                            .unwrap_or_default();
+                        println!(
+                            "  [x] {:?} [{}]{}: {}",
+                            r.check, sev, loc, r.message
+                        );
+                    }
+                }
+                println!("{}", "-".repeat(60));
+                println!("{} checks: {} passed, {} failed", total, passed, failed);
+                if failed > 0 {
+                    std::process::exit(1);
+                }
             }
         }
     }
