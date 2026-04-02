@@ -2,7 +2,7 @@
 
 Example skills and Claude Code plugins in AIF format — demonstrating how typed semantic blocks create more rigorous, verifiable, and LLM-effective skills than plain SKILL.md files.
 
-**Benchmark result:** LLMs follow AIF LML skills **10 percentage points better** than raw Markdown (0.97 vs 0.87 overall compliance) at 5% fewer tokens. See [skill execution benchmark](../../benchmarks/skill_execution_results.json).
+**Benchmark result:** LLMs follow AIF LML skills **10 percentage points better** than raw Markdown (0.97 vs 0.87 overall compliance) at 5% fewer tokens. See [skill execution benchmark](../../benchmarks/skill-execution/results.json).
 
 ## Why AIF for Skills?
 

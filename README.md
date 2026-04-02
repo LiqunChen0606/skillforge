@@ -226,7 +226,7 @@ Tested 3 scenarios (SQL injection review, clean code approval, eval() detection)
 | HTML | 1,485 | 0.95 | 0.88 | 0.93 | 0.91 |
 | Raw Markdown | 1,067 | 0.97 | 0.85 | 0.87 | 0.87 |
 
-**LML Aggressive wins:** 10 percentage points better than raw Markdown at 5% fewer tokens. The explicit typed tags (`@step:`, `@verify:`, `@red_flag:`) help the LLM identify and follow each instruction block. See [full results](benchmarks/skill_execution_results.json).
+**LML Aggressive wins:** 10 percentage points better than raw Markdown at 5% fewer tokens. The explicit typed tags (`@step:`, `@verify:`, `@red_flag:`) help the LLM identify and follow each instruction block. See [full results](benchmarks/skill-execution/results.json).
 
 ## Benchmark Results
 
@@ -240,7 +240,7 @@ Tested 3 scenarios (SQL injection review, clean code approval, eval() detection)
 | **AIF LML Aggressive** | **980K** | **Full semantic types** | **Yes** | **Structured reasoning, agents** |
 | Raw HTML | 5.5M | Full + presentational | Yes | Browser rendering |
 
-\* Run `python benchmarks/token_benchmark.py` for exact numbers on your content.
+\* Run `python benchmarks/document-tokens/benchmark.py` for exact numbers on your content.
 
 **Key takeaway:** PDF-text and cleaned HTML are cheapest but carry zero structure. AIF is the **only format that preserves full semantic types at fewer tokens than raw Markdown.**
 
@@ -270,7 +270,7 @@ Baseline: Raw HTML (5.5M tokens). All comparisons are vs Raw HTML.
 | HTML | 44,427 | -12.5% | 100% | 0.82 |
 | JSON IR | 71,640 | -81.3% | 100% | 0.49 |
 
-> Full reports: [Benchmark Dashboard](benchmarks/index.html) | [Document Report](benchmarks/results.html) | [Skill Report](benchmarks/skill_benchmark_report.html)
+> Full reports: [Benchmark Dashboard](benchmarks/index.html) | [Document Report](benchmarks/document-tokens/report.html) | [Skill Report](benchmarks/skill-tokens/report.html)
 
 ## Architecture
 

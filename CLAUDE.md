@@ -149,8 +149,8 @@ aif config set llm.model <model>
 aif config list
 
 # Benchmarks
-python benchmarks/skill_token_benchmark.py  # Skill format comparison (requires ANTHROPIC_API_KEY)
-python benchmarks/token_benchmark.py        # Document format comparison: raw HTML/PDF/MD vs AIF formats (Wikipedia articles)
+python benchmarks/skill-tokens/benchmark.py  # Skill format comparison (requires ANTHROPIC_API_KEY)
+python benchmarks/document-tokens/benchmark.py        # Document format comparison: raw HTML/PDF/MD vs AIF formats (Wikipedia articles)
 ```
 
 ## Phase 2 Features
@@ -174,7 +174,7 @@ Full `encode` + `decode` for the custom binary format. All block/inline types ro
 `crates/aif-skill/src/registry.rs` — Local file-based registry for skill lookup by name, version, or content hash.
 
 ### Compliance Benchmarks (Task 7)
-Extended `benchmarks/skill_token_benchmark.py` with HTML, Markdown, and JSON compliance patterns.
+Extended `benchmarks/skill-tokens/benchmark.py` with HTML, Markdown, and JSON compliance patterns.
 
 ### Format Recommender (Task 8)
 `crates/aif-skill/src/recommend.rs` — Analyzes document structure to recommend optimal output format.
@@ -268,7 +268,7 @@ All importers now set `_aif_source_format` ("html", "markdown", "pdf") and `_aif
 `ChunkMetadata` extended with: `summary` (optional auto-generated text), `requires_parent_context` (bool), `semantic_types` (list of semantic block types in chunk). New `LinkType::ParentContext` variant for "must read before" relationships. `ChunkGraph::required_context(id)` follows ParentContext + Dependency links transitively. `ChunkGraph::chunks_for_doc(path)` returns ordered chunks for a document.
 
 ### Chunking Quality Benchmark
-`benchmarks/chunking_quality_benchmark.py` — evaluates 4 chunking strategies across all example documents. Metrics: self-containment (% chunks with titles), token budget compliance, size coefficient of variation, blocks per chunk. Outputs text summary + JSON.
+`benchmarks/chunking/benchmark.py` — evaluates 4 chunking strategies across all example documents. Metrics: self-containment (% chunks with titles), token budget compliance, size coefficient of variation, blocks per chunk. Outputs text summary + JSON.
 
 ### Cross-Benchmark Dashboard
 `benchmarks/index.html` — unified landing page linking both document and skill benchmark reports with executive summary, side-by-side comparison, AIF advantage visualization, and format decision matrix.
@@ -282,13 +282,13 @@ All importers now set `_aif_source_format` ("html", "markdown", "pdf") and `_aif
 `crates/aif-core/src/infer.rs` — Pattern-based inference upgrades untyped blocks (Paragraph, BlockQuote, Callout) to typed SemanticBlocks with confidence scoring. 8 rules: blockquote-with-citation→Evidence (0.70), short-blockquote→Claim (0.55), paragraph-definition (0.80), recommendation (0.75), conclusion (0.75), assumption (0.70), result (0.65), callout-requirement (0.60). `InferRule` trait extensible for future LLM inference. Inferred blocks get `_aif_inferred`, `_aif_confidence`, `_aif_infer_rule` metadata. CLI: `aif import doc.md --infer-semantics`.
 
 ### Roundtrip Quality Benchmark
-`benchmarks/roundtrip_benchmark.py` — Measures AIF→HTML→AIF, AIF→Markdown→AIF, AIF→JSON→AIF fidelity. 5 metrics: block count ratio, block type preservation, semantic type preservation (2x weight), metadata preservation, inline fidelity. Results: JSON path 1.00 (lossless), HTML 0.93, Markdown 0.57.
+`benchmarks/roundtrip/benchmark.py` — Measures AIF→HTML→AIF, AIF→Markdown→AIF, AIF→JSON→AIF fidelity. 5 metrics: block count ratio, block type preservation, semantic type preservation (2x weight), metadata preservation, inline fidelity. Results: JSON path 1.00 (lossless), HTML 0.93, Markdown 0.57.
 
 ### Chunk Graph Lint
 `lint_chunk_graph()` in `aif-core::lint` — 3 structural checks on chunk graphs: OrphanedChunks (isolated nodes in multi-chunk docs), MissingContinuation (sequential chunks without Continuation link), DependencyCycle (circular Dependency/ParentContext links via 3-color DFS). CLI: `aif chunk lint graph.json [--format text|json]`.
 
 ### Skill Execution Quality Benchmark
-`benchmarks/skill_execution_benchmark.py` — Measures whether LLMs follow skills better in AIF LML vs raw Markdown. 3 scenarios (SQL injection review, clean code approval, eval detection) x 4 formats. Judge LLM scores step coverage, constraint respect, output contract adherence. Results: LML Aggressive 0.97 overall vs Raw Markdown 0.87 (+10 percentage points at 5% fewer tokens). Explicit typed tags help LLMs identify instruction blocks.
+`benchmarks/skill-execution/benchmark.py` — Measures whether LLMs follow skills better in AIF LML vs raw Markdown. 3 scenarios (SQL injection review, clean code approval, eval detection) x 4 formats. Judge LLM scores step coverage, constraint respect, output contract adherence. Results: LML Aggressive 0.97 overall vs Raw Markdown 0.87 (+10 percentage points at 5% fewer tokens). Explicit typed tags help LLMs identify instruction blocks.
 
 ### AIF Skills & Plugins
 `examples/skills/` — 7 AIF skills including 6 claude-code plugins: code-review, security-guidance, feature-dev, frontend-design, commit-commands, claude-opus-4-5-migration. Comprehensive authoring guide with bidirectional AIF↔Markdown conversion, validation workflows, and deployment instructions for Claude Code / Codex.
@@ -356,8 +356,8 @@ All importers now set `_aif_source_format` ("html", "markdown", "pdf") and `_aif
 
 \* Binary formats are compact in bytes (~82% smaller than JSON) but inflate when base64-encoded for token counting. Use binary for wire transport, not LLM context.
 
-Full HTML report: `benchmarks/skill_benchmark_report.html`
-Raw data: `benchmarks/skill_results.json`
+Full HTML report: `benchmarks/skill-tokens/report.html`
+Raw data: `benchmarks/skill-tokens/results.json`
 
 ## Document Benchmark Results (2026-04-01, claude-opus-4-6, 10 Wikipedia articles)
 
@@ -392,5 +392,5 @@ Baseline: Raw HTML (5.5M tokens total). Cleaned HTML text added for fair compari
 | **AIF LML Aggressive** | **980K** | **Full semantic** | **Yes** | **Structured reasoning, agents** |
 | Raw HTML | 5.5M | Full + presentational | Yes | Browser rendering |
 
-Full HTML report: `benchmarks/results.html`
-Raw data: `benchmarks/results.json`
+Full HTML report: `benchmarks/document-tokens/report.html`
+Raw data: `benchmarks/document-tokens/results.json`
