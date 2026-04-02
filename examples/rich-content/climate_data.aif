@@ -1,0 +1,63 @@
+#title: Global Temperature Anomalies 2020-2024
+#author: AIF Documentation Team
+#summary: Demonstrating AIF's rich content handling: tables, figures, media metadata, and structured references
+#date: 2026-04-02
+#source: NASA GISS Surface Temperature Analysis
+#license: CC-BY-4.0
+
+@section[id=overview]: Overview
+
+This document demonstrates how AIF handles **rich content beyond raw text** — tables with captions, SVG figures with metadata, cross-references between data and claims, and structured document metadata.
+
+@definition[id=def-anomaly]
+A temperature anomaly is the departure from a long-term average (baseline: 1951-1980 mean). Positive anomalies indicate warmer-than-average conditions.
+
+@section[id=data]: Temperature Data
+
+@table[id=temp-table, refs=fig-chart]: Global Mean Temperature Anomalies (°C)
+| Year | Annual Anomaly | 5-Year Mean | Rank |
+| 2020 | +1.02 | +0.98 | 2nd |
+| 2021 | +0.85 | +0.99 | 6th |
+| 2022 | +0.89 | +1.00 | 5th |
+| 2023 | +1.17 | +1.03 | 1st |
+| 2024 | +1.09 | +1.04 | 3rd |
+
+@callout[type=note]
+The 5-year running mean smooths out year-to-year variability from El Nino/La Nina cycles. All five years exceed +0.85°C above the 1951-1980 baseline.
+
+@section[id=visualization]: Visualizations
+
+@figure[id=fig-chart, src=temperature_trend.svg, alt=Global temperature anomaly trend 2020-2024, width=800, height=400, mime=image/svg+xml, refs=temp-table]
+Global temperature anomaly trend showing the 5-year running mean exceeding 1.0°C for the first time in 2023.
+
+@figure[id=fig-map, src=heatmap_2023.svg, alt=Global temperature anomaly map for 2023, width=960, height=480, mime=image/svg+xml]
+Spatial distribution of temperature anomalies in 2023. Arctic regions show amplified warming (+3-5°C), consistent with polar amplification models.
+
+@section[id=analysis]: Analysis
+
+@claim[id=c1, refs=temp-table,e1]
+The 2020-2024 period is the warmest five-year period in the instrumental record.
+
+@evidence[id=e1, refs=temp-table]
+All five years in 2020-2024 rank in the top 6 warmest years globally, with 2023 setting a new record at +1.17°C above the 1951-1980 baseline. The 5-year running mean crossed 1.0°C for the first time in 2023.
+
+@claim[id=c2, refs=fig-map]
+Arctic amplification is accelerating, with polar regions warming 3-5x faster than the global mean.
+
+@evidence[id=e2]
+The 2023 heatmap shows anomalies exceeding +3°C across most of the Arctic Ocean and northern Siberia, while tropical regions show +0.5-1.0°C anomalies. This 3-5x ratio matches climate model projections for high-emission scenarios.
+
+@section[id=media-demo]: Audio and Video Metadata
+
+AIF supports structured metadata on all media types — not just figures.
+
+@audio[id=audio-briefing, src=climate_briefing_2024.mp3, alt=2024 Climate Briefing Podcast, duration=1847.5, mime=audio/mpeg]
+Annual climate briefing from the WMO Secretary-General, covering 2024 temperature records and extreme weather events.
+
+@video[id=video-viz, src=arctic_ice_timelapse.mp4, alt=Arctic sea ice extent timelapse 1979-2024, width=1920, height=1080, duration=120.0, mime=video/mp4, poster=arctic_ice_poster.jpg]
+Time-lapse visualization of September Arctic sea ice minimum extent from 1979 to 2024, showing a 13% decline per decade.
+
+@section[id=conclusion]: Conclusions
+
+@conclusion[id=concl]
+The instrumental record confirms accelerating warming, with the 2020-2024 pentad crossing the 1.0°C threshold. AIF preserves not just this conclusion, but the entire evidence chain: raw data (tables), visualizations (SVG figures with metadata), claims, and supporting evidence — all linked via typed `refs` attributes and verifiable via `aif lint`.

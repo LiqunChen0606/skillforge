@@ -170,6 +170,8 @@ Unlike Markdown, AIF natively supports typed semantic content:
 
 These types are preserved across all output formats — the LLM knows a `@claim` is a claim, not just a paragraph. This enables document-level semantic linting: `aif lint` checks for broken references, claims without evidence, duplicate IDs, orphaned media, and malformed tables.
 
+**Rich content beyond text:** AIF also handles tables with captions, SVG figures with dimensions/MIME metadata, audio/video with duration and poster frames, and cross-references (`refs=id1,id2`) between any blocks. See the [rich content examples](examples/rich-content/) for a full walkthrough with compilation demos and roundtrip fidelity comparison.
+
 ## Skill Profiles
 
 Structured AI skill documents with versioning, integrity hashing, and a 3-stage eval pipeline:

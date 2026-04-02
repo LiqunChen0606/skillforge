@@ -15,6 +15,11 @@ examples/
 │   ├── wiki_source.md          # Source Markdown for import testing
 │   └── wiki_source_imported.json  # JSON IR from Markdown import
 │
+├── rich-content/       # Tables, figures, media metadata, cross-references
+│   ├── README.md               # Detailed guide: what AIF preserves that Markdown can't
+│   ├── climate_data.aif        # Full example with tables, SVG, audio, video, refs
+│   └── temperature_trend.svg   # Example SVG figure
+│
 ├── skills/             # AI agent skill definitions
 │   └── code_review.aif         # Code review skill with @example blocks
 │

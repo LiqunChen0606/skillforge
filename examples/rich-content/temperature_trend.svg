@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400">
+  <style>
+    text { font-family: -apple-system, sans-serif; }
+    .title { font-size: 16px; font-weight: bold; fill: #16213e; }
+    .label { font-size: 12px; fill: #666; }
+    .value { font-size: 11px; fill: #333; }
+    .grid { stroke: #e9ecef; stroke-width: 1; }
+    .line { fill: none; stroke: #dc3545; stroke-width: 2.5; }
+    .mean-line { fill: none; stroke: #0d6efd; stroke-width: 2; stroke-dasharray: 6,3; }
+    .dot { fill: #dc3545; }
+    .baseline { stroke: #28a745; stroke-width: 1; stroke-dasharray: 4,4; }
+  </style>
+
+  <!-- Title -->
+  <text x="400" y="30" text-anchor="middle" class="title">Global Temperature Anomaly (°C above 1951-1980 baseline)</text>
+
+  <!-- Axes -->
+  <line x1="100" y1="50" x2="100" y2="340" stroke="#333" stroke-width="1"/>
+  <line x1="100" y1="340" x2="750" y2="340" stroke="#333" stroke-width="1"/>
+
+  <!-- Grid lines -->
+  <line x1="100" y1="100" x2="750" y2="100" class="grid"/>
+  <line x1="100" y1="170" x2="750" y2="170" class="grid"/>
+  <line x1="100" y1="240" x2="750" y2="240" class="grid"/>
+
+  <!-- Y-axis labels -->
+  <text x="90" y="105" text-anchor="end" class="label">+1.2</text>
+  <text x="90" y="175" text-anchor="end" class="label">+1.0</text>
+  <text x="90" y="245" text-anchor="end" class="label">+0.8</text>
+  <text x="90" y="345" text-anchor="end" class="label">+0.0</text>
+
+  <!-- 1.0°C threshold -->
+  <line x1="100" y1="170" x2="750" y2="170" class="baseline"/>
+  <text x="755" y="175" class="label" fill="#28a745">1.0°C threshold</text>
+
+  <!-- Data points: 2020=+1.02, 2021=+0.85, 2022=+0.89, 2023=+1.17, 2024=+1.09 -->
+  <!-- Y scale: 0.0 = 340, 1.2 = 100, so 1 unit = 200px -->
+  <!-- X: 5 points spread across 100-700 -->
+
+  <!-- Annual anomaly line (red) -->
+  <polyline class="line" points="200,170 325,200 450,192 575,145 700,158"/>
+  <circle cx="200" cy="170" r="5" class="dot"/>
+  <circle cx="325" cy="200" r="5" class="dot"/>
+  <circle cx="450" cy="192" r="5" class="dot"/>
+  <circle cx="575" cy="145" r="5" class="dot"/>
+  <circle cx="700" cy="158" r="5" class="dot"/>
+
+  <!-- 5-year mean line (blue dashed) -->
+  <polyline class="mean-line" points="200,177 325,175 450,173 575,169 700,167"/>
+
+  <!-- X-axis labels -->
+  <text x="200" y="365" text-anchor="middle" class="label">2020</text>
+  <text x="325" y="365" text-anchor="middle" class="label">2021</text>
+  <text x="450" y="365" text-anchor="middle" class="label">2022</text>
+  <text x="575" y="365" text-anchor="middle" class="label">2023</text>
+  <text x="700" y="365" text-anchor="middle" class="label">2024</text>
+
+  <!-- Data value labels -->
+  <text x="200" y="162" text-anchor="middle" class="value">+1.02</text>
+  <text x="325" y="218" text-anchor="middle" class="value">+0.85</text>
+  <text x="450" y="210" text-anchor="middle" class="value">+0.89</text>
+  <text x="575" y="138" text-anchor="middle" class="value">+1.17</text>
+  <text x="700" y="152" text-anchor="middle" class="value">+1.09</text>
+
+  <!-- Legend -->
+  <line x1="200" y1="390" x2="230" y2="390" stroke="#dc3545" stroke-width="2.5"/>
+  <text x="235" y="394" class="label">Annual anomaly</text>
+  <line x1="380" y1="390" x2="410" y2="390" stroke="#0d6efd" stroke-width="2" stroke-dasharray="6,3"/>
+  <text x="415" y="394" class="label">5-year mean</text>
+  <line x1="540" y1="390" x2="570" y2="390" stroke="#28a745" stroke-width="1" stroke-dasharray="4,4"/>
+  <text x="575" y="394" class="label">1.0°C threshold</text>
+</svg>
