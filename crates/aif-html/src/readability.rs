@@ -7,9 +7,28 @@
 //! 4. `<body>` fallback → strip chrome tags (nav, header, footer, aside without aif-callout)
 
 use scraper::{ElementRef, Html, Selector};
+use std::sync::OnceLock;
 
 /// Tags considered page chrome and stripped when using the body fallback.
 const CHROME_TAGS: &[&str] = &["nav", "header", "footer"];
+
+// Pre-compiled selectors for content root detection.
+fn sel_article() -> &'static Selector {
+    static SEL: OnceLock<Selector> = OnceLock::new();
+    SEL.get_or_init(|| Selector::parse("article").unwrap())
+}
+fn sel_main() -> &'static Selector {
+    static SEL: OnceLock<Selector> = OnceLock::new();
+    SEL.get_or_init(|| Selector::parse("main").unwrap())
+}
+fn sel_role_main() -> &'static Selector {
+    static SEL: OnceLock<Selector> = OnceLock::new();
+    SEL.get_or_init(|| Selector::parse("[role=\"main\"]").unwrap())
+}
+fn sel_body() -> &'static Selector {
+    static SEL: OnceLock<Selector> = OnceLock::new();
+    SEL.get_or_init(|| Selector::parse("body").unwrap())
+}
 
 /// Result of content root extraction.
 pub enum ContentRoot<'a> {
@@ -23,30 +42,18 @@ pub enum ContentRoot<'a> {
 
 /// Find the best content root in the parsed HTML document.
 pub fn find_content_root(html: &Html) -> ContentRoot<'_> {
-    // 1. <article>
-    let article_sel = Selector::parse("article").unwrap();
-    if let Some(el) = html.select(&article_sel).next() {
+    if let Some(el) = html.select(sel_article()).next() {
         return ContentRoot::Element(el);
     }
-
-    // 2. <main>
-    let main_sel = Selector::parse("main").unwrap();
-    if let Some(el) = html.select(&main_sel).next() {
+    if let Some(el) = html.select(sel_main()).next() {
         return ContentRoot::Element(el);
     }
-
-    // 3. [role="main"]
-    let role_sel = Selector::parse("[role=\"main\"]").unwrap();
-    if let Some(el) = html.select(&role_sel).next() {
+    if let Some(el) = html.select(sel_role_main()).next() {
         return ContentRoot::Element(el);
     }
-
-    // 4. <body> fallback
-    let body_sel = Selector::parse("body").unwrap();
-    if html.select(&body_sel).next().is_some() {
+    if html.select(sel_body()).next().is_some() {
         return ContentRoot::BodyFiltered;
     }
-
     ContentRoot::None
 }
 

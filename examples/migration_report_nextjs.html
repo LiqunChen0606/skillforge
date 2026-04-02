@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Migration Report: Next.js 13 → 15</title>
+<style>
+  :root {
+    --navy: #16213e; --accent: #0f3460;
+    --green: #28a745; --green-bg: #d4edda; --green-border: #c3e6cb;
+    --red: #dc3545; --red-bg: #f8d7da;
+    --yellow: #ffc107; --yellow-bg: #fff3cd;
+    --blue-bg: #cfe2ff;
+    --gray-50: #f8f9fa; --gray-200: #e9ecef; --gray-600: #6c757d; --gray-900: #1a1a2e;
+    --shadow: 0 1px 3px rgba(0,0,0,0.1); --radius: 8px;
+  }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; background: var(--gray-50); color: var(--gray-900); line-height: 1.6; }
+  h1 { color: var(--navy); border-bottom: 3px solid var(--accent); padding-bottom: 0.5rem; font-size: 1.6rem; }
+  h2 { color: var(--navy); margin-top: 2rem; font-size: 1.2rem; }
+  .meta { color: var(--gray-600); font-size: 0.85rem; margin-bottom: 1.5rem; }
+  .card { background: white; border-radius: var(--radius); padding: 1.25rem; box-shadow: var(--shadow); margin: 1rem 0; }
+
+  /* Status banner */
+  .status-banner { border-radius: var(--radius); padding: 1.5rem 2rem; margin: 1rem 0; color: white; }
+  .status-success { background: linear-gradient(135deg, #155724, #28a745); }
+  .status-partial { background: linear-gradient(135deg, #856404, #ffc107); color: #1a1a2e; }
+  .status-failed { background: linear-gradient(135deg, #721c24, #dc3545); }
+  .status-banner .big { font-size: 2rem; font-weight: 800; }
+  .status-banner .sub { opacity: 0.85; font-size: 0.9rem; }
+
+  /* Stats grid */
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin: 1rem 0; }
+  .stat-card { background: white; border-radius: var(--radius); padding: 1rem; box-shadow: var(--shadow); text-align: center; }
+  .stat-card .value { font-size: 1.8rem; font-weight: 800; color: var(--navy); }
+  .stat-card .label { font-size: 0.8rem; color: var(--gray-600); }
+  .stat-card.success .value { color: var(--green); }
+  .stat-card.warning .value { color: var(--yellow); }
+  .stat-card.danger .value { color: var(--red); }
+
+  /* Progress */
+  .progress-bar { height: 8px; background: var(--gray-200); border-radius: 4px; overflow: hidden; margin: 0.5rem 0; }
+  .progress-fill { height: 100%; border-radius: 4px; }
+  .progress-green { background: var(--green); }
+  .progress-yellow { background: var(--yellow); }
+
+  /* Check results */
+  table { border-collapse: collapse; width: 100%; margin: 0.5rem 0; background: white; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+  th { background: var(--navy); color: white; padding: 8px 12px; font-size: 0.82rem; text-align: left; }
+  td { padding: 8px 12px; border-bottom: 1px solid #eee; font-size: 0.85rem; }
+  .pass { color: var(--green); font-weight: 700; }
+  .fail { color: var(--red); font-weight: 700; }
+  .skip { color: var(--gray-600); }
+
+  /* Risk badge */
+  .risk-badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; }
+  .risk-low { background: var(--green-bg); color: #155724; }
+  .risk-medium { background: var(--yellow-bg); color: #856404; }
+  .risk-high { background: var(--red-bg); color: #721c24; }
+
+  /* Code blocks */
+  pre { background: #1e1e1e; color: #d4d4d4; padding: 1rem; border-radius: 6px; overflow-x: auto; font-size: 0.82rem; line-height: 1.5; }
+  code { font-family: 'SF Mono', 'Fira Code', Consolas, monospace; }
+
+  .note { background: var(--yellow-bg); border-left: 4px solid var(--yellow); border-radius: 0 6px 6px 0; padding: 0.8rem 1rem; margin: 1rem 0; font-size: 0.9rem; }
+  .info { background: var(--blue-bg); border-left: 4px solid #0d6efd; border-radius: 0 6px 6px 0; padding: 0.8rem 1rem; margin: 1rem 0; font-size: 0.9rem; }
+  .warning { background: var(--red-bg); border-left: 4px solid var(--red); border-radius: 0 6px 6px 0; padding: 0.8rem 1rem; margin: 1rem 0; font-size: 0.9rem; }
+
+  .timestamp { text-align: right; color: #999; font-size: 0.8rem; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--gray-200); }
+  .chunk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 0.5rem; }
+  .chunk-item { background: white; border: 1px solid var(--gray-200); border-radius: 6px; padding: 0.6rem 0.8rem; font-size: 0.82rem; }
+  .chunk-item.pass { border-left: 3px solid var(--green); }
+  .chunk-item.fail { border-left: 3px solid var(--red); }
+  .chunk-item .chunk-name { font-weight: 600; }
+  .chunk-item .chunk-status { float: right; }
+</style>
+</head>
+<body>
+
+<h1>Migration Report: Next.js 13 → 15</h1>
+<p class="meta">Skill: <strong>nextjs-13-to-15</strong> v1.0 &bull; Strategy: FilePerChunk &bull; Generated: 2026-04-02</p>
+
+<!-- Status Banner -->
+<div class="status-banner status-success">
+  <div class="big">Migration Successful</div>
+  <div class="sub">All 47 source files migrated &bull; 42 passed verification &bull; 5 flagged for manual review</div>
+</div>
+
+<!-- Stats Grid -->
+<div class="stats">
+  <div class="stat-card success">
+    <div class="value">42</div>
+    <div class="label">Files Passed</div>
+  </div>
+  <div class="stat-card warning">
+    <div class="value">5</div>
+    <div class="label">Manual Review</div>
+  </div>
+  <div class="stat-card">
+    <div class="value">0</div>
+    <div class="label">Failed</div>
+  </div>
+  <div class="stat-card">
+    <div class="value">0</div>
+    <div class="label">Skipped</div>
+  </div>
+  <div class="stat-card success">
+    <div class="value">89.4%</div>
+    <div class="label">Avg Confidence</div>
+  </div>
+  <div class="stat-card">
+    <div class="value">3</div>
+    <div class="label">Repair Iterations</div>
+  </div>
+</div>
+
+<!-- Risk Assessment -->
+<h2>Risk Assessment</h2>
+<div class="card">
+  <p><span class="risk-badge risk-low">LOW RISK</span> &mdash; High confidence (89.4%), all verification checks pass, and only 5 files need manual review (all related to complex caching patterns).</p>
+  <table>
+    <thead><tr><th>Factor</th><th>Assessment</th><th>Detail</th></tr></thead>
+    <tbody>
+      <tr><td>Confidence Score</td><td><span class="pass">89.4%</span></td><td>Above 80% threshold for automated approval</td></tr>
+      <tr><td>Static Checks</td><td><span class="pass">9/9 PASS</span></td><td>All pattern presence/absence checks passed</td></tr>
+      <tr><td>Semantic Checks</td><td><span class="pass">3/3 PASS</span></td><td>LLM-verified behavioral correctness</td></tr>
+      <tr><td>Repair Iterations</td><td><span class="pass">3 total</span></td><td>2 files needed 1 repair pass each, 1 needed 2</td></tr>
+      <tr><td>Breaking Changes</td><td><span class="risk-badge risk-medium">5 files</span></td><td>Complex caching wrappers flagged for review</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Verification Analysis -->
+<h2>Verification Analysis</h2>
+<div class="card">
+  <h3>Static Checks (Pattern Matching)</h3>
+  <div class="progress-bar"><div class="progress-fill progress-green" style="width:100%"></div></div>
+  <p><span class="pass">9/9 checks passed</span> across all migrated files.</p>
+  <table>
+    <thead><tr><th>Check</th><th>Type</th><th>Result</th><th>Detail</th></tr></thead>
+    <tbody>
+      <tr><td><code>@next/font</code> imports removed</td><td>Absence</td><td><span class="pass">PASS</span></td><td>0 remaining imports</td></tr>
+      <tr><td><code>experimental.serverActions</code> removed</td><td>Absence</td><td><span class="pass">PASS</span></td><td>Config cleaned</td></tr>
+      <tr><td><code>experimental.appDir</code> removed</td><td>Absence</td><td><span class="pass">PASS</span></td><td>Config cleaned</td></tr>
+      <tr><td><code>await params</code> present</td><td>Presence</td><td><span class="pass">PASS</span></td><td>23/23 page files updated</td></tr>
+      <tr><td><code>next/font</code> imports present</td><td>Presence</td><td><span class="pass">PASS</span></td><td>3 font imports migrated</td></tr>
+      <tr><td><code>experimental-edge</code> removed</td><td>Absence</td><td><span class="pass">PASS</span></td><td>2 edge routes updated</td></tr>
+      <tr><td><code>forwardRef</code> removed</td><td>Absence</td><td><span class="pass">PASS</span></td><td>8 components migrated to direct ref</td></tr>
+      <tr><td><code>next >= 15.0.0</code></td><td>Presence</td><td><span class="pass">PASS</span></td><td>package.json: "next": "^15.1.0"</td></tr>
+      <tr><td><code>react >= 19.0.0</code></td><td>Presence</td><td><span class="pass">PASS</span></td><td>package.json: "react": "^19.0.0"</td></tr>
+    </tbody>
+  </table>
+
+  <h3 style="margin-top:1.5rem">Semantic Checks (LLM-Verified)</h3>
+  <div class="progress-bar"><div class="progress-fill progress-green" style="width:100%"></div></div>
+  <table>
+    <thead><tr><th>Check</th><th>Result</th><th>Confidence</th><th>Detail</th></tr></thead>
+    <tbody>
+      <tr><td>Async request APIs correctly awaited</td><td><span class="pass">PASS</span></td><td>94%</td><td>All params/searchParams/cookies/headers properly async</td></tr>
+      <tr><td>Caching behavior explicitly specified</td><td><span class="pass">PASS</span></td><td>87%</td><td>force-cache added to 12 fetch calls; 5 flagged for review</td></tr>
+      <tr><td>React 19 patterns applied correctly</td><td><span class="pass">PASS</span></td><td>91%</td><td>forwardRef → direct ref, Context.Provider → Context</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Results by Chunk -->
+<h2>Results by Chunk</h2>
+<div class="card">
+  <div class="chunk-grid">
+    <div class="chunk-item pass"><span class="chunk-name">app/layout.tsx</span><span class="chunk-status pass">PASS</span></div>
+    <div class="chunk-item pass"><span class="chunk-name">app/page.tsx</span><span class="chunk-status pass">PASS</span></div>
+    <div class="chunk-item pass"><span class="chunk-name">app/dashboard/page.tsx</span><span class="chunk-status pass">PASS</span></div>
+    <div class="chunk-item pass"><span class="chunk-name">app/dashboard/layout.tsx</span><span class="chunk-status pass">PASS</span></div>
+    <div class="chunk-item pass"><span class="chunk-name">app/api/users/route.tsx</span><span class="chunk-status pass">PASS</span></div>
+    <div class="chunk-item pass"><span class="chunk-name">app/api/auth/route.tsx</span><span class="chunk-status pass">PASS</span></div>
+    <div class="chunk-item pass"><span class="chunk-name">app/blog/[slug]/page.tsx</span><span class="chunk-status pass">PASS</span></div>
+    <div class="chunk-item pass"><span class="chunk-name">app/settings/page.tsx</span><span class="chunk-status pass">PASS</span></div>
+    <div class="chunk-item pass"><span class="chunk-name">components/Header.tsx</span><span class="chunk-status pass">PASS</span></div>
+    <div class="chunk-item pass"><span class="chunk-name">components/Button.tsx</span><span class="chunk-status pass">PASS</span></div>
+    <div class="chunk-item pass"><span class="chunk-name">components/Modal.tsx</span><span class="chunk-status pass">PASS</span></div>
+    <div class="chunk-item fail"><span class="chunk-name">lib/cache-wrapper.ts</span><span class="chunk-status fail">REVIEW</span></div>
+    <div class="chunk-item fail"><span class="chunk-name">lib/data-fetcher.ts</span><span class="chunk-status fail">REVIEW</span></div>
+    <div class="chunk-item pass"><span class="chunk-name">middleware.ts</span><span class="chunk-status pass">PASS</span></div>
+    <div class="chunk-item pass"><span class="chunk-name">next.config.ts</span><span class="chunk-status pass">PASS</span></div>
+    <div class="chunk-item pass"><span class="chunk-name">package.json</span><span class="chunk-status pass">PASS</span></div>
+  </div>
+  <p style="margin-top:0.5rem; font-size:0.82rem; color:var(--gray-600);">Showing 16 of 47 chunks. 42 passed, 5 flagged for manual review.</p>
+</div>
+
+<!-- Manual Review Items -->
+<h2>Manual Review Required</h2>
+<div class="warning">
+  <strong>5 files flagged</strong> — These files contain complex caching patterns that require human judgment to migrate correctly.
+</div>
+<div class="card">
+  <table>
+    <thead><tr><th>File</th><th>Reason</th><th>Priority</th></tr></thead>
+    <tbody>
+      <tr><td><code>lib/cache-wrapper.ts</code></td><td>Custom caching wrapper relies on Next.js implicit caching behavior; needs explicit cache directives</td><td><span class="risk-badge risk-medium">MEDIUM</span></td></tr>
+      <tr><td><code>lib/data-fetcher.ts</code></td><td>Complex fetch orchestration with conditional caching; automated migration may miss edge cases</td><td><span class="risk-badge risk-medium">MEDIUM</span></td></tr>
+      <tr><td><code>app/products/[...slug]/page.tsx</code></td><td>Catch-all route with nested params destructuring; needs manual await pattern</td><td><span class="risk-badge risk-low">LOW</span></td></tr>
+      <tr><td><code>app/api/revalidate/route.ts</code></td><td>On-demand revalidation handler; caching semantics changed in Next.js 15</td><td><span class="risk-badge risk-medium">MEDIUM</span></td></tr>
+      <tr><td><code>tests/integration/fetch.test.ts</code></td><td>Test mocks depend on default caching behavior; needs updated assertions</td><td><span class="risk-badge risk-low">LOW</span></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Recommendations -->
+<h2>Recommendations</h2>
+<div class="card">
+  <ol>
+    <li><strong>Run full test suite</strong> — Execute <code>npm test</code> and <code>next build</code> to verify no regressions.</li>
+    <li><strong>Review caching files</strong> — The 5 flagged files need human review of caching semantics. Start with <code>lib/cache-wrapper.ts</code>.</li>
+    <li><strong>Monitor production behavior</strong> — Next.js 15's default no-cache fetch behavior may increase API calls. Monitor with your observability stack.</li>
+    <li><strong>Update CI/CD</strong> — Ensure CI uses Node.js 18.17+ (required by Next.js 15) and React 19 compatible test libraries.</li>
+  </ol>
+</div>
+
+<!-- Step Execution Timeline -->
+<h2>Step Execution Timeline</h2>
+<div class="card">
+  <table>
+    <thead><tr><th>Step</th><th>Description</th><th>Files</th><th>Status</th><th>Repairs</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Upgrade core dependencies</td><td>1</td><td><span class="pass">PASS</span></td><td>0</td></tr>
+      <tr><td>2</td><td>Migrate async request APIs</td><td>23</td><td><span class="pass">PASS</span></td><td>2</td></tr>
+      <tr><td>3</td><td>Update next.config.js → next.config.ts</td><td>1</td><td><span class="pass">PASS</span></td><td>0</td></tr>
+      <tr><td>4</td><td>Update caching semantics</td><td>12</td><td><span class="pass">PASS</span> (5 review)</td><td>1</td></tr>
+      <tr><td>5</td><td>Update middleware and edge runtime</td><td>2</td><td><span class="pass">PASS</span></td><td>0</td></tr>
+      <tr><td>6</td><td>Update React 19 patterns</td><td>8</td><td><span class="pass">PASS</span></td><td>0</td></tr>
+      <tr><td>7</td><td>Update testing infrastructure</td><td>5</td><td><span class="pass">PASS</span> (1 review)</td><td>0</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p class="timestamp">Generated by AIF Migration Engine &bull; Skill: nextjs-13-to-15 v1.0 &bull; 2026-04-02</p>
+</body>
+</html>

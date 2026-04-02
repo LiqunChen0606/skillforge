@@ -919,7 +919,7 @@ fn handle_config(action: ConfigAction) {
             let mut config = aif_core::config::AifConfig::load(&config_path);
 
             match key.as_str() {
-                "llm.provider" => match aif_core::config::LlmProvider::from_str(&value) {
+                "llm.provider" => match aif_core::config::LlmProvider::parse_provider(&value) {
                     Some(p) => config.llm.provider = p,
                     None => {
                         eprintln!(
@@ -1000,7 +1000,7 @@ fn main() {
                         std::process::exit(1);
                     })
                 }
-                "aif" | _ => {
+                _ => {
                     let source = read_source(&input);
                     parse_aif(&source)
                 }

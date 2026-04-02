@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Migration Report: TypeScript Strict Mode Adoption</title>
+<style>
+  :root {
+    --navy: #16213e; --accent: #0f3460;
+    --green: #28a745; --green-bg: #d4edda;
+    --red: #dc3545; --red-bg: #f8d7da;
+    --yellow: #ffc107; --yellow-bg: #fff3cd;
+    --blue-bg: #cfe2ff;
+    --gray-50: #f8f9fa; --gray-200: #e9ecef; --gray-600: #6c757d; --gray-900: #1a1a2e;
+    --shadow: 0 1px 3px rgba(0,0,0,0.1); --radius: 8px;
+  }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; background: var(--gray-50); color: var(--gray-900); line-height: 1.6; }
+  h1 { color: var(--navy); border-bottom: 3px solid var(--accent); padding-bottom: 0.5rem; font-size: 1.6rem; }
+  h2 { color: var(--navy); margin-top: 2rem; font-size: 1.2rem; }
+  h3 { color: var(--navy); margin-top: 1.5rem; font-size: 1.05rem; }
+  .meta { color: var(--gray-600); font-size: 0.85rem; margin-bottom: 1.5rem; }
+  .card { background: white; border-radius: var(--radius); padding: 1.25rem; box-shadow: var(--shadow); margin: 1rem 0; }
+  .status-banner { border-radius: var(--radius); padding: 1.5rem 2rem; margin: 1rem 0; }
+  .status-partial { background: linear-gradient(135deg, #856404, #ffc107); color: #1a1a2e; }
+  .status-banner .big { font-size: 2rem; font-weight: 800; }
+  .status-banner .sub { opacity: 0.85; font-size: 0.9rem; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin: 1rem 0; }
+  .stat-card { background: white; border-radius: var(--radius); padding: 1rem; box-shadow: var(--shadow); text-align: center; }
+  .stat-card .value { font-size: 1.8rem; font-weight: 800; color: var(--navy); }
+  .stat-card .label { font-size: 0.8rem; color: var(--gray-600); }
+  .stat-card.success .value { color: var(--green); }
+  .stat-card.warning .value { color: #856404; }
+  .stat-card.danger .value { color: var(--red); }
+  .progress-bar { height: 8px; background: var(--gray-200); border-radius: 4px; overflow: hidden; margin: 0.5rem 0; }
+  .progress-fill { height: 100%; border-radius: 4px; }
+  .progress-green { background: var(--green); }
+  .progress-yellow { background: var(--yellow); }
+  table { border-collapse: collapse; width: 100%; margin: 0.5rem 0; background: white; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+  th { background: var(--navy); color: white; padding: 8px 12px; font-size: 0.82rem; text-align: left; }
+  td { padding: 8px 12px; border-bottom: 1px solid #eee; font-size: 0.85rem; }
+  .pass { color: var(--green); font-weight: 700; }
+  .fail { color: var(--red); font-weight: 700; }
+  .risk-badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; }
+  .risk-low { background: var(--green-bg); color: #155724; }
+  .risk-medium { background: var(--yellow-bg); color: #856404; }
+  .risk-high { background: var(--red-bg); color: #721c24; }
+  code { font-family: 'SF Mono', 'Fira Code', Consolas, monospace; }
+  pre { background: #1e1e1e; color: #d4d4d4; padding: 1rem; border-radius: 6px; overflow-x: auto; font-size: 0.82rem; line-height: 1.5; }
+  .note { background: var(--yellow-bg); border-left: 4px solid var(--yellow); border-radius: 0 6px 6px 0; padding: 0.8rem 1rem; margin: 1rem 0; font-size: 0.9rem; }
+  .warning { background: var(--red-bg); border-left: 4px solid var(--red); border-radius: 0 6px 6px 0; padding: 0.8rem 1rem; margin: 1rem 0; font-size: 0.9rem; }
+  .info { background: var(--blue-bg); border-left: 4px solid #0d6efd; border-radius: 0 6px 6px 0; padding: 0.8rem 1rem; margin: 1rem 0; font-size: 0.9rem; }
+
+  /* Phase timeline */
+  .phase-timeline { display: flex; flex-direction: column; gap: 0; margin: 1rem 0; }
+  .phase { display: grid; grid-template-columns: 60px 1fr 100px 80px; align-items: center; padding: 0.75rem 1rem; border-left: 3px solid var(--gray-200); }
+  .phase.complete { border-left-color: var(--green); background: #f8fff8; }
+  .phase.review { border-left-color: var(--yellow); background: #fffef8; }
+  .phase.failed { border-left-color: var(--red); background: #fff8f8; }
+  .phase-num { font-size: 1.4rem; font-weight: 800; color: var(--navy); }
+  .phase-name { font-weight: 600; }
+  .phase-desc { font-size: 0.82rem; color: var(--gray-600); }
+  .phase-errors { text-align: center; font-weight: 600; }
+  .phase-status { text-align: right; }
+
+  .chunk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 0.5rem; }
+  .chunk-item { background: white; border: 1px solid var(--gray-200); border-radius: 6px; padding: 0.6rem 0.8rem; font-size: 0.82rem; }
+  .chunk-item.pass { border-left: 3px solid var(--green); }
+  .chunk-item.fail { border-left: 3px solid var(--red); }
+  .chunk-item .chunk-name { font-weight: 600; }
+  .chunk-item .chunk-status { float: right; }
+  .timestamp { text-align: right; color: #999; font-size: 0.8rem; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--gray-200); }
+</style>
+</head>
+<body>
+
+<h1>Migration Report: TypeScript Strict Mode Adoption</h1>
+<p class="meta">Skill: <strong>typescript-strict-mode</strong> v1.0 &bull; Strategy: DirectoryChunk &bull; Generated: 2026-04-02</p>
+
+<div class="status-banner status-partial">
+  <div class="big">Partial Success — Manual Review Required</div>
+  <div class="sub">156 of 183 source files migrated &bull; 143 passed &bull; 13 flagged for review &bull; 27 deferred (>50 errors)</div>
+</div>
+
+<div class="stats">
+  <div class="stat-card success">
+    <div class="value">143</div>
+    <div class="label">Files Passed</div>
+  </div>
+  <div class="stat-card warning">
+    <div class="value">13</div>
+    <div class="label">Manual Review</div>
+  </div>
+  <div class="stat-card">
+    <div class="value">0</div>
+    <div class="label">Failed</div>
+  </div>
+  <div class="stat-card warning">
+    <div class="value">27</div>
+    <div class="label">Deferred</div>
+  </div>
+  <div class="stat-card">
+    <div class="value">78.6%</div>
+    <div class="label">Avg Confidence</div>
+  </div>
+  <div class="stat-card warning">
+    <div class="value">18</div>
+    <div class="label">Repair Iterations</div>
+  </div>
+</div>
+
+<h2>Risk Assessment</h2>
+<div class="card">
+  <p><span class="risk-badge risk-medium">MEDIUM RISK</span> &mdash; Confidence score (78.6%) is below the 80% automated approval threshold. 27 files with >50 noImplicitAny errors were deferred per the skill's fallback protocol. 13 files need manual review for complex type patterns.</p>
+  <table>
+    <thead><tr><th>Factor</th><th>Assessment</th><th>Detail</th></tr></thead>
+    <tbody>
+      <tr><td>Confidence Score</td><td><span class="fail">78.6%</span></td><td>Below 80% threshold — manual review recommended</td></tr>
+      <tr><td>Static Checks</td><td><span class="pass">5/6 PASS</span></td><td>1 check marginal: 2 <code>@ts-expect-error</code> comments added</td></tr>
+      <tr><td>Semantic Checks</td><td><span class="pass">2/3 PASS</span></td><td>1 marginal: 3 modules still have implicit-any in callbacks</td></tr>
+      <tr><td>Deferred Files</td><td><span class="risk-badge risk-medium">27 files</span></td><td>Files with >50 noImplicitAny errors, per fallback protocol</td></tr>
+      <tr><td>Repair Iterations</td><td><span class="risk-badge risk-medium">18 total</span></td><td>Higher than typical — strictNullChecks phase had most repairs</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Phase Timeline -->
+<h2>Phased Rollout Progress</h2>
+<div class="card">
+  <p>The migration follows 8 phases, from least to most disruptive. Each phase is committed separately to isolate regressions.</p>
+  <div class="phase-timeline">
+    <div class="phase complete">
+      <div class="phase-num">1</div>
+      <div><div class="phase-name">alwaysStrict + strictBindCallApply</div><div class="phase-desc">Least disruptive flags</div></div>
+      <div class="phase-errors">4 errors fixed</div>
+      <div class="phase-status"><span class="pass">PASS</span></div>
+    </div>
+    <div class="phase complete">
+      <div class="phase-num">2</div>
+      <div><div class="phase-name">noImplicitThis</div><div class="phase-desc">Explicit this parameter types</div></div>
+      <div class="phase-errors">12 errors fixed</div>
+      <div class="phase-status"><span class="pass">PASS</span></div>
+    </div>
+    <div class="phase review">
+      <div class="phase-num">3</div>
+      <div><div class="phase-name">noImplicitAny</div><div class="phase-desc">Most impactful flag — 27 files deferred</div></div>
+      <div class="phase-errors">247 errors fixed<br><small>+142 deferred</small></div>
+      <div class="phase-status"><span class="risk-badge risk-medium">PARTIAL</span></div>
+    </div>
+    <div class="phase review">
+      <div class="phase-num">4</div>
+      <div><div class="phase-name">strictNullChecks</div><div class="phase-desc">Most valuable for catching real bugs</div></div>
+      <div class="phase-errors">189 errors fixed<br><small>13 review</small></div>
+      <div class="phase-status"><span class="risk-badge risk-medium">REVIEW</span></div>
+    </div>
+    <div class="phase complete">
+      <div class="phase-num">5</div>
+      <div><div class="phase-name">strictFunctionTypes</div><div class="phase-desc">Contravariant parameter checking</div></div>
+      <div class="phase-errors">8 errors fixed</div>
+      <div class="phase-status"><span class="pass">PASS</span></div>
+    </div>
+    <div class="phase complete">
+      <div class="phase-num">6</div>
+      <div><div class="phase-name">strictPropertyInitialization</div><div class="phase-desc">Class property initialization</div></div>
+      <div class="phase-errors">23 errors fixed</div>
+      <div class="phase-status"><span class="pass">PASS</span></div>
+    </div>
+    <div class="phase complete">
+      <div class="phase-num">7</div>
+      <div><div class="phase-name">useUnknownInCatchVariables</div><div class="phase-desc">Safe error handling</div></div>
+      <div class="phase-errors">31 errors fixed</div>
+      <div class="phase-status"><span class="pass">PASS</span></div>
+    </div>
+    <div class="phase review">
+      <div class="phase-num">8</div>
+      <div><div class="phase-name">Consolidate to strict: true</div><div class="phase-desc">Blocked — phases 3 and 4 incomplete</div></div>
+      <div class="phase-errors">—</div>
+      <div class="phase-status"><span class="risk-badge risk-medium">BLOCKED</span></div>
+    </div>
+  </div>
+
+  <div class="note">
+    <strong>Phase 8 is blocked</strong> because phases 3 (noImplicitAny) and 4 (strictNullChecks) have deferred/review items. Once all deferred files are migrated, phase 8 can be completed to consolidate into <code>"strict": true</code>.
+  </div>
+</div>
+
+<h2>Verification Analysis</h2>
+<div class="card">
+  <h3>Static Checks</h3>
+  <div class="progress-bar"><div class="progress-fill progress-yellow" style="width:83%"></div></div>
+  <p><span class="pass">5/6 checks passed</span>, 1 marginal</p>
+  <table>
+    <thead><tr><th>Check</th><th>Type</th><th>Result</th><th>Detail</th></tr></thead>
+    <tbody>
+      <tr><td>Individual strict flags enabled</td><td>Presence</td><td><span class="pass">PASS</span></td><td>7 of 8 flags in tsconfig.json (strict:true blocked)</td></tr>
+      <tr><td>No remaining individual sub-flags after consolidation</td><td>Absence</td><td><span class="fail">N/A</span></td><td>Phase 8 blocked — individual flags still present</td></tr>
+      <tr><td>No <code>@ts-ignore</code> added by migration</td><td>Absence</td><td><span class="pass">PASS</span></td><td>0 new @ts-ignore comments</td></tr>
+      <tr><td>No <code>as any</code> added by migration</td><td>Absence</td><td><span class="pass">PASS</span></td><td>0 new as-any assertions</td></tr>
+      <tr><td><code>tsc --noEmit</code> succeeds</td><td>Presence</td><td><span class="pass">PASS</span></td><td>0 errors on migrated files</td></tr>
+      <tr><td>No <code>@ts-expect-error</code> added</td><td>Absence</td><td><span class="risk-badge risk-medium">MARGINAL</span></td><td>2 added for third-party type incompatibilities</td></tr>
+    </tbody>
+  </table>
+
+  <h3 style="margin-top:1.5rem">Semantic Checks</h3>
+  <table>
+    <thead><tr><th>Check</th><th>Result</th><th>Confidence</th><th>Detail</th></tr></thead>
+    <tbody>
+      <tr><td>Type safety improved: implicit-any count reduced</td><td><span class="pass">PASS</span></td><td>82%</td><td>247→3 implicit-any errors in migrated files (27 files deferred)</td></tr>
+      <tr><td>Null safety: all nullable values handled</td><td><span class="risk-badge risk-medium">PARTIAL</span></td><td>73%</td><td>13 files have complex nullable patterns needing review</td></tr>
+      <tr><td>All existing tests pass</td><td><span class="pass">PASS</span></td><td>96%</td><td>1,247 tests passing, 0 failures</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Error Distribution -->
+<h2>Error Distribution by Phase</h2>
+<div class="card">
+  <table>
+    <thead><tr><th>Phase</th><th>Flag</th><th>Errors Found</th><th>Auto-Fixed</th><th>Deferred</th><th>Review</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>alwaysStrict + strictBindCallApply</td><td>4</td><td>4</td><td>0</td><td>0</td></tr>
+      <tr><td>2</td><td>noImplicitThis</td><td>12</td><td>12</td><td>0</td><td>0</td></tr>
+      <tr><td>3</td><td>noImplicitAny</td><td>389</td><td>247</td><td>142</td><td>0</td></tr>
+      <tr><td>4</td><td>strictNullChecks</td><td>202</td><td>189</td><td>0</td><td>13</td></tr>
+      <tr><td>5</td><td>strictFunctionTypes</td><td>8</td><td>8</td><td>0</td><td>0</td></tr>
+      <tr><td>6</td><td>strictPropertyInitialization</td><td>23</td><td>23</td><td>0</td><td>0</td></tr>
+      <tr><td>7</td><td>useUnknownInCatchVariables</td><td>31</td><td>31</td><td>0</td><td>0</td></tr>
+      <tr class="total-row"><td></td><td><strong>TOTAL</strong></td><td><strong>669</strong></td><td><strong>514</strong></td><td><strong>142</strong></td><td><strong>13</strong></td></tr>
+    </tbody>
+  </table>
+
+  <div class="info">
+    <strong>76.8% auto-fix rate</strong> — 514 of 669 TypeScript errors were automatically resolved. The remaining 155 (142 deferred + 13 review) require manual intervention, primarily in legacy utility modules with pervasive implicit-any patterns.
+  </div>
+</div>
+
+<!-- Deferred Files -->
+<h2>Deferred Files (27)</h2>
+<div class="note">
+  Per the skill's fallback protocol, modules with more than 50 noImplicitAny errors are deferred for incremental migration. These files should be added to <code>tsconfig.strict-exclude.json</code>.
+</div>
+<div class="card">
+  <table>
+    <thead><tr><th>Directory</th><th>Files</th><th>Errors</th><th>Primary Issue</th></tr></thead>
+    <tbody>
+      <tr><td><code>src/legacy/utils/</code></td><td>8</td><td>73</td><td>Untyped utility functions dating to JS→TS migration</td></tr>
+      <tr><td><code>src/legacy/api-client/</code></td><td>5</td><td>52</td><td>Dynamic API response handling without type guards</td></tr>
+      <tr><td><code>src/legacy/data-layer/</code></td><td>7</td><td>89</td><td>Generic database query wrappers with implicit-any returns</td></tr>
+      <tr><td><code>src/legacy/middleware/</code></td><td>4</td><td>38</td><td>Express middleware chain with untyped req/res extensions</td></tr>
+      <tr><td><code>src/legacy/transforms/</code></td><td>3</td><td>32</td><td>Data transformation pipelines with dynamic key access</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Manual Review Items -->
+<h2>Manual Review Required (13 files)</h2>
+<div class="warning">
+  These files have complex nullable patterns that need human judgment — particularly around database query results and optional chaining vs. runtime validation.
+</div>
+<div class="card">
+  <table>
+    <thead><tr><th>File</th><th>Phase</th><th>Issue</th><th>Priority</th></tr></thead>
+    <tbody>
+      <tr><td><code>src/services/user-service.ts</code></td><td>4</td><td>8 nullable database query results — prefer zod validation over non-null assertion</td><td><span class="risk-badge risk-medium">MEDIUM</span></td></tr>
+      <tr><td><code>src/services/order-service.ts</code></td><td>4</td><td>Complex nullable chain: order?.items?.find()?.price — needs type narrowing strategy</td><td><span class="risk-badge risk-medium">MEDIUM</span></td></tr>
+      <tr><td><code>src/controllers/auth.ts</code></td><td>4</td><td>Session token nullable access — security-sensitive, needs explicit null handling</td><td><span class="risk-badge risk-high">HIGH</span></td></tr>
+      <tr><td><code>src/hooks/useAsync.ts</code></td><td>4</td><td>Generic hook with T | null | undefined — needs discriminated union type</td><td><span class="risk-badge risk-low">LOW</span></td></tr>
+      <tr><td colspan="4" style="text-align:center; color:var(--gray-600);">+ 9 more files (see full report in migration output)</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>Recommendations</h2>
+<div class="card">
+  <ol>
+    <li><strong>Address HIGH priority reviews first</strong> — <code>src/controllers/auth.ts</code> has security-sensitive null handling.</li>
+    <li><strong>Create <code>tsconfig.strict-exclude.json</code></strong> — Add the 27 deferred files so the rest of the codebase runs with strict flags enabled.</li>
+    <li><strong>Schedule incremental migration</strong> — Tackle deferred directories one at a time, starting with <code>src/legacy/utils/</code> (fewest files).</li>
+    <li><strong>Replace @ts-expect-error</strong> — The 2 added comments are for third-party type incompatibilities. Check for updated @types packages.</li>
+    <li><strong>Run full test suite</strong> — Verify with <code>tsc --noEmit && npm test</code>.</li>
+    <li><strong>Complete Phase 8</strong> — Once all deferred files are migrated, replace individual flags with <code>"strict": true</code>.</li>
+  </ol>
+</div>
+
+<p class="timestamp">Generated by AIF Migration Engine &bull; Skill: typescript-strict-mode v1.0 &bull; 2026-04-02</p>
+</body>
+</html>

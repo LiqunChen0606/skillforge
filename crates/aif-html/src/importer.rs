@@ -85,8 +85,8 @@ pub fn import_html(input: &str, strip_chrome: bool) -> HtmlImportResult {
     let html = Html::parse_document(input);
     let mut doc = Document::new();
 
-    // Auto-detect AIF roundtrip mode
-    let mode = if input.contains("aif-") {
+    // Auto-detect AIF roundtrip mode by checking for aif-* CSS classes on elements
+    let mode = if input.contains("class=\"aif-") || input.contains("class='aif-") {
         ImportMode::AifRoundtrip
     } else {
         ImportMode::Generic
@@ -531,7 +531,7 @@ fn group_headings_from_refs(raw: &[&RawBlock]) -> Vec<Block> {
                     j += 1;
                 }
 
-                let sub: Vec<&RawBlock> = raw[i + 1..j].iter().copied().collect();
+                let sub: Vec<&RawBlock> = raw[i + 1..j].to_vec();
                 let children = group_headings_from_refs(&sub);
 
                 let mut attrs = Attrs::new();
@@ -960,10 +960,12 @@ fn parse_video(el: ElementRef, aif_mode: bool) -> Block {
     attrs.id = el.value().attr("id").map(String::from);
 
     let src = el.value().attr("src").unwrap_or("").to_string();
-    let mut meta = MediaMeta::default();
-    meta.width = el.value().attr("width").and_then(|w| w.parse().ok());
-    meta.height = el.value().attr("height").and_then(|h| h.parse().ok());
-    meta.poster = el.value().attr("poster").map(String::from);
+    let meta = MediaMeta {
+        width: el.value().attr("width").and_then(|w| w.parse().ok()),
+        height: el.value().attr("height").and_then(|h| h.parse().ok()),
+        poster: el.value().attr("poster").map(String::from),
+        ..MediaMeta::default()
+    };
     let mut caption = None;
 
     // Caption from <p> child

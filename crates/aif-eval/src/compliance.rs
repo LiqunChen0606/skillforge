@@ -152,6 +152,6 @@ impl ComplianceChecker {
             .await?;
 
         let text = response.text();
-        parse_compliance_response(&text).map_err(|e| ApiError::Parse(e))
+        parse_compliance_response(&text).map_err(ApiError::Parse)
     }
 }

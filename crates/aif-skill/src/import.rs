@@ -85,8 +85,6 @@ fn parse_frontmatter(input: &str) -> (std::collections::BTreeMap<String, String>
 
 /// Parse markdown content into sections based on headings.
 struct MdSection {
-    #[allow(dead_code)]
-    level: usize,
     heading: String,
     body: String,
 }
@@ -103,9 +101,8 @@ fn parse_md_sections(input: &str) -> (Option<String>, String, Vec<MdSection>) {
         let trimmed = line.trim();
         if trimmed.starts_with("## ") {
             // Flush previous section
-            if let Some((level, heading)) = current_heading.take() {
+            if let Some((_level, heading)) = current_heading.take() {
                 sections.push(MdSection {
-                    level,
                     heading,
                     body: current_body.trim().to_string(),
                 });
@@ -123,9 +120,8 @@ fn parse_md_sections(input: &str) -> (Option<String>, String, Vec<MdSection>) {
     }
 
     // Flush last section
-    if let Some((level, heading)) = current_heading.take() {
+    if let Some((_level, heading)) = current_heading.take() {
         sections.push(MdSection {
-            level,
             heading,
             body: current_body.trim().to_string(),
         });

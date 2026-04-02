@@ -119,15 +119,13 @@ impl ScenarioRunner {
     }
 
     pub fn build_prompt(&self, skill_text: &str, spec: &ScenarioSpec) -> (String, String) {
-        let system = format!(
-            "You are an eval agent that tests whether a coding-agent skill produces correct outcomes. \
+        let system = "You are an eval agent that tests whether a coding-agent skill produces correct outcomes. \
              You will be given a skill, a scenario (precondition + task + expected output), and must \
              simulate how an agent with this skill loaded would handle the scenario.\n\n\
-             Respond with ONLY a JSON object: {{\"passed\": true/false, \"evidence\": \"brief explanation\"}}\n\n\
+             Respond with ONLY a JSON object: {\"passed\": true/false, \"evidence\": \"brief explanation\"}\n\n\
              - passed=true means the agent would satisfy the output_contract\n\
              - passed=false means the agent would violate the output_contract\n\
-             - evidence should be a 1-2 sentence explanation"
-        );
+             - evidence should be a 1-2 sentence explanation".to_string();
 
         let user_msg = format!(
             "## Skill\n\n{}\n\n\
@@ -161,7 +159,7 @@ impl ScenarioRunner {
         let text = response.text();
 
         parse_scenario_response(&text, &spec.name, spec.scenario_type)
-            .map_err(|e| ApiError::Parse(e))
+            .map_err(ApiError::Parse)
     }
 
     pub async fn evaluate_all(

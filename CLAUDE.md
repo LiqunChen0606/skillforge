@@ -256,6 +256,18 @@ Three production-quality examples in `examples/`: `migration_nextjs_13_to_15.aif
   - Unified config — merged `EngineConfig` into `MigrationConfig`
   - Distinct risk callouts — Low→Note, Medium→Info, High→Warning, Critical→Tip
   - Removed unused `reqwest`/`tokio` dependencies
+- **Code quality sweep** (Phase 6):
+  - HTML importer: AIF roundtrip detection uses `class="aif-` prefix instead of bare `aif-` substring to prevent false positives
+  - Readability: `OnceLock`-cached static CSS selectors replace scattered `Selector::parse().unwrap()` calls
+  - Removed dead code: unused `MdSection.level` field, unreachable `"aif"` match arm in CLI
+  - 6 Clippy fixes: redundant closures → method references, derivable Default, useless `format!`, `vec![]` macro, `.to_vec()`
+  - Renamed `LlmProvider::from_str` → `parse_provider` to avoid `FromStr` trait conflict
+  - Replaced `write!().unwrap()` with `push_str(&format!())` in hybrid LML emitter
+- **Enhanced benchmark reports**:
+  - Skill report: executive summary cards, cost impact at 3 Claude pricing tiers, statistical analysis (mean/min/max/stddev), compliance/TNO heatmap, format recommendation matrix, binary formats separated to fix chart scale
+  - Document report: executive summary (82.2% savings, $68 saved per 10 articles), cost & latency impact table, scale impact projections, Information Density Score analysis, variance analysis
+  - Benchmark Python script: `compute_statistics()` and `compute_cost_impact()` functions, extended JSON output
+- **Example migration reports**: 3 HTML templates in `examples/` — NextJS (success), ESLint (clean success), TypeScript strict (partial success with deferred files)
 
 ## Benchmark Results (2026-03-31, claude-opus-4-6, 10 skills)
 

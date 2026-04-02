@@ -12,19 +12,12 @@ pub fn generate_report_document(report: &MigrationReport) -> Document {
     );
     metadata.insert("author".to_string(), "aif-migrate".to_string());
 
-    let mut blocks = Vec::new();
-
-    // 1. Executive summary
-    blocks.push(build_executive_summary(report));
-
-    // 2. Risk assessment
-    blocks.push(build_risk_assessment(report));
-
-    // 3. Verification analysis
-    blocks.push(build_verification_analysis(report));
-
-    // 4. Results by chunk (detailed)
-    blocks.push(build_chunk_results(report));
+    let mut blocks = vec![
+        build_executive_summary(report),
+        build_risk_assessment(report),
+        build_verification_analysis(report),
+        build_chunk_results(report),
+    ];
 
     // 5. Failure analysis (only if there are failures)
     if let Some(failure_section) = build_failure_analysis(report) {

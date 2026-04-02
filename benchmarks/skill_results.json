@@ -665,5 +665,97 @@
     "binary_token_tokens": 179279,
     "binary_token_bytes": 151964,
     "savings_binary_token_pct": -353.8019541335493
+  },
+  "statistics": {
+    "json": {
+      "mean_save_pct": -187.25692945036027,
+      "min_save_pct": -731.0502283105023,
+      "max_save_pct": -36.043711798481205,
+      "stddev_save_pct": 221.6767669134068,
+      "mean_tokens": 7164.0,
+      "min_tokens": 1820,
+      "max_tokens": 12200
+    },
+    "html": {
+      "mean_save_pct": -26.18983782605462,
+      "min_save_pct": -98.63013698630137,
+      "max_save_pct": -6.897229318137166,
+      "stddev_save_pct": 28.90786113070667,
+      "mean_tokens": 4442.7,
+      "min_tokens": 435,
+      "max_tokens": 8557
+    },
+    "markdown": {
+      "mean_save_pct": 4.094407318243621,
+      "min_save_pct": 0.5364249870219773,
+      "max_save_pct": 14.61187214611872,
+      "stddev_save_pct": 4.835652492975393,
+      "mean_tokens": 3875.5,
+      "min_tokens": 187,
+      "max_tokens": 7722
+    },
+    "lml": {
+      "mean_save_pct": -6.69762822577394,
+      "min_save_pct": -24.200913242009126,
+      "max_save_pct": -1.1854047045749105,
+      "stddev_save_pct": 7.06287995794507,
+      "mean_tokens": 4080.5,
+      "min_tokens": 272,
+      "max_tokens": 7935
+    },
+    "lml_compact": {
+      "mean_save_pct": -1.872417846982556,
+      "min_save_pct": -5.037513397642024,
+      "max_save_pct": 10.280373831775702,
+      "stddev_save_pct": 4.237908463622867,
+      "mean_tokens": 4058.6,
+      "min_tokens": 228,
+      "max_tokens": 7935
+    },
+    "lml_conservative": {
+      "mean_save_pct": -15.586205179580958,
+      "min_save_pct": -65.75342465753424,
+      "max_save_pct": -3.037599555473225,
+      "stddev_save_pct": 20.435101858313498,
+      "mean_tokens": 4179.4,
+      "min_tokens": 363,
+      "max_tokens": 8037
+    },
+    "lml_moderate": {
+      "mean_save_pct": -14.537827335319665,
+      "min_save_pct": -60.73059360730593,
+      "max_save_pct": -2.833858121874422,
+      "stddev_save_pct": 18.80849022087693,
+      "mean_tokens": 4168.4,
+      "min_tokens": 352,
+      "max_tokens": 8026
+    },
+    "lml_aggressive": {
+      "mean_save_pct": -1.3662848380270043,
+      "min_save_pct": -8.675799086757996,
+      "max_save_pct": 0.22226338210780128,
+      "stddev_save_pct": 2.968802861414537,
+      "mean_tokens": 3951.4,
+      "min_tokens": 238,
+      "max_tokens": 7791
+    },
+    "binary_wire": {
+      "mean_save_pct": -361.4180915286364,
+      "min_save_pct": -416.43835616438355,
+      "max_save_pct": -309.3338573393594,
+      "stddev_save_pct": 35.65834690174075,
+      "mean_tokens": 17932.6,
+      "min_tokens": 1131,
+      "max_tokens": 38460
+    },
+    "binary_token": {
+      "mean_save_pct": -361.81306188740757,
+      "min_save_pct": -418.7214611872146,
+      "max_save_pct": -308.25309491059147,
+      "stddev_save_pct": 36.72754888689713,
+      "mean_tokens": 17927.9,
+      "min_tokens": 1136,
+      "max_tokens": 38467
+    }
   }
 }

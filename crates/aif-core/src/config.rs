@@ -13,7 +13,7 @@ pub enum LlmProvider {
 }
 
 impl LlmProvider {
-    pub fn from_str(s: &str) -> Option<Self> {
+    pub fn parse_provider(s: &str) -> Option<Self> {
         match s.to_lowercase().as_str() {
             "anthropic" => Some(Self::Anthropic),
             "openai" => Some(Self::OpenAi),
@@ -63,7 +63,7 @@ impl Default for LlmConfig {
 
 impl LlmConfig {
     pub fn apply_env(&mut self, provider: &str, api_key: Option<&str>, model: Option<&str>) {
-        if let Some(p) = LlmProvider::from_str(provider) {
+        if let Some(p) = LlmProvider::parse_provider(provider) {
             self.provider = p;
         }
         if let Some(key) = api_key {
@@ -82,18 +82,10 @@ impl LlmConfig {
 }
 
 /// Top-level AIF config file structure (~/.aif/config.toml).
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct AifConfig {
     #[serde(default)]
     pub llm: LlmConfig,
-}
-
-impl Default for AifConfig {
-    fn default() -> Self {
-        Self {
-            llm: LlmConfig::default(),
-        }
-    }
 }
 
 impl AifConfig {
@@ -165,10 +157,10 @@ model = "claude-sonnet-4-6"
 
     #[test]
     fn provider_from_string() {
-        assert_eq!(LlmProvider::from_str("anthropic"), Some(LlmProvider::Anthropic));
-        assert_eq!(LlmProvider::from_str("openai"), Some(LlmProvider::OpenAi));
-        assert_eq!(LlmProvider::from_str("ANTHROPIC"), Some(LlmProvider::Anthropic));
-        assert_eq!(LlmProvider::from_str("unknown"), None);
+        assert_eq!(LlmProvider::parse_provider("anthropic"), Some(LlmProvider::Anthropic));
+        assert_eq!(LlmProvider::parse_provider("openai"), Some(LlmProvider::OpenAi));
+        assert_eq!(LlmProvider::parse_provider("ANTHROPIC"), Some(LlmProvider::Anthropic));
+        assert_eq!(LlmProvider::parse_provider("unknown"), None);
     }
 
     #[test]

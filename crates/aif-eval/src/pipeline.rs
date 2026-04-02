@@ -10,17 +10,12 @@ use crate::compliance::{ComplianceChecker, ComplianceConfig, DefaultChecks};
 use crate::scenario::{extract_scenarios, ScenarioRunner};
 
 /// Which stages to run.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub enum StageFilter {
     LintOnly,
     UpToCompliance,
+    #[default]
     All,
-}
-
-impl Default for StageFilter {
-    fn default() -> Self {
-        Self::All
-    }
 }
 
 impl StageFilter {

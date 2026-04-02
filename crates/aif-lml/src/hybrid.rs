@@ -1,6 +1,5 @@
 use aif_core::ast::*;
 use base64::{engine::general_purpose::STANDARD as B64, Engine as _};
-use std::fmt::Write;
 
 const BINARY_THRESHOLD: usize = 50;
 
@@ -87,13 +86,13 @@ fn emit_media_meta_inline(out: &mut String, meta: &MediaMeta) {
         out.push_str(alt);
     }
     if let Some(w) = meta.width {
-        write!(out, " w={}", w).unwrap();
+        out.push_str(&format!(" w={}", w));
     }
     if let Some(h) = meta.height {
-        write!(out, " h={}", h).unwrap();
+        out.push_str(&format!(" h={}", h));
     }
     if let Some(d) = meta.duration {
-        write!(out, " dur={}", d).unwrap();
+        out.push_str(&format!(" dur={}", d));
     }
     if let Some(m) = &meta.mime {
         out.push_str(" mime=");
