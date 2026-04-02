@@ -42,6 +42,9 @@ enum Commands {
         /// Run semantic inference on imported document
         #[arg(long)]
         infer_semantics: bool,
+        /// Use LLM-assisted semantic inference (requires LLM config or AIF_LLM_API_KEY)
+        #[arg(long)]
+        infer_llm: bool,
     },
     /// Dump the parsed IR as JSON
     DumpIr {
@@ -1100,7 +1103,7 @@ fn main() {
 
             write_output(&result, output.as_ref());
         }
-        Commands::Import { input, output, strip_chrome, infer_semantics } => {
+        Commands::Import { input, output, strip_chrome, infer_semantics, .. } => {
             let ext = input.extension().map(|e| e.to_ascii_lowercase());
             let is_pdf = ext.as_ref().map(|e| e == "pdf").unwrap_or(false);
             let is_html = ext.as_ref().map(|e| e == "html" || e == "htm").unwrap_or(false);
@@ -1537,20 +1540,23 @@ fn handle_migrate(action: MigrateAction) {
             // 5. Determine apply_fn: use LLM if configured, otherwise placeholder
             let config_path = dirs_or_default().join("config.toml");
             let aif_config = aif_core::config::AifConfig::load_with_env(&config_path);
-            let has_llm = aif_config.llm.api_key.is_some();
 
-            if !has_llm {
+            let api_key = std::env::var("AIF_LLM_API_KEY")
+                .ok()
+                .or_else(|| aif_config.llm.api_key.clone());
+
+            let apply_fn: Box<dyn Fn(&[String], &str, Option<&str>) -> Option<String>> = if let Some(key) = api_key {
+                let model = aif_config.llm.model.clone()
+                    .unwrap_or_else(|| "claude-sonnet-4-5-20250514".to_string());
+                eprintln!("Using LLM for migration (model: {})", model);
+                aif_migrate::llm::make_llm_apply_fn(key, model)
+            } else {
                 eprintln!("Note: No LLM API key configured. Running with placeholder (returns original content unchanged).");
-                eprintln!("For real migrations, set up with: aif config set llm.api-key <key>");
+                eprintln!("For real migrations, set AIF_LLM_API_KEY or run: aif config set llm.api-key <key>");
                 eprintln!();
-            }
-
-            // Placeholder apply_fn that returns the original content unchanged
-            let apply_fn = |_steps: &[String], source_code: &str, _repair_ctx: Option<&str>| -> Option<String> {
-                if !has_llm {
-                    eprintln!("LLM integration required — set up with `aif config set llm.api-key`");
-                }
-                Some(source_code.to_string())
+                Box::new(|_steps: &[String], source_code: &str, _repair_ctx: Option<&str>| -> Option<String> {
+                    Some(source_code.to_string())
+                })
             };
 
             // 6. Run the migration engine

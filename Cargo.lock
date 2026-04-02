@@ -67,9 +67,11 @@ dependencies = [
 name = "aif-core"
 version = "0.1.0"
 dependencies = [
+ "reqwest",
  "schemars",
  "serde",
  "serde_json",
+ "tokio",
  "toml",
 ]
 
@@ -131,6 +133,7 @@ dependencies = [
  "aif-parser",
  "aif-skill",
  "regex",
+ "reqwest",
  "serde",
  "serde_json",
  "tokio",

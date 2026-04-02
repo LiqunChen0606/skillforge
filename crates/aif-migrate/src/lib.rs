@@ -1,6 +1,7 @@
 pub mod apply;
 pub mod chunk;
 pub mod engine;
+pub mod llm;
 pub mod repair;
 pub mod report;
 pub mod types;

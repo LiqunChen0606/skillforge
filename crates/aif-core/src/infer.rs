@@ -1,5 +1,5 @@
 //! Semantic inference engine — upgrades untyped blocks to typed SemanticBlocks
-//! based on pattern-matching rules.
+//! based on pattern-matching rules and optional LLM classification.
 
 use crate::ast::{
     Attrs, Block, BlockKind, CalloutType, Inline, SemanticBlockType,
@@ -26,11 +26,25 @@ impl Default for InferConfig {
 }
 
 /// Inference strategy.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub enum InferStrategy {
     /// Pattern-based heuristic rules.
     Pattern,
+    /// LLM-assisted classification (pattern rules first, then LLM for unmatched).
+    Llm(crate::config::LlmConfig),
 }
+
+impl PartialEq for InferStrategy {
+    fn eq(&self, other: &Self) -> bool {
+        matches!(
+            (self, other),
+            (InferStrategy::Pattern, InferStrategy::Pattern)
+                | (InferStrategy::Llm(_), InferStrategy::Llm(_))
+        )
+    }
+}
+
+impl Eq for InferStrategy {}
 
 /// A rule that attempts to infer a semantic type for a block.
 pub trait InferRule: Send + Sync {
@@ -373,6 +387,218 @@ fn extract_content(kind: &BlockKind) -> Vec<Inline> {
 }
 
 // ---------------------------------------------------------------------------
+// LLM-assisted semantic inference (feature-gated)
+// ---------------------------------------------------------------------------
+
+/// Extract plain text from a block for LLM classification.
+fn block_text(block: &Block) -> String {
+    match &block.kind {
+        BlockKind::Paragraph { content } => inlines_to_text(content, TextMode::Plain),
+        BlockKind::BlockQuote { content } => blocks_to_plain_text(content),
+        BlockKind::Callout { content, .. } => inlines_to_text(content, TextMode::Plain),
+        _ => String::new(),
+    }
+}
+
+/// Build the LLM classification prompt for a batch of blocks.
+pub fn build_classification_prompt(blocks: &[(usize, String)]) -> String {
+    let mut prompt = String::from(
+        "Classify each text block into one of these semantic types, or 'none' if it doesn't fit:\n\
+         Types: Claim, Evidence, Definition, Theorem, Assumption, Result, Conclusion, Requirement, Recommendation\n\n\
+         For each block, respond with one line: INDEX:TYPE:CONFIDENCE\n\
+         where CONFIDENCE is 0.0-1.0 and TYPE is one of the above or 'none'.\n\n",
+    );
+    for (idx, text) in blocks {
+        let truncated = if text.len() > 200 {
+            &text[..200]
+        } else {
+            text.as_str()
+        };
+        prompt.push_str(&format!("Block {}:\n{}\n\n", idx, truncated));
+    }
+    prompt
+}
+
+/// Parse the LLM classification response (INDEX:TYPE:CONFIDENCE lines).
+pub fn parse_classification_response(
+    body: &str,
+    _count: usize,
+) -> Vec<(usize, Option<SemanticBlockType>, f64)> {
+    // Try to extract text content from Anthropic API JSON response
+    let text = if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(body) {
+        parsed["content"][0]["text"]
+            .as_str()
+            .unwrap_or("")
+            .to_string()
+    } else {
+        // Treat as raw text (useful for testing)
+        body.to_string()
+    };
+
+    let mut results = Vec::new();
+    for line in text.lines() {
+        let parts: Vec<&str> = line.split(':').collect();
+        if parts.len() >= 3 {
+            let idx = match parts[0].trim().parse::<usize>() {
+                Ok(i) => i,
+                Err(_) => continue,
+            };
+            let stype = match parts[1].trim().to_lowercase().as_str() {
+                "claim" => Some(SemanticBlockType::Claim),
+                "evidence" => Some(SemanticBlockType::Evidence),
+                "definition" => Some(SemanticBlockType::Definition),
+                "theorem" => Some(SemanticBlockType::Theorem),
+                "assumption" => Some(SemanticBlockType::Assumption),
+                "result" => Some(SemanticBlockType::Result),
+                "conclusion" => Some(SemanticBlockType::Conclusion),
+                "requirement" => Some(SemanticBlockType::Requirement),
+                "recommendation" => Some(SemanticBlockType::Recommendation),
+                _ => None,
+            };
+            let conf = parts[2].trim().parse::<f64>().unwrap_or(0.0);
+            results.push((idx, stype, conf));
+        }
+    }
+    results
+}
+
+/// Collect blocks that were not already upgraded by pattern rules.
+/// Returns (block_index, text_content) pairs for top-level blocks only.
+fn collect_unmatched_blocks(doc: &Document) -> Vec<(usize, String)> {
+    let mut unmatched = Vec::new();
+    for (i, block) in doc.blocks.iter().enumerate() {
+        match &block.kind {
+            BlockKind::Paragraph { .. }
+            | BlockKind::BlockQuote { .. }
+            | BlockKind::Callout { .. } => {
+                let text = block_text(block);
+                if text.len() >= 10 {
+                    unmatched.push((i, text));
+                }
+            }
+            _ => {}
+        }
+    }
+    unmatched
+}
+
+/// Apply LLM classifications back into the document.
+fn apply_llm_classifications(
+    doc: &mut Document,
+    classifications: &[(usize, Option<SemanticBlockType>, f64)],
+    min_confidence: f64,
+) {
+    for &(idx, ref stype, conf) in classifications {
+        if idx >= doc.blocks.len() {
+            continue;
+        }
+        let stype = match stype {
+            Some(t) => t.clone(),
+            None => continue,
+        };
+        if conf < min_confidence {
+            continue;
+        }
+        // Only upgrade if block is still untyped (not already a SemanticBlock)
+        let block = &doc.blocks[idx];
+        match &block.kind {
+            BlockKind::Paragraph { .. }
+            | BlockKind::BlockQuote { .. }
+            | BlockKind::Callout { .. } => {}
+            _ => continue,
+        }
+
+        let content = extract_content(&doc.blocks[idx].kind);
+        let mut pairs = BTreeMap::new();
+        pairs.insert("_aif_inferred".to_string(), "true".to_string());
+        pairs.insert("_aif_confidence".to_string(), format!("{:.2}", conf));
+        pairs.insert("_aif_infer_rule".to_string(), "llm".to_string());
+
+        doc.blocks[idx].kind = BlockKind::SemanticBlock {
+            block_type: stype,
+            attrs: Attrs { id: None, pairs },
+            title: None,
+            content,
+        };
+    }
+}
+
+/// Run pattern rules first, then batch remaining unmatched blocks for LLM classification.
+///
+/// Requires the `llm` feature. Without it, this function is not available;
+/// use `annotate_semantics` (pattern-only) instead.
+#[cfg(feature = "llm")]
+pub async fn annotate_semantics_with_llm(doc: &mut Document, config: &InferConfig) {
+    // Step 1: Run pattern rules (cheap, fast)
+    let pattern_config = InferConfig {
+        min_confidence: config.min_confidence,
+        strategy: InferStrategy::Pattern,
+    };
+    annotate_semantics(doc, &pattern_config);
+
+    // Step 2: Check if we're in LLM mode
+    let llm_config = match &config.strategy {
+        InferStrategy::Llm(c) => c,
+        _ => return, // Not LLM mode, pattern-only already done
+    };
+
+    // Step 3: Collect unmatched blocks
+    let unmatched = collect_unmatched_blocks(doc);
+    if unmatched.is_empty() {
+        return;
+    }
+
+    // Step 4: Call LLM for classification
+    let classifications = classify_blocks_with_llm(llm_config, &unmatched).await;
+
+    // Step 5: Apply results
+    apply_llm_classifications(doc, &classifications, config.min_confidence);
+}
+
+#[cfg(feature = "llm")]
+async fn classify_blocks_with_llm(
+    config: &crate::config::LlmConfig,
+    blocks: &[(usize, String)],
+) -> Vec<(usize, Option<SemanticBlockType>, f64)> {
+    let prompt = build_classification_prompt(blocks);
+
+    let api_key = match &config.api_key {
+        Some(key) => key,
+        None => {
+            eprintln!("Warning: no API key configured for LLM inference, skipping");
+            return vec![];
+        }
+    };
+
+    let model = config.resolved_model();
+
+    let client = reqwest::Client::new();
+    let response = client
+        .post("https://api.anthropic.com/v1/messages")
+        .header("x-api-key", api_key)
+        .header("anthropic-version", "2023-06-01")
+        .header("content-type", "application/json")
+        .json(&serde_json::json!({
+            "model": model,
+            "max_tokens": 1024,
+            "messages": [{"role": "user", "content": prompt}]
+        }))
+        .send()
+        .await;
+
+    match response {
+        Ok(resp) => {
+            let body = resp.text().await.unwrap_or_default();
+            parse_classification_response(&body, blocks.len())
+        }
+        Err(e) => {
+            eprintln!("LLM classification request failed: {}", e);
+            vec![]
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
@@ -576,5 +802,113 @@ mod tests {
             BlockKind::BlockQuote { .. } => {}
             other => panic!("expected BlockQuote to remain, got {:?}", other),
         }
+    }
+
+    // -----------------------------------------------------------------------
+    // LLM inference tests (no network required)
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn parse_classification_response_raw_text() {
+        let text = "0:Claim:0.85\n1:Evidence:0.72\n2:none:0.30\n";
+        let results = super::parse_classification_response(text, 3);
+        assert_eq!(results.len(), 3);
+        assert_eq!(results[0], (0, Some(SemanticBlockType::Claim), 0.85));
+        assert_eq!(results[1], (1, Some(SemanticBlockType::Evidence), 0.72));
+        assert_eq!(results[2], (2, None, 0.30));
+    }
+
+    #[test]
+    fn parse_classification_response_from_api_json() {
+        let json = r#"{"content":[{"type":"text","text":"0:Definition:0.90\n1:Theorem:0.80"}]}"#;
+        let results = super::parse_classification_response(json, 2);
+        assert_eq!(results.len(), 2);
+        assert_eq!(results[0], (0, Some(SemanticBlockType::Definition), 0.90));
+        assert_eq!(results[1], (1, Some(SemanticBlockType::Theorem), 0.80));
+    }
+
+    #[test]
+    fn parse_classification_response_handles_garbage() {
+        let text = "not a valid line\nfoo:bar:baz\n";
+        let results = super::parse_classification_response(text, 0);
+        assert!(results.is_empty());
+    }
+
+    #[test]
+    fn build_prompt_includes_all_blocks() {
+        let blocks = vec![
+            (0, "This is a claim about the world.".to_string()),
+            (3, "Evidence suggests that X is true.".to_string()),
+        ];
+        let prompt = super::build_classification_prompt(&blocks);
+        assert!(prompt.contains("Block 0:"));
+        assert!(prompt.contains("Block 3:"));
+        assert!(prompt.contains("Claim, Evidence, Definition"));
+        assert!(prompt.contains("INDEX:TYPE:CONFIDENCE"));
+    }
+
+    #[test]
+    fn build_prompt_truncates_long_text() {
+        let long_text = "A".repeat(500);
+        let blocks = vec![(0, long_text)];
+        let prompt = super::build_classification_prompt(&blocks);
+        // Should contain truncated version (200 chars), not full 500
+        assert!(prompt.len() < 500 + 200);
+    }
+
+    #[test]
+    fn collect_unmatched_skips_short_text() {
+        let doc = Document {
+            metadata: BTreeMap::new(),
+            blocks: vec![
+                para(vec![text("Hi.")]), // < 10 chars, should be skipped
+                para(vec![text("This paragraph has enough text to be classified.")]),
+            ],
+        };
+        let unmatched = super::collect_unmatched_blocks(&doc);
+        assert_eq!(unmatched.len(), 1);
+        assert_eq!(unmatched[0].0, 1);
+    }
+
+    #[test]
+    fn apply_llm_classifications_upgrades_blocks() {
+        let mut doc = Document {
+            metadata: BTreeMap::new(),
+            blocks: vec![
+                para(vec![text("This is a claim about something important.")]),
+                para(vec![text("Some normal text here.")]),
+            ],
+        };
+        let classifications = vec![
+            (0, Some(SemanticBlockType::Claim), 0.85),
+            (1, Some(SemanticBlockType::Evidence), 0.30), // below threshold
+        ];
+        super::apply_llm_classifications(&mut doc, &classifications, 0.5);
+
+        // Block 0 should be upgraded
+        match &doc.blocks[0].kind {
+            BlockKind::SemanticBlock {
+                block_type, attrs, ..
+            } => {
+                assert_eq!(*block_type, SemanticBlockType::Claim);
+                assert_eq!(attrs.pairs.get("_aif_infer_rule").unwrap(), "llm");
+            }
+            other => panic!("expected SemanticBlock, got {:?}", other),
+        }
+
+        // Block 1 should remain a Paragraph (confidence too low)
+        match &doc.blocks[1].kind {
+            BlockKind::Paragraph { .. } => {}
+            other => panic!("expected Paragraph to remain, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn infer_strategy_eq() {
+        assert_eq!(InferStrategy::Pattern, InferStrategy::Pattern);
+        let llm1 = InferStrategy::Llm(crate::config::LlmConfig::default());
+        let llm2 = InferStrategy::Llm(crate::config::LlmConfig::default());
+        assert_eq!(llm1, llm2);
+        assert_ne!(InferStrategy::Pattern, llm1);
     }
 }
