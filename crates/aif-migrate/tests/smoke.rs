@@ -1,4 +1,5 @@
 use aif_migrate::types::{MigrationConfig, ChunkStatus, ChunkResult, VerificationResult};
+use aif_migrate::chunk::ChunkStrategy;
 use std::path::PathBuf;
 
 #[test]
@@ -40,6 +41,8 @@ fn migration_config_construction() {
         output_dir: PathBuf::from("./migrated"),
         max_repair_iterations: 3,
         file_patterns: vec!["*.rs".to_string()],
+        chunk_strategy: ChunkStrategy::FilePerChunk,
+        dry_run: false,
     };
     assert_eq!(config.max_repair_iterations, 3);
     assert_eq!(config.file_patterns.len(), 1);

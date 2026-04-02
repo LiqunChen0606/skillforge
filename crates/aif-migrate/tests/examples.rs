@@ -1,5 +1,7 @@
-use aif_migrate::engine::{EngineConfig, MigrationEngine};
+use aif_migrate::engine::MigrationEngine;
+use aif_migrate::types::MigrationConfig;
 use aif_migrate::chunk::ChunkStrategy;
+use std::path::PathBuf;
 
 fn load_and_validate(source: &str, expected_name: &str, expected_steps: usize) {
     let doc = aif_parser::parse(source).expect("parse failed");
@@ -8,8 +10,12 @@ fn load_and_validate(source: &str, expected_name: &str, expected_steps: usize) {
         .find(|b| matches!(b.kind, aif_core::ast::BlockKind::SkillBlock { .. }))
         .expect("no skill block found");
 
-    let engine = MigrationEngine::new(EngineConfig {
+    let engine = MigrationEngine::new(MigrationConfig {
+        skill_path: PathBuf::from("test.aif"),
+        source_dir: PathBuf::from("./src"),
+        output_dir: PathBuf::from("./out"),
         max_repair_iterations: 3,
+        file_patterns: vec![],
         chunk_strategy: ChunkStrategy::FilePerChunk,
         dry_run: false,
     });
@@ -79,8 +85,12 @@ fn nextjs_skill_has_rich_steps() {
         .find(|b| matches!(b.kind, aif_core::ast::BlockKind::SkillBlock { .. }))
         .unwrap();
 
-    let engine = MigrationEngine::new(EngineConfig {
+    let engine = MigrationEngine::new(MigrationConfig {
+        skill_path: PathBuf::from("test.aif"),
+        source_dir: PathBuf::from("./src"),
+        output_dir: PathBuf::from("./out"),
         max_repair_iterations: 3,
+        file_patterns: vec![],
         chunk_strategy: ChunkStrategy::FilePerChunk,
         dry_run: false,
     });
@@ -111,8 +121,12 @@ fn typescript_strict_has_phased_steps() {
         .find(|b| matches!(b.kind, aif_core::ast::BlockKind::SkillBlock { .. }))
         .unwrap();
 
-    let engine = MigrationEngine::new(EngineConfig {
+    let engine = MigrationEngine::new(MigrationConfig {
+        skill_path: PathBuf::from("test.aif"),
+        source_dir: PathBuf::from("./src"),
+        output_dir: PathBuf::from("./out"),
         max_repair_iterations: 3,
+        file_patterns: vec![],
         chunk_strategy: ChunkStrategy::FilePerChunk,
         dry_run: false,
     });

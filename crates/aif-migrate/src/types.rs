@@ -1,8 +1,9 @@
+use crate::chunk::ChunkStrategy;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::time::Duration;
 
-/// Configuration for a migration run.
+/// Unified configuration for a migration run.
 #[derive(Debug, Clone)]
 pub struct MigrationConfig {
     pub skill_path: PathBuf,
@@ -10,6 +11,8 @@ pub struct MigrationConfig {
     pub output_dir: PathBuf,
     pub max_repair_iterations: u32,
     pub file_patterns: Vec<String>,
+    pub chunk_strategy: ChunkStrategy,
+    pub dry_run: bool,
 }
 
 /// Result for a single chunk.
@@ -171,7 +174,7 @@ mod duration_serde {
     use std::time::Duration;
 
     pub fn serialize<S: Serializer>(d: &Duration, s: S) -> Result<S::Ok, S::Error> {
-        d.as_millis().serialize(s)
+        (d.as_millis() as u64).serialize(s)
     }
 
     pub fn deserialize<'de, D: Deserializer<'de>>(d: D) -> Result<Duration, D::Error> {

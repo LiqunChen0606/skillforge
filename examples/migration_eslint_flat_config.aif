@@ -156,6 +156,16 @@
     with rules property).
   @end
 
+  @red_flag
+    Do not delete legacy config files until the new flat config has been
+    verified to produce identical lint results. Premature deletion can
+    leave the project without any lint configuration.
+
+    Do not automatically migrate custom ESLint rules that use
+    deprecated rule APIs (context.getScope, context.getAncestors).
+    These require manual rewrite to the new API surface.
+  @end
+
   @output_contract
     ESLint runs successfully with the new flat config.
     All previously enforced rules still apply.

@@ -14,6 +14,8 @@ pub enum ChunkStrategy {
 pub struct SourceChunk {
     pub chunk_id: String,
     pub files: Vec<(PathBuf, String)>,
+    /// Warnings generated during chunking (e.g., oversized files).
+    pub warnings: Vec<String>,
 }
 
 pub fn estimate_tokens(text: &str) -> usize {
@@ -37,6 +39,7 @@ pub fn chunk_source_files(
                 SourceChunk {
                     chunk_id: format!("file-{:04}-{}", i, path.display()),
                     files: vec![((*path).clone(), content.to_string())],
+                    warnings: Vec::new(),
                 }
             }).collect()
         }
@@ -54,6 +57,7 @@ pub fn chunk_source_files(
                 SourceChunk {
                     chunk_id: format!("dir-{:04}-{}", i, dir),
                     files,
+                    warnings: Vec::new(),
                 }
             }).collect()
         }
@@ -61,6 +65,7 @@ pub fn chunk_source_files(
             let mut chunks = Vec::new();
             let mut current_files = Vec::new();
             let mut current_tokens = 0usize;
+            let mut current_warnings = Vec::new();
 
             for (path, content) in &sorted {
                 let file_tokens = estimate_tokens(content);
@@ -68,8 +73,16 @@ pub fn chunk_source_files(
                     chunks.push(SourceChunk {
                         chunk_id: format!("budget-{:04}", chunks.len()),
                         files: std::mem::take(&mut current_files),
+                        warnings: std::mem::take(&mut current_warnings),
                     });
                     current_tokens = 0;
+                }
+                // Warn if a single file exceeds the token budget
+                if file_tokens > max_tokens {
+                    current_warnings.push(format!(
+                        "File '{}' has ~{} tokens, exceeding budget of {} tokens",
+                        path.display(), file_tokens, max_tokens
+                    ));
                 }
                 current_files.push(((*path).clone(), content.to_string()));
                 current_tokens += file_tokens;
@@ -78,6 +91,7 @@ pub fn chunk_source_files(
                 chunks.push(SourceChunk {
                     chunk_id: format!("budget-{:04}", chunks.len()),
                     files: current_files,
+                    warnings: current_warnings,
                 });
             }
             chunks

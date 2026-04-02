@@ -1,5 +1,5 @@
 use aif_migrate::chunk::{chunk_source_files, ChunkStrategy};
-use aif_migrate::engine::{EngineConfig, MigrationEngine};
+use aif_migrate::engine::MigrationEngine;
 use aif_migrate::report::generate_report_document;
 use aif_migrate::types::*;
 use aif_migrate::verify::{extract_static_specs, run_static_checks};
@@ -19,8 +19,12 @@ fn load_fixture_skill() -> aif_core::ast::Block {
 #[test]
 fn full_validation_pipeline() {
     let skill = load_fixture_skill();
-    let engine = MigrationEngine::new(EngineConfig {
+    let engine = MigrationEngine::new(MigrationConfig {
+        skill_path: PathBuf::from("test.aif"),
+        source_dir: PathBuf::from("./src"),
+        output_dir: PathBuf::from("./out"),
         max_repair_iterations: 3,
+        file_patterns: vec![],
         chunk_strategy: ChunkStrategy::FilePerChunk,
         dry_run: false,
     });

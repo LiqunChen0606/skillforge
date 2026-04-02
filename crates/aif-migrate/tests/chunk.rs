@@ -1,4 +1,4 @@
-use aif_migrate::chunk::{ChunkStrategy, chunk_source_files};
+use aif_migrate::chunk::{ChunkStrategy, chunk_source_files, estimate_tokens};
 use std::path::PathBuf;
 use std::collections::HashMap;
 
@@ -50,15 +50,22 @@ fn token_budget_respects_limit() {
     }
 }
 
-fn estimate_tokens(text: &str) -> usize {
-    (text.split_whitespace().count() as f64 * 1.3).ceil() as usize
-}
-
 #[test]
 fn empty_files_returns_empty_chunks() {
     let files: HashMap<PathBuf, String> = HashMap::new();
     let chunks = chunk_source_files(&files, ChunkStrategy::FilePerChunk);
     assert!(chunks.is_empty());
+}
+
+#[test]
+fn oversized_file_produces_warning() {
+    // A single file with ~50K tokens in a 100-token budget should produce a warning
+    let big_content: String = (0..40000).map(|i| format!("word{}", i)).collect::<Vec<_>>().join(" ");
+    let files = make_files(&[("big.rs", &big_content)]);
+    let chunks = chunk_source_files(&files, ChunkStrategy::TokenBudget { max_tokens: 100 });
+    assert_eq!(chunks.len(), 1);
+    assert!(!chunks[0].warnings.is_empty(), "Oversized chunk should have a warning");
+    assert!(chunks[0].warnings[0].contains("exceeding budget"), "Warning should mention exceeding budget");
 }
 
 #[test]

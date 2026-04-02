@@ -1,10 +1,16 @@
-use aif_migrate::engine::{EngineConfig, MigrationEngine};
+use aif_migrate::engine::MigrationEngine;
+use aif_migrate::types::MigrationConfig;
 use aif_migrate::chunk::ChunkStrategy;
+use std::path::PathBuf;
 
 #[test]
-fn engine_config_defaults() {
-    let config = EngineConfig {
+fn migration_config_defaults() {
+    let config = MigrationConfig {
+        skill_path: PathBuf::from("test.aif"),
+        source_dir: PathBuf::from("./src"),
+        output_dir: PathBuf::from("./out"),
         max_repair_iterations: 3,
+        file_patterns: vec![],
         chunk_strategy: ChunkStrategy::FilePerChunk,
         dry_run: false,
     };
@@ -37,8 +43,12 @@ fn engine_validates_skill_before_running() {
         })
         .unwrap();
 
-    let engine = MigrationEngine::new(EngineConfig {
+    let engine = MigrationEngine::new(MigrationConfig {
+        skill_path: PathBuf::from("test.aif"),
+        source_dir: PathBuf::from("./src"),
+        output_dir: PathBuf::from("./out"),
         max_repair_iterations: 3,
+        file_patterns: vec![],
         chunk_strategy: ChunkStrategy::FilePerChunk,
         dry_run: false,
     });
@@ -87,8 +97,12 @@ fn engine_validates_valid_migration_skill() {
         })
         .unwrap();
 
-    let engine = MigrationEngine::new(EngineConfig {
+    let engine = MigrationEngine::new(MigrationConfig {
+        skill_path: PathBuf::from("test.aif"),
+        source_dir: PathBuf::from("./src"),
+        output_dir: PathBuf::from("./out"),
         max_repair_iterations: 3,
+        file_patterns: vec![],
         chunk_strategy: ChunkStrategy::FilePerChunk,
         dry_run: false,
     });
@@ -142,8 +156,12 @@ fn engine_extracts_steps_from_skill() {
         })
         .unwrap();
 
-    let engine = MigrationEngine::new(EngineConfig {
+    let engine = MigrationEngine::new(MigrationConfig {
+        skill_path: PathBuf::from("test.aif"),
+        source_dir: PathBuf::from("./src"),
+        output_dir: PathBuf::from("./out"),
         max_repair_iterations: 3,
+        file_patterns: vec![],
         chunk_strategy: ChunkStrategy::FilePerChunk,
         dry_run: false,
     });
@@ -192,8 +210,12 @@ fn engine_extracts_verify_criteria() {
         })
         .unwrap();
 
-    let engine = MigrationEngine::new(EngineConfig {
+    let engine = MigrationEngine::new(MigrationConfig {
+        skill_path: PathBuf::from("test.aif"),
+        source_dir: PathBuf::from("./src"),
+        output_dir: PathBuf::from("./out"),
         max_repair_iterations: 3,
+        file_patterns: vec![],
         chunk_strategy: ChunkStrategy::FilePerChunk,
         dry_run: false,
     });

@@ -109,6 +109,16 @@
     them as requiring package upgrades before migration can proceed.
   @end
 
+  @red_flag
+    Do not migrate files that import from Next.js internal modules
+    (paths starting with `next/dist/`). These are private APIs and
+    require manual assessment before migration.
+
+    Do not automatically convert `getServerSideProps` or `getStaticProps`
+    in pages/ directory files — these are Pages Router patterns and
+    require a separate Pages→App Router migration, not a version upgrade.
+  @end
+
   @output_contract
     All source files migrated to Next.js 15 API surface.
     Build succeeds with `next build`.

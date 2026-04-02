@@ -131,7 +131,6 @@ dependencies = [
  "aif-parser",
  "aif-skill",
  "regex",
- "reqwest",
  "serde",
  "serde_json",
  "tokio",

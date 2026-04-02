@@ -202,6 +202,15 @@
     (e.g., zod schemas) over non-null assertions to catch actual null values.
   @end
 
+  @red_flag
+    Do not add `as any` type assertions to silence errors — this defeats
+    the purpose of strict mode. Each error must be resolved with proper types.
+
+    Do not enable `strict: true` in a single step. The phased rollout is
+    essential — enabling all flags at once produces an overwhelming error
+    count that leads to blanket suppression rather than proper fixes.
+  @end
+
   @output_contract
     TypeScript compiles with strict: true and zero errors.
     No new @ts-ignore or @ts-expect-error comments introduced.

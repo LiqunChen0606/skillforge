@@ -37,10 +37,10 @@ AIF is a semantic document format and toolchain for humans and LLMs. Concise lik
 - `EvalReport` / `StageResult` / `ScenarioResult` — eval pipeline results (in `aif-skill::eval`)
 - `LintCheck` / `LintResult` — structural lint checks (in `aif-skill::lint`)
 - `LlmConfig` / `AifConfig` — LLM provider and project configuration (in `aif-core::config`)
-- `MigrationConfig` / `ChunkResult` / `MigrationReport` — migration pipeline types (in `aif-migrate::types`)
-- `SourceChunk` / `ChunkStrategy` — source file chunking (in `aif-migrate::chunk`)
-- `MigrationEngine` / `EngineConfig` — pipeline orchestrator (in `aif-migrate::engine`)
-- `StaticCheckSpec` — pattern-based static verification (in `aif-migrate::verify`)
+- `MigrationConfig` / `ChunkResult` / `MigrationReport` — migration pipeline types (in `aif-migrate::types`); `MigrationConfig` includes `chunk_strategy` and `dry_run` fields (unified from former `EngineConfig`)
+- `SourceChunk` / `ChunkStrategy` — source file chunking (in `aif-migrate::chunk`); `SourceChunk` includes `warnings: Vec<String>` for oversized-chunk diagnostics
+- `MigrationEngine` — pipeline orchestrator with `run()` method: validate → chunk → apply → verify → repair → report (in `aif-migrate::engine`)
+- `StaticCheckSpec` — pattern-based static verification with regex matching for both presence and absence checks (in `aif-migrate::verify`)
 - `HtmlImportResult` / `ImportMode` — HTML import result with AIF-roundtrip vs generic mode detection (in `aif-html::importer`)
 
 ## Build & Test
@@ -218,13 +218,13 @@ Token-optimized binary format now encodes and decodes `SemanticBlockType` (9 var
 ## Phase 5 Features
 
 ### Migration Skill System
-`crates/aif-migrate/` — Chunked migration engine that applies typed migration skills to codebases. Migration skills use `profile=migration` attribute on `@skill` blocks with required `@precondition`, `@step`, `@verify`, and `@output_contract` blocks. Pipeline: validate skill → chunk source files → migrate per-chunk with LLM → verify (static + semantic) → repair loop → generate AIF report. Three chunking strategies: FilePerChunk, DirectoryChunk, TokenBudget. CLI: `aif migrate validate` and `aif migrate run`. Async LLM pipeline stub — validation and static verification fully functional.
+`crates/aif-migrate/` — Chunked migration engine that applies typed migration skills to codebases. Migration skills use `profile=migration` attribute on `@skill` blocks with required `@precondition`, `@step`, `@verify`, and `@output_contract` blocks. Full `MigrationEngine::run()` orchestration: validate skill → chunk source files → apply per-chunk with LLM callback → verify (static regex + semantic) → repair loop → generate AIF report. Three chunking strategies: FilePerChunk, DirectoryChunk, TokenBudget (with oversized-chunk warnings). Unified `MigrationConfig` (no separate `EngineConfig`). Multi-code-block extraction from LLM responses. Regex-based pattern matching for both presence and absence verification checks with explicit invalid-regex error reporting. CLI: `aif migrate validate` and `aif migrate run`.
 
 ### Enhanced Migration Reports
 AIF report generation includes 7 rich sections: Executive Summary (success/partial/failed/skipped counts, confidence level), Risk Assessment (Low/Medium/High/Critical with interpretation), Verification Analysis (static + semantic check pass rates with per-check details), Results by Chunk (individual `[PASS]`/`[FAIL]` per check), Failure Analysis (recurring patterns, repair exhaustion warnings), Manual Review/Unresolved, and Recommendations (actionable next steps tiered by success rate). Helper methods on `MigrationReport`: `status_counts()`, `failed_static_checks()`, `failed_semantic_checks()`, `total_repair_iterations()`, `average_confidence()`, `confidence_label()`, `risk_level()`.
 
 ### Example Migration Skills
-Three production-quality examples in `examples/`: `migration_nextjs_13_to_15.aif` (Next.js 13→15, 7 steps — async request APIs, caching, React 19), `migration_eslint_flat_config.aif` (ESLint legacy→flat config, 7 steps — plugin migration, FlatCompat), `migration_typescript_strict.aif` (TypeScript strict mode, 8 steps — phased rollout).
+Three production-quality examples in `examples/`: `migration_nextjs_13_to_15.aif` (Next.js 13→15, 7 steps — async request APIs, caching, React 19), `migration_eslint_flat_config.aif` (ESLint legacy→flat config, 7 steps — plugin migration, FlatCompat), `migration_typescript_strict.aif` (TypeScript strict mode, 8 steps — phased rollout). All include `@red_flag` blocks for common pitfalls.
 
 ## Phase 6 Features
 
@@ -246,6 +246,16 @@ Three production-quality examples in `examples/`: `migration_nextjs_13_to_15.aif
 - **`inlines_to_text` consolidation** — unified into `aif-core::text` with `TextMode` enum (Plain, Markdown, Render); all 3 former call sites delegate to the shared implementation
 - **LML media roundtrip** — bidirectional parser now round-trips Figure/Audio/Video blocks with full MediaMeta attributes
 - **Binary type roundtrip coverage** — all 9 `SemanticBlockType` and 4 `CalloutType` variants now have explicit roundtrip tests
+- **Migration engine hardening** (Phase 5):
+  - Symmetric regex matching — both `PatternPresence` and `PatternAbsence` use `Regex::is_match()`
+  - Explicit invalid-regex errors — bad patterns fail the check with clear message instead of silent fallback
+  - Robust negation heuristic — word-boundary regex (`\bno\s`, `\bnot\s`, `must not`, `cannot`, `never`, `removed`, `forbidden`, `absent`, `without`, `eliminated`) replaces naive substring check
+  - Oversized-chunk warnings — `SourceChunk` emits warning when a single file exceeds token budget
+  - Full `MigrationEngine::run()` — orchestrates validate → chunk → apply → verify → repair → report with pluggable `apply_fn` callback
+  - Multi-code-block extraction — `parse_migration_response` joins all code blocks, not just first
+  - Unified config — merged `EngineConfig` into `MigrationConfig`
+  - Distinct risk callouts — Low→Note, Medium→Info, High→Warning, Critical→Tip
+  - Removed unused `reqwest`/`tokio` dependencies
 
 ## Benchmark Results (2026-03-31, claude-opus-4-6, 10 skills)
 

@@ -33,6 +33,10 @@ AIF eliminates the trade-off: typed semantic blocks with token counts matching o
 - **Format recommender** — analyzes document structure to suggest optimal output format
 - **Semantic compression** — text deduplication dictionary for repeated content
 - **Hybrid format** — LML text with base64-encoded binary content blocks
+- **Skill eval pipeline** — 3-stage quality assessment: structural lint, behavioral compliance, effectiveness testing
+- **Migration engine** — chunked codebase migration with typed skills, static+LLM verification, repair loops, and AIF report generation
+- **HTML import** — two-layer importer: lossless AIF roundtrip via CSS class detection + generic HTML-to-AIF mapping with readability extraction
+- **LLM configuration** — multi-provider support (Anthropic, OpenAI, Google, local) with `~/.aif/config.toml`
 
 ## Quick Start
 
@@ -52,8 +56,10 @@ cargo run -p aif-cli -- compile doc.aif --format pdf
 # Compile to compact binary
 cargo run -p aif-cli -- compile doc.aif --format binary-wire
 
-# Import Markdown or PDF to AIF IR
+# Import Markdown, HTML, or PDF to AIF IR
 cargo run -p aif-cli -- import doc.md
+cargo run -p aif-cli -- import doc.html
+cargo run -p aif-cli -- import doc.html --strip-chrome  # Extract article content
 cargo run -p aif-cli -- import doc.pdf
 
 # Dump semantic IR as JSON
@@ -61,6 +67,13 @@ cargo run -p aif-cli -- dump-ir doc.aif
 
 # Generate JSON Schema
 cargo run -p aif-cli -- schema
+
+# Validate and run migrations
+cargo run -p aif-cli -- migrate validate skill.aif
+cargo run -p aif-cli -- migrate run --skill skill.aif --source ./src --output ./migrated
+
+# Eval pipeline for skills
+cargo run -p aif-cli -- skill eval skill.aif --stage 1 --report text
 ```
 
 ## Architecture
@@ -82,13 +95,15 @@ cargo run -p aif-cli -- schema
 |-------|---------|
 | `aif-core` | AST types, spans, errors, JSON Schema generation, shared `inlines_to_text` utility — shared IR |
 | `aif-parser` | Logos-based lexer + parser (`.aif` → AST) |
-| `aif-html` | HTML compiler (AST → HTML) |
+| `aif-html` | HTML compiler (AST → HTML) + importer (HTML → AST) with AIF-roundtrip and generic modes, readability extraction |
 | `aif-markdown` | Markdown compiler + pulldown-cmark importer |
 | `aif-lml` | LML compiler — 5 prose modes, bidirectional parser, hybrid format, semantic compression |
 | `aif-binary` | Binary serialization — wire (postcard) and token-optimized with full encode/decode roundtrip |
 | `aif-skill` | Skill profiles — validation, hashing, versioning, diff, registry, delta transport, format recommender, chaining, marketplace |
 | `aif-pdf` | PDF export (krilla) + import (pdf_oxide) + document chunking (4 strategies) + chunk graphs |
-| `aif-cli` | CLI tool: `compile`, `import`, `dump-ir`, `skill`, `schema`, `chunk` subcommands |
+| `aif-eval` | Eval pipeline — Anthropic LLM client, behavioral compliance, scenario tests, pipeline orchestrator |
+| `aif-migrate` | Migration engine — chunked pipeline, repair loops, static+LLM verification, AIF report generation |
+| `aif-cli` | CLI tool: `compile`, `import`, `dump-ir`, `skill`, `schema`, `chunk`, `config`, `migrate` subcommands |
 
 ## Benchmark Results
 
@@ -132,17 +147,26 @@ Benchmarked with Claude API token counting (claude-opus-4-6, 2026-04-01). Baseli
 >
 > Full HTML report: `benchmarks/skill_benchmark_report.html` | Raw data: `benchmarks/skill_results.json`
 
-### Key Takeaways
+### Key Findings
 
-1. **For LLM context windows:** AIF LML Aggressive is the most token-efficient format — **82.2% savings** vs raw HTML for general documents. For skills, it matches SKILL.md baseline with 100% semantic compliance (TNO 0.99).
+1. **Raw PDF text is cheapest — but lossy.** Raw PDF text extraction (89.8% savings) beats every format on token count, but produces flat unstructured text with no headings, sections, tables, or semantic blocks. Fine for simple Q&A; unsuitable when you need the model to reason about document structure.
 
-2. **Raw Markdown saves 77.1%** vs HTML, but AIF LML adds another ~5 percentage points on top while preserving full semantic structure.
+2. **AIF LML Aggressive is the best structured format.** At 82.2% savings vs HTML, it's only ~75% more tokens than raw PDF text, but carries full semantic structure: typed sections, headings, claims, callouts, code blocks, tables, and figures. The LLM can navigate and reason about the document as a structured object, not a flat string.
 
-3. **For wire transport:** Binary wire format (postcard) is 82% smaller than JSON, ideal for tool-to-tool pipelines and bulk storage.
+3. **AIF beats raw Markdown by 5+ percentage points.** Raw Markdown saves 77.1%, AIF LML Aggressive pushes to 82.2%. Across 10 Wikipedia articles, that's **283K fewer tokens** (1.26M → 0.98M).
 
-4. **Semantic tags are nearly free:** LML Aggressive proves that semantic structure doesn't have to cost tokens — the right tag design (`@step:`, `@verify:`) adds negligible overhead versus unstructured Markdown.
+4. **Semantic tags are nearly free.** LML Aggressive proves structure doesn't cost tokens — `@step:`, `@verify:` add negligible overhead vs unstructured Markdown.
 
-5. **Avoid for LLM context:** HTML (+12.5%), JSON (+81%), and binary formats (base64 inflation) all waste tokens.
+5. **For wire transport:** Binary wire format is 82% smaller in bytes than JSON — use for storage/transport, not LLM context (base64 inflates tokens).
+
+### Structure-per-Token Comparison
+
+| Format | Tokens | Structure | Roundtrip | Best For |
+|--------|--------|-----------|-----------|----------|
+| Raw PDF text | 561K | None | No | Cheap Q&A, summarization |
+| Raw Markdown | 1.26M | Basic (headings, lists) | Partial | General documents |
+| **AIF LML Aggressive** | **980K** | **Full semantic** | **Yes** | **Structured reasoning, agents** |
+| Raw HTML | 5.5M | Full + presentational | Yes | Browser rendering |
 
 ## Skill Profiles
 
@@ -284,6 +308,52 @@ cargo test --workspace         # Run all ~334 tests
 cargo run -p aif-cli -- --help # CLI usage
 ```
 
+## Migration Engine
+
+AIF supports typed migration skills for automated codebase transformations:
+
+```aif
+@skill[name="nextjs-upgrade", version="1.0", profile="migration"]
+  @precondition
+    Next.js 13.x project with pages/ or app/ router.
+  @end
+
+  @step[order=1]
+    Convert synchronous request APIs to async.
+  @end
+
+  @verify
+    No remaining synchronous cookies()/headers() calls.
+  @end
+
+  @output_contract
+    All files compile with Next.js 15 types.
+  @end
+
+  @red_flag
+    Don't migrate dynamic route params without checking usage.
+  @end
+@end
+```
+
+Pipeline: validate skill → chunk source files → apply per-chunk → verify (static regex + semantic) → repair loop → generate rich AIF report with risk assessment and recommendations.
+
+Three example migration skills included: Next.js 13→15, ESLint flat config, TypeScript strict mode.
+
+## HTML Import
+
+Import HTML documents to AIF semantic IR:
+
+```bash
+# Import AIF-emitted HTML (lossless roundtrip)
+cargo run -p aif-cli -- import page.html
+
+# Import generic web pages with chrome stripping
+cargo run -p aif-cli -- import article.html --strip-chrome
+```
+
+Two-layer detection: AIF-roundtrip mode (via `aif-*` CSS classes) reconstructs exact AST types; generic mode maps standard HTML tags to AIF blocks. Readability extraction strips navigation, headers, footers, and sidebars.
+
 ## Design Documents
 
 - [Skill Profile Design](docs/plans/2026-03-30-skill-profile-design.md)
@@ -292,6 +362,9 @@ cargo run -p aif-cli -- --help # CLI usage
 - [PDF & Document Chunking](docs/plans/2026-03-31-pdf-chunking-design.md)
 - [Skill Chaining & Marketplace](docs/plans/2026-03-31-skill-chaining-marketplace-design.md)
 - [Cross-Language SDK](docs/plans/2026-03-31-multi-language-sdk-design.md)
+- [Skill Eval Pipeline](docs/plans/2026-04-01-skill-eval-pipeline-design.md)
+- [Migration Skill System](docs/plans/2026-04-02-migration-skill-system-design.md)
+- [HTML Importer](docs/plans/2026-04-02-html-importer.md)
 
 ## License
 

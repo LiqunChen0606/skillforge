@@ -27,13 +27,16 @@ pub fn validate_migration_skill(skill_block: &Block) -> Vec<MigrationLintResult>
         }
         _ => false,
     };
+    let is_skill_block = matches!(&skill_block.kind, BlockKind::SkillBlock { .. });
     results.push(MigrationLintResult {
         check: MigrationLintCheck::HasMigrationProfile,
         passed: has_profile,
         message: if has_profile {
             "Skill has profile=migration attribute".to_string()
+        } else if !is_skill_block {
+            "Block is not a @skill block — expected @skill[profile=migration]".to_string()
         } else {
-            "Skill missing profile=migration attribute".to_string()
+            "Skill block missing profile=migration attribute — add profile=migration to @skill attrs".to_string()
         },
     });
 

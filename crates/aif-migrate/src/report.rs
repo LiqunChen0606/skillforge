@@ -98,8 +98,9 @@ fn build_risk_assessment(report: &MigrationReport) -> Block {
     // Overall risk callout
     let risk_callout_type = match risk {
         "Low Risk" => CalloutType::Note,
-        "Medium Risk" => CalloutType::Warning,
-        _ => CalloutType::Warning,
+        "Medium Risk" => CalloutType::Info,
+        "High Risk" => CalloutType::Warning,
+        _ => CalloutType::Tip, // Critical Risk — most severe
     };
     paragraphs.push(Block {
         kind: BlockKind::Callout {

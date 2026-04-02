@@ -27,7 +27,14 @@ pub fn build_migration_prompt(steps: &[String], source: &str, repair_context: Op
 
 pub fn parse_migration_response(response: &str) -> Option<String> {
     let re = Regex::new(r"(?s)```(?:\w*)\n(.*?)```").unwrap();
-    re.captures(response).map(|c| c[1].trim().to_string())
+    let blocks: Vec<String> = re.captures_iter(response)
+        .map(|c| c[1].trim().to_string())
+        .collect();
+    if blocks.is_empty() {
+        None
+    } else {
+        Some(blocks.join("\n\n"))
+    }
 }
 
 pub fn build_semantic_verify_prompt(original: &str, migrated: &str, criteria: &[String]) -> String {
