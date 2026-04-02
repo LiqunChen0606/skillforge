@@ -346,6 +346,44 @@ fn dirs_or_default() -> PathBuf {
         .unwrap_or_else(|| PathBuf::from("/tmp/aif"))
 }
 
+/// Run semantic inference on an imported document.
+/// If `infer_llm` is true, uses LLM-assisted inference (pattern rules first, then LLM for unmatched).
+/// If `infer_semantics` is true (but not `infer_llm`), uses pattern-only inference.
+fn run_inference(doc: &mut aif_core::ast::Document, infer_semantics: bool, infer_llm: bool) {
+    if !infer_semantics && !infer_llm {
+        return;
+    }
+
+    if infer_llm {
+        // Load LLM config
+        let config_path = dirs_or_default().join("config.toml");
+        let aif_config = aif_core::config::AifConfig::load_with_env(&config_path);
+
+        if aif_config.llm.api_key.is_none() {
+            eprintln!("Warning: --infer-llm requested but no API key configured.");
+            eprintln!("  Set AIF_LLM_API_KEY or run: aif config set llm.api-key <key>");
+            eprintln!("  Falling back to pattern-only inference.");
+            aif_core::infer::annotate_semantics(doc, &aif_core::infer::InferConfig::default());
+        } else {
+            let infer_config = aif_core::infer::InferConfig {
+                min_confidence: 0.5,
+                strategy: aif_core::infer::InferStrategy::Llm(aif_config.llm),
+            };
+            let rt = tokio::runtime::Runtime::new().expect("Failed to create tokio runtime");
+            rt.block_on(aif_core::infer::annotate_semantics_with_llm(doc, &infer_config));
+        }
+    } else {
+        aif_core::infer::annotate_semantics(doc, &aif_core::infer::InferConfig::default());
+    }
+
+    let inferred_count = doc.blocks.iter()
+        .filter(|b| matches!(&b.kind, aif_core::ast::BlockKind::SemanticBlock { attrs, .. } if attrs.pairs.contains_key("_aif_inferred")))
+        .count();
+    if inferred_count > 0 {
+        eprintln!("Inferred {} semantic block(s)", inferred_count);
+    }
+}
+
 fn handle_skill(action: SkillAction) {
     match action {
         SkillAction::Import { input, output, format } => {
@@ -1103,7 +1141,7 @@ fn main() {
 
             write_output(&result, output.as_ref());
         }
-        Commands::Import { input, output, strip_chrome, infer_semantics, .. } => {
+        Commands::Import { input, output, strip_chrome, infer_semantics, infer_llm } => {
             let ext = input.extension().map(|e| e.to_ascii_lowercase());
             let is_pdf = ext.as_ref().map(|e| e == "pdf").unwrap_or(false);
             let is_html = ext.as_ref().map(|e| e == "html" || e == "htm").unwrap_or(false);
@@ -1135,15 +1173,7 @@ fn main() {
                 result.document.metadata.insert("_aif_source_format".into(), "pdf".into());
                 result.document.metadata.insert("_aif_source_file".into(), source_file);
                 result.document.metadata.insert("_aif_import_confidence".into(), format!("{:.2}", result.avg_confidence));
-                if infer_semantics {
-                    aif_core::infer::annotate_semantics(&mut result.document, &aif_core::infer::InferConfig::default());
-                    let inferred_count = result.document.blocks.iter()
-                        .filter(|b| matches!(&b.kind, aif_core::ast::BlockKind::SemanticBlock { attrs, .. } if attrs.pairs.contains_key("_aif_inferred")))
-                        .count();
-                    if inferred_count > 0 {
-                        eprintln!("Inferred {} semantic block(s)", inferred_count);
-                    }
-                }
+                run_inference(&mut result.document, infer_semantics, infer_llm);
                 let json = serde_json::to_string_pretty(&result.document).unwrap();
                 write_output(&json, output.as_ref());
             } else if is_html {
@@ -1159,15 +1189,7 @@ fn main() {
                 );
                 // Provenance (source_format and import_mode already set by importer)
                 result.document.metadata.insert("_aif_source_file".into(), source_file);
-                if infer_semantics {
-                    aif_core::infer::annotate_semantics(&mut result.document, &aif_core::infer::InferConfig::default());
-                    let inferred_count = result.document.blocks.iter()
-                        .filter(|b| matches!(&b.kind, aif_core::ast::BlockKind::SemanticBlock { attrs, .. } if attrs.pairs.contains_key("_aif_inferred")))
-                        .count();
-                    if inferred_count > 0 {
-                        eprintln!("Inferred {} semantic block(s)", inferred_count);
-                    }
-                }
+                run_inference(&mut result.document, infer_semantics, infer_llm);
                 let json = serde_json::to_string_pretty(&result.document).unwrap();
                 write_output(&json, output.as_ref());
             } else {
@@ -1175,15 +1197,7 @@ fn main() {
                 let mut doc = aif_markdown::import_markdown(&source);
                 // Provenance (source_format already set by importer)
                 doc.metadata.insert("_aif_source_file".into(), source_file);
-                if infer_semantics {
-                    aif_core::infer::annotate_semantics(&mut doc, &aif_core::infer::InferConfig::default());
-                    let inferred_count = doc.blocks.iter()
-                        .filter(|b| matches!(&b.kind, aif_core::ast::BlockKind::SemanticBlock { attrs, .. } if attrs.pairs.contains_key("_aif_inferred")))
-                        .count();
-                    if inferred_count > 0 {
-                        eprintln!("Inferred {} semantic block(s)", inferred_count);
-                    }
-                }
+                run_inference(&mut doc, infer_semantics, infer_llm);
                 let json = serde_json::to_string_pretty(&doc).unwrap();
                 write_output(&json, output.as_ref());
             }

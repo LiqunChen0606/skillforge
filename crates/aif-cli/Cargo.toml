@@ -13,7 +13,7 @@ name = "aif"
 path = "src/main.rs"
 
 [dependencies]
-aif-core = { workspace = true }
+aif-core = { workspace = true, features = ["llm"] }
 aif-parser = { path = "../aif-parser" }
 aif-html = { path = "../aif-html" }
 aif-markdown = { path = "../aif-markdown" }
