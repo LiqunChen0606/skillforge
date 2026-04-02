@@ -21,7 +21,7 @@ AIF is a semantic document format and toolchain for humans and LLMs. Concise lik
 | `aif-skill` | Skill profiles — validation, hashing, versioning, diff, registry, delta transport, format recommender, chaining, marketplace |
 | `aif-pdf` | PDF export (krilla) + import (pdf_oxide) + document chunking (4 strategies) + chunk graphs |
 | `aif-eval` | Eval pipeline — Anthropic LLM client, behavioral compliance, scenario tests, pipeline orchestrator |
-| `aif-cli` | CLI tool: `compile`, `import`, `dump-ir`, `skill`, `schema`, `chunk` subcommands |
+| `aif-cli` | CLI tool: `compile`, `import`, `dump-ir`, `skill`, `schema`, `chunk`, `config` subcommands |
 
 ### Key Types
 
@@ -33,6 +33,9 @@ AIF is a semantic document format and toolchain for humans and LLMs. Concise lik
 - `Attrs` — id + key-value pairs on any block
 - `TextMode` — Plain, Markdown, Render modes for `inlines_to_text` (in `aif-core::text`)
 - `ChunkGraph` / `Chunk` / `ChunkId` — sub-document addressing and cross-document linking
+- `EvalReport` / `StageResult` / `ScenarioResult` — eval pipeline results (in `aif-skill::eval`)
+- `LintCheck` / `LintResult` — structural lint checks (in `aif-skill::lint`)
+- `LlmConfig` / `AifConfig` — LLM provider and project configuration (in `aif-core::config`)
 
 ## Build & Test
 
