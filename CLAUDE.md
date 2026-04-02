@@ -14,7 +14,7 @@ AIF is a semantic document format and toolchain for humans and LLMs. Concise lik
 |-------|---------|
 | `aif-core` | AST types, spans, errors, JSON Schema generation, shared `inlines_to_text` utility — shared IR |
 | `aif-parser` | Logos-based lexer + block/inline parser (`.aif` → AST) |
-| `aif-html` | HTML compiler (AST → HTML) |
+| `aif-html` | HTML compiler (AST → HTML) + importer (HTML → AST) with AIF-roundtrip and generic modes, readability extraction |
 | `aif-markdown` | Markdown compiler + pulldown-cmark importer |
 | `aif-lml` | LML compiler — 5 prose modes, bidirectional parser, hybrid LML+binary, semantic compression |
 | `aif-binary` | Binary serialization — wire (postcard) and token-optimized formats with full encode/decode roundtrip, media metadata, semantic/callout type preservation |
@@ -41,6 +41,7 @@ AIF is a semantic document format and toolchain for humans and LLMs. Concise lik
 - `SourceChunk` / `ChunkStrategy` — source file chunking (in `aif-migrate::chunk`)
 - `MigrationEngine` / `EngineConfig` — pipeline orchestrator (in `aif-migrate::engine`)
 - `StaticCheckSpec` — pattern-based static verification (in `aif-migrate::verify`)
+- `HtmlImportResult` / `ImportMode` — HTML import result with AIF-roundtrip vs generic mode detection (in `aif-html::importer`)
 
 ## Build & Test
 
@@ -108,7 +109,7 @@ cargo run -p aif-cli -- --help # CLI usage
 # Document compilation
 aif compile input.aif -f html|markdown|lml|lml-compact|lml-conservative|lml-moderate|lml-aggressive|json|binary-wire|binary-token|pdf [-o output]
 aif compile --input-format json input.json -f html|lml-aggressive|...  # Compile from JSON IR
-aif import input.md|input.pdf [-o output]
+aif import input.md|input.html|input.pdf [-o output] [--strip-chrome]
 aif dump-ir input.aif
 aif schema                     # Generate JSON Schema for AIF Document type
 
@@ -225,10 +226,20 @@ AIF report generation includes 7 rich sections: Executive Summary (success/parti
 ### Example Migration Skills
 Three production-quality examples in `examples/`: `migration_nextjs_13_to_15.aif` (Next.js 13→15, 7 steps — async request APIs, caching, React 19), `migration_eslint_flat_config.aif` (ESLint legacy→flat config, 7 steps — plugin migration, FlatCompat), `migration_typescript_strict.aif` (TypeScript strict mode, 8 steps — phased rollout).
 
+## Phase 6 Features
+
+### HTML Import
+`crates/aif-html/src/importer.rs` — Two-layer HTML importer. Layer 1 (AIF roundtrip): detects `aif-*` CSS classes on `<div>`, `<aside>`, `<a>`, `<sup>` elements to reconstruct exact AST types — lossless roundtrip for AIF-emitted HTML. Layer 2 (generic): maps standard HTML tags to AIF blocks (`<p>` → Paragraph, `<section>/<h*>` → Section, `<pre><code>` → CodeBlock, `<table>` → Table, `<figure>/<audio>/<video>` → media blocks with MediaMeta, `<ul>/<ol>` → List, `<blockquote>` → BlockQuote). Auto-detects mode based on presence of `aif-*` classes. Extracts `<title>` and `<meta description>` as document metadata. Bare headings are grouped with following siblings into synthetic Section blocks.
+
+### Readability Extraction
+`crates/aif-html/src/readability.rs` — Opt-in `--strip-chrome` flag for importing full web pages. Prioritizes content roots: `<article>` → `<main>` → `[role="main"]` → `<body>` with chrome tag filtering. Chrome tags (nav, header, footer, non-AIF aside) are stripped. Tag-based heuristic, not full Mozilla Readability.
+
 ## Known Limitations
 
 - Markdown importer does not detect audio/video links for roundtrip fidelity
 - LML aggressive mode does not emit `mime` for media blocks (derivable from `src` extension); parser handles it if present
+- HTML generic import maps `<div>` containers to flat block lists (no generic div-to-section heuristic)
+- Readability extraction (`--strip-chrome`) uses tag-based heuristics, not full Mozilla Readability algorithm
 
 ## Recent Fixes
 
@@ -272,7 +283,19 @@ Baseline: Raw HTML (5.5M tokens total).
 | AIF LML Aggressive | 979.8K | **+82.2% saved** | 2.8M |
 | AIF LML Standard | 985.1K | +82.1% saved | 2.8M |
 
-Key findings: AIF LML Aggressive is the most token-efficient format, saving **82.2%** vs raw HTML. Even raw Markdown saves 77.1%, but AIF LML adds another 5+ percentage points on top.
+### Key Findings
+
+1. **Raw PDF text is cheapest but lossy** — 89.8% savings, but flat unstructured text (no headings, sections, tables). Fine for simple Q&A; unsuitable for structured reasoning.
+2. **AIF LML Aggressive is the best structured format** — 82.2% savings with full semantic structure (typed sections, claims, callouts, tables). Only ~75% more tokens than raw PDF text.
+3. **AIF beats Markdown by 5+ points** — 283K fewer tokens across 10 articles (1.26M → 0.98M).
+4. **Structure-per-token comparison:**
+
+| Format | Tokens | Structure | Roundtrip | Best For |
+|--------|--------|-----------|-----------|----------|
+| Raw PDF text | 561K | None | No | Cheap Q&A, summarization |
+| Raw Markdown | 1.26M | Basic | Partial | General documents |
+| **AIF LML Aggressive** | **980K** | **Full semantic** | **Yes** | **Structured reasoning, agents** |
+| Raw HTML | 5.5M | Full + presentational | Yes | Browser rendering |
 
 Full HTML report: `benchmarks/results.html`
 Raw data: `benchmarks/results.json`
