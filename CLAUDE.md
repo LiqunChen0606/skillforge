@@ -21,7 +21,8 @@ AIF is a semantic document format and toolchain for humans and LLMs. Concise lik
 | `aif-skill` | Skill profiles — validation, hashing, versioning, diff, registry, delta transport, format recommender, chaining, marketplace |
 | `aif-pdf` | PDF export (krilla) + import (pdf_oxide) + document chunking (4 strategies) + chunk graphs |
 | `aif-eval` | Eval pipeline — Anthropic LLM client, behavioral compliance, scenario tests, pipeline orchestrator |
-| `aif-cli` | CLI tool: `compile`, `import`, `dump-ir`, `skill`, `schema`, `chunk`, `config` subcommands |
+| `aif-migrate` | Migration engine — chunked pipeline, repair loops, static+LLM verification, AIF report generation |
+| `aif-cli` | CLI tool: `compile`, `import`, `dump-ir`, `skill`, `schema`, `chunk`, `config`, `migrate` subcommands |
 
 ### Key Types
 
@@ -36,6 +37,10 @@ AIF is a semantic document format and toolchain for humans and LLMs. Concise lik
 - `EvalReport` / `StageResult` / `ScenarioResult` — eval pipeline results (in `aif-skill::eval`)
 - `LintCheck` / `LintResult` — structural lint checks (in `aif-skill::lint`)
 - `LlmConfig` / `AifConfig` — LLM provider and project configuration (in `aif-core::config`)
+- `MigrationConfig` / `ChunkResult` / `MigrationReport` — migration pipeline types (in `aif-migrate::types`)
+- `SourceChunk` / `ChunkStrategy` — source file chunking (in `aif-migrate::chunk`)
+- `MigrationEngine` / `EngineConfig` — pipeline orchestrator (in `aif-migrate::engine`)
+- `StaticCheckSpec` — pattern-based static verification (in `aif-migrate::verify`)
 
 ## Build & Test
 
@@ -132,6 +137,10 @@ aif chunk graph input1.aif input2.aif [-o graph.json]
 # Eval pipeline
 aif skill eval <skill.aif> [--stage 1|2|3] [--report text|json]
 
+# Migration
+aif migrate validate input.aif                # Validate migration skill profile
+aif migrate run --skill s.aif --source ./src --output ./migrated [--strategy file|directory|token-budget] [--max-repairs 3] [--report text|json]
+
 # Configuration
 aif config set llm.provider <provider>   # anthropic, openai, google, local
 aif config set llm.api-key <key>
@@ -204,6 +213,11 @@ Token-optimized binary format now encodes and decodes `SemanticBlockType` (9 var
 
 ### LLM Configuration
 `~/.aif/config.toml` with `[llm]` section: provider, api_key, model, base_url. Environment variable overrides: AIF_LLM_PROVIDER, AIF_LLM_API_KEY, AIF_LLM_MODEL. CLI: `aif config set/list`.
+
+## Phase 5 Features
+
+### Migration Skill System
+`crates/aif-migrate/` — Chunked migration engine that applies typed migration skills to codebases. Migration skills use `profile=migration` attribute on `@skill` blocks with required `@precondition`, `@step`, `@verify`, and `@output_contract` blocks. Pipeline: validate skill → chunk source files → migrate per-chunk with LLM → verify (static + semantic) → repair loop → generate AIF report. Three chunking strategies: FilePerChunk, DirectoryChunk, TokenBudget. CLI: `aif migrate validate` and `aif migrate run`. Async LLM pipeline stub — validation and static verification fully functional.
 
 ## Known Limitations
 
