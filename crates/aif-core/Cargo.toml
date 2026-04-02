@@ -7,3 +7,4 @@ edition.workspace = true
 serde = { workspace = true }
 serde_json = { workspace = true }
 schemars = "0.8"
+toml = "0.8"

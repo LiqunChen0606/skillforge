@@ -4,3 +4,4 @@ pub mod span;
 pub mod error;
 pub mod schema;
 pub mod text;
+pub mod config;
