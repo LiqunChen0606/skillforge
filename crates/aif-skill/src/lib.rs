@@ -13,3 +13,4 @@ pub mod chain;
 pub mod remote;
 pub mod resolver;
 pub mod lint;
+pub mod eval;
