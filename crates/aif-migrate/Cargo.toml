@@ -7,6 +7,7 @@ edition.workspace = true
 aif-core = { workspace = true }
 aif-skill = { path = "../aif-skill" }
 aif-eval = { path = "../aif-eval" }
+regex = "1"
 serde = { workspace = true }
 serde_json = { workspace = true }
 reqwest = { version = "0.12", features = ["json"] }
