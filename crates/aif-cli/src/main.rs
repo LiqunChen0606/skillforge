@@ -59,6 +59,11 @@ enum Commands {
         #[command(subcommand)]
         action: ConfigAction,
     },
+    /// Run code migrations using migration skills
+    Migrate {
+        #[command(subcommand)]
+        action: MigrateAction,
+    },
 }
 
 #[derive(Subcommand)]
@@ -196,6 +201,36 @@ enum ConfigAction {
     },
     /// Show current configuration
     List {},
+}
+
+#[derive(Subcommand)]
+enum MigrateAction {
+    /// Validate a migration skill
+    Validate {
+        /// Path to migration skill .aif file
+        input: PathBuf,
+    },
+    /// Run a migration
+    Run {
+        /// Path to migration skill .aif file
+        #[arg(long)]
+        skill: PathBuf,
+        /// Source directory to migrate
+        #[arg(long)]
+        source: PathBuf,
+        /// Output directory for migrated files
+        #[arg(short, long, default_value = "./migrated")]
+        output: PathBuf,
+        /// Chunking strategy: file, directory, token-budget
+        #[arg(long, default_value = "file")]
+        strategy: String,
+        /// Max repair iterations per chunk
+        #[arg(long, default_value = "3")]
+        max_repairs: u32,
+        /// Report format: text or json
+        #[arg(long, default_value = "text")]
+        report: String,
+    },
 }
 
 fn find_skill_block(blocks: &[Block]) -> Option<&Block> {
@@ -1070,6 +1105,9 @@ fn main() {
         Commands::Config { action } => {
             handle_config(action);
         }
+        Commands::Migrate { action } => {
+            handle_migrate(action);
+        }
     }
 }
 
@@ -1202,6 +1240,74 @@ fn handle_chunk(action: ChunkAction) {
             } else {
                 println!("{}", json);
             }
+        }
+    }
+}
+
+fn handle_migrate(action: MigrateAction) {
+    match action {
+        MigrateAction::Validate { input } => {
+            let source = read_source(&input);
+            let doc = parse_aif(&source);
+
+            let skill_block = find_skill_block(&doc.blocks).unwrap_or_else(|| {
+                eprintln!("No @skill block found in {}", input.display());
+                std::process::exit(1);
+            });
+
+            let results = aif_migrate::validate::validate_migration_skill(skill_block);
+            let all_passed = results.iter().all(|r| r.passed);
+
+            for r in &results {
+                let icon = if r.passed { "PASS" } else { "FAIL" };
+                eprintln!("  [{}] {:?}: {}", icon, r.check, r.message);
+            }
+
+            if all_passed {
+                eprintln!("\nMigration skill validation passed.");
+            } else {
+                eprintln!("\nMigration skill validation failed.");
+                std::process::exit(1);
+            }
+        }
+        MigrateAction::Run {
+            skill,
+            source,
+            output,
+            strategy,
+            max_repairs,
+            report: _report,
+        } => {
+            eprintln!("Migration engine requires LLM configuration.");
+            eprintln!("Configure with: aif config set llm.api-key <key>");
+            eprintln!();
+
+            let config_path = dirs_or_default().join("config.toml");
+            let aif_config = aif_core::config::AifConfig::load_with_env(&config_path);
+
+            if aif_config.llm.api_key.is_none() {
+                eprintln!("Error: No LLM API key configured.");
+                eprintln!("Set via: aif config set llm.api-key <key>");
+                eprintln!("Or env: AIF_LLM_API_KEY=<key>");
+                std::process::exit(1);
+            }
+
+            let _chunk_strategy = match strategy.as_str() {
+                "file" => aif_migrate::chunk::ChunkStrategy::FilePerChunk,
+                "directory" => aif_migrate::chunk::ChunkStrategy::DirectoryChunk,
+                "token-budget" => aif_migrate::chunk::ChunkStrategy::TokenBudget { max_tokens: 4000 },
+                other => {
+                    eprintln!("Unknown strategy: {}. Use: file, directory, token-budget", other);
+                    std::process::exit(1);
+                }
+            };
+
+            eprintln!("Migration engine (async pipeline) not yet wired — validation available via 'aif migrate validate'.");
+            eprintln!("Skill: {}", skill.display());
+            eprintln!("Source: {}", source.display());
+            eprintln!("Output: {}", output.display());
+            eprintln!("Strategy: {}", strategy);
+            eprintln!("Max repairs: {}", max_repairs);
         }
     }
 }
