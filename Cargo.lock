@@ -54,6 +54,7 @@ dependencies = [
  "aif-html",
  "aif-lml",
  "aif-markdown",
+ "aif-migrate",
  "aif-parser",
  "aif-pdf",
  "aif-skill",
@@ -123,8 +124,10 @@ version = "0.1.0"
 dependencies = [
  "aif-core",
  "aif-eval",
+ "aif-html",
  "aif-parser",
  "aif-skill",
+ "regex",
  "reqwest",
  "serde",
  "serde_json",

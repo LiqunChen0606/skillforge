@@ -119,5 +119,7 @@ fn report_generation_end_to_end() {
 
     // Compile to JSON to verify structure
     let json = serde_json::to_string_pretty(&doc).unwrap();
-    assert!(json.contains("Summary"));
+    assert!(json.contains("Executive Summary"));
+    assert!(json.contains("Risk Assessment"));
+    assert!(json.contains("Recommendations"));
 }

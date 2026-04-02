@@ -219,6 +219,12 @@ Token-optimized binary format now encodes and decodes `SemanticBlockType` (9 var
 ### Migration Skill System
 `crates/aif-migrate/` — Chunked migration engine that applies typed migration skills to codebases. Migration skills use `profile=migration` attribute on `@skill` blocks with required `@precondition`, `@step`, `@verify`, and `@output_contract` blocks. Pipeline: validate skill → chunk source files → migrate per-chunk with LLM → verify (static + semantic) → repair loop → generate AIF report. Three chunking strategies: FilePerChunk, DirectoryChunk, TokenBudget. CLI: `aif migrate validate` and `aif migrate run`. Async LLM pipeline stub — validation and static verification fully functional.
 
+### Enhanced Migration Reports
+AIF report generation includes 7 rich sections: Executive Summary (success/partial/failed/skipped counts, confidence level), Risk Assessment (Low/Medium/High/Critical with interpretation), Verification Analysis (static + semantic check pass rates with per-check details), Results by Chunk (individual `[PASS]`/`[FAIL]` per check), Failure Analysis (recurring patterns, repair exhaustion warnings), Manual Review/Unresolved, and Recommendations (actionable next steps tiered by success rate). Helper methods on `MigrationReport`: `status_counts()`, `failed_static_checks()`, `failed_semantic_checks()`, `total_repair_iterations()`, `average_confidence()`, `confidence_label()`, `risk_level()`.
+
+### Example Migration Skills
+Three production-quality examples in `examples/`: `migration_nextjs_13_to_15.aif` (Next.js 13→15, 7 steps — async request APIs, caching, React 19), `migration_eslint_flat_config.aif` (ESLint legacy→flat config, 7 steps — plugin migration, FlatCompat), `migration_typescript_strict.aif` (TypeScript strict mode, 8 steps — phased rollout).
+
 ## Known Limitations
 
 - Markdown importer does not detect audio/video links for roundtrip fidelity

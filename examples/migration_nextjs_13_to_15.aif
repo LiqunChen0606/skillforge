@@ -1,0 +1,120 @@
+#title: Next.js 13 to 15 Migration Skill
+#author: AIF Migration Team
+
+@skill[name="nextjs-13-to-15", version="1.0", profile=migration]
+  @precondition
+    Repository uses Next.js 13.x with React 18.
+    Project uses the App Router (app/ directory).
+    Package manager is npm or yarn.
+    TypeScript configuration present (tsconfig.json).
+    No custom server.js overriding the Next.js server.
+  @end
+
+  @step[order=1]
+    Upgrade core dependencies in package.json:
+    - next: ^13.x.x → ^15.0.0
+    - react: ^18.x.x → ^19.0.0
+    - react-dom: ^18.x.x → ^19.0.0
+    - @types/react: ^18.x.x → ^19.0.0
+    - @types/react-dom: ^18.x.x → ^19.0.0
+    Remove deprecated peer dependencies:
+    - @next/font (now built into next/font)
+  @end
+
+  @step[order=2]
+    Migrate async request APIs. In Next.js 15, params, searchParams,
+    headers(), cookies(), and draftMode() are now async.
+
+    Before:
+      export default function Page({ params }) {
+        const { slug } = params;
+      }
+
+    After:
+      export default async function Page({ params }) {
+        const { slug } = await params;
+      }
+
+    Apply to all page.tsx, layout.tsx, route.tsx, and
+    generateMetadata functions. Both server and client components
+    that access these APIs must be updated.
+  @end
+
+  @step[order=3]
+    Update next.config.js to next.config.ts (optional but recommended).
+    Migrate deprecated configuration options:
+    - Remove experimental.serverActions (now stable, enabled by default)
+    - Remove experimental.appDir (stable since Next 13.4)
+    - Update images.domains to images.remotePatterns format
+    - Replace experimental.instrumentationHook with instrumentation (top-level)
+    - Remove swcMinify (now default behavior)
+  @end
+
+  @step[order=4]
+    Update caching semantics. Next.js 15 changed default caching behavior:
+    - fetch() requests are no longer cached by default
+    - Route Handlers (GET) are no longer cached by default
+    - Client-side router cache no longer caches Page components by default
+
+    Add explicit cache directives where caching was relied upon:
+    - fetch(url, { cache: 'force-cache' }) for previously cached fetches
+    - export const dynamic = 'force-static' for static route handlers
+    - Use <Link prefetch={true}> for routes that benefit from prefetching
+  @end
+
+  @step[order=5]
+    Update middleware and edge runtime patterns:
+    - NextRequest geo and ip properties are removed; use provider-specific headers
+    - Replace runtime = 'experimental-edge' with runtime = 'edge'
+    - Update Middleware matcher patterns if using deprecated syntax
+  @end
+
+  @step[order=6]
+    Update React 19 patterns in client components:
+    - Replace useEffect for data fetching with React.use() where appropriate
+    - Replace forwardRef with direct ref prop on function components
+    - Update Context.Provider to direct Context usage: <Context value={...}>
+    - Remove deprecated string refs if any remain
+  @end
+
+  @step[order=7]
+    Update testing infrastructure:
+    - Update @testing-library/react to latest (supports React 19)
+    - Update jest or vitest configuration for Next 15 transforms
+    - Replace deprecated renderHook import location
+    - Update MSW or similar mocking tools if they depend on fetch behavior
+  @end
+
+  @verify
+    No remaining `@next/font` imports in source files.
+    No remaining `experimental.serverActions` in next config.
+    No remaining `experimental.appDir` in next config.
+    All `params` and `searchParams` access uses `await`.
+    All files import from `next/font` not `@next/font`.
+    No remaining `runtime = 'experimental-edge'` declarations.
+    No remaining `forwardRef` usage without migration comment.
+    Package.json shows `next` version >= 15.0.0.
+    Package.json shows `react` version >= 19.0.0.
+  @end
+
+  @fallback
+    If a component uses complex params destructuring in server components,
+    preserve the original and flag for manual review.
+
+    If a custom caching wrapper relies on Next.js implicit caching behavior,
+    flag it for manual review with a note explaining the caching change.
+
+    If third-party packages depend on Next.js 13 internals (e.g., custom
+    server adapters or internal routing APIs), skip those files and list
+    them as requiring package upgrades before migration can proceed.
+  @end
+
+  @output_contract
+    All source files migrated to Next.js 15 API surface.
+    Build succeeds with `next build`.
+    No TypeScript errors related to API changes.
+    All previously passing tests continue to pass.
+    Deprecated configuration options removed.
+    Caching behavior explicitly specified where previously implicit.
+  @end
+@end

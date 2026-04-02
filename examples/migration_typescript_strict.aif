@@ -1,0 +1,212 @@
+#title: TypeScript Strict Mode Adoption Skill
+#author: AIF Migration Team
+
+@skill[name="typescript-strict-mode", version="1.0", profile=migration]
+  @precondition
+    Repository uses TypeScript with tsconfig.json present.
+    strict is not already set to true in tsconfig.json.
+    Project builds successfully before migration.
+    Some or all of the strict sub-flags are currently disabled:
+    strictNullChecks, strictFunctionTypes, strictBindCallApply,
+    strictPropertyInitialization, noImplicitAny, noImplicitThis,
+    alwaysStrict, useUnknownInCatchVariables.
+  @end
+
+  @step[order=1]
+    Phase 1 — Enable alwaysStrict and strictBindCallApply.
+    These are the least disruptive strict flags:
+    - alwaysStrict: Emits 'use strict' in all output files
+    - strictBindCallApply: Type-checks bind, call, apply arguments
+
+    Set in tsconfig.json:
+      "compilerOptions": {
+        "alwaysStrict": true,
+        "strictBindCallApply": true
+      }
+
+    Fix any resulting errors (usually few):
+    - Incorrect bind/call/apply argument types
+    - Functions called with wrong argument counts via .call()
+  @end
+
+  @step[order=2]
+    Phase 2 — Enable noImplicitThis.
+    Functions that use `this` without explicit type annotation will error.
+
+    Common fixes:
+    - Add explicit `this` parameter: function handler(this: HTMLElement, e: Event)
+    - Convert to arrow functions where `this` refers to lexical scope
+    - Add `this: void` to callbacks that don't use `this`
+
+    Before:
+      element.addEventListener('click', function(e) {
+        this.classList.add('active'); // Error: 'this' implicitly has type 'any'
+      });
+
+    After:
+      element.addEventListener('click', function(this: HTMLElement, e: Event) {
+        this.classList.add('active');
+      });
+    Or:
+      element.addEventListener('click', (e) => {
+        element.classList.add('active');
+      });
+  @end
+
+  @step[order=3]
+    Phase 3 — Enable noImplicitAny.
+    This is typically the most impactful flag. Variables, parameters, and
+    return types that cannot be inferred will require explicit annotations.
+
+    Priority order for fixing:
+    1. Function parameters — most common source of implicit any
+    2. Variable declarations without initializers
+    3. Object destructuring without type context
+    4. Callback parameters in higher-order functions
+
+    Common patterns:
+    - function process(data) → function process(data: ProcessInput)
+    - const items = [] → const items: Item[] = []
+    - .map((item) => ...) — usually inferred, but check
+    - catch (error) → catch (error: unknown) or catch (error: Error)
+
+    For large files with many implicit-any errors, consider adding
+    per-file @ts-expect-error or @ts-ignore comments as temporary
+    markers, then fixing in subsequent commits.
+  @end
+
+  @step[order=4]
+    Phase 4 — Enable strictNullChecks.
+    This is the most valuable strict flag for catching real bugs.
+    Variables typed as T can no longer implicitly be null or undefined.
+
+    Common patterns to fix:
+    - Optional chaining: obj.prop → obj?.prop
+    - Nullish coalescing: value || default → value ?? default
+    - Explicit null checks: if (value !== null && value !== undefined)
+    - Non-null assertion (use sparingly): value!
+    - Type narrowing: if (typeof x === 'string') { ... }
+    - Map.get() returns T | undefined (add existence checks)
+    - Array.find() returns T | undefined (add existence checks)
+    - DOM queries return Element | null (add null checks)
+
+    Before:
+      const user = getUser(id);
+      console.log(user.name); // May be null!
+
+    After:
+      const user = getUser(id);
+      if (!user) throw new Error(`User ${id} not found`);
+      console.log(user.name);
+  @end
+
+  @step[order=5]
+    Phase 5 — Enable strictFunctionTypes.
+    Function parameter types are checked contravariantly.
+    This catches unsafe function assignments.
+
+    Before:
+      type Handler = (event: Event) => void;
+      const handler: Handler = (event: MouseEvent) => { ... };
+      // Unsafe: Handler could be called with KeyboardEvent
+
+    After:
+      type Handler = (event: MouseEvent) => void;
+      const handler: Handler = (event: MouseEvent) => { ... };
+
+    Common fixes:
+    - Narrow callback parameter types to match expected usage
+    - Use function overloads for handlers accepting multiple event types
+    - Update generic constraints on utility types
+  @end
+
+  @step[order=6]
+    Phase 6 — Enable strictPropertyInitialization.
+    Class properties must be initialized in the constructor or declaration.
+
+    Common fixes:
+    - Add initializer: private name: string = '';
+    - Initialize in constructor: this.name = name;
+    - Use definite assignment assertion (sparingly): private name!: string;
+    - Make optional: private name?: string;
+
+    For dependency-injected properties (Angular, NestJS, etc.),
+    the definite assignment assertion (!) is appropriate since the
+    DI framework guarantees initialization.
+  @end
+
+  @step[order=7]
+    Phase 7 — Enable useUnknownInCatchVariables.
+    Catch clause variables are typed as `unknown` instead of `any`.
+
+    Before:
+      try { ... } catch (error) {
+        console.log(error.message); // error is 'any'
+      }
+
+    After:
+      try { ... } catch (error) {
+        if (error instanceof Error) {
+          console.log(error.message);
+        } else {
+          console.log(String(error));
+        }
+      }
+  @end
+
+  @step[order=8]
+    Final step — Replace individual flags with strict: true.
+    Once all individual strict flags are enabled and all errors fixed,
+    replace the individual flags with the single strict flag.
+
+    Before:
+      "compilerOptions": {
+        "alwaysStrict": true,
+        "strictBindCallApply": true,
+        "noImplicitThis": true,
+        "noImplicitAny": true,
+        "strictNullChecks": true,
+        "strictFunctionTypes": true,
+        "strictPropertyInitialization": true,
+        "useUnknownInCatchVariables": true
+      }
+
+    After:
+      "compilerOptions": {
+        "strict": true
+      }
+
+    Verify the build still passes after this consolidation.
+  @end
+
+  @verify
+    tsconfig.json contains `"strict": true`.
+    No remaining individual strict sub-flags in tsconfig.json.
+    No `@ts-ignore` comments added by the migration (only pre-existing ones).
+    No remaining `as any` type assertions added by the migration.
+    Build succeeds with `tsc --noEmit`.
+    All existing tests pass.
+  @end
+
+  @fallback
+    If a module has more than 50 noImplicitAny errors, add it to
+    a tsconfig.strict-exclude.json and flag for incremental migration.
+
+    If third-party type definitions are incompatible with strictFunctionTypes,
+    add targeted type assertion wrappers and document the incompatibility.
+
+    If legacy class hierarchies make strictPropertyInitialization impractical,
+    use the definite assignment assertion (!) with a comment explaining why.
+
+    For strictNullChecks on database query results, prefer runtime validation
+    (e.g., zod schemas) over non-null assertions to catch actual null values.
+  @end
+
+  @output_contract
+    TypeScript compiles with strict: true and zero errors.
+    No new @ts-ignore or @ts-expect-error comments introduced.
+    All existing tests pass.
+    Type safety improved: implicit any count reduced to zero.
+    Null safety improved: all nullable values explicitly handled.
+  @end
+@end

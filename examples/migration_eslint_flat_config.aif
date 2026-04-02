@@ -1,0 +1,166 @@
+#title: ESLint Legacy to Flat Config Migration Skill
+#author: AIF Migration Team
+
+@skill[name="eslint-legacy-to-flat", version="1.0", profile=migration]
+  @precondition
+    Repository uses ESLint 8.x with legacy configuration format.
+    Configuration is in .eslintrc, .eslintrc.js, .eslintrc.json, or .eslintrc.yml.
+    Project may use extends, plugins, and overrides in legacy format.
+    No existing eslint.config.js or eslint.config.mjs present.
+  @end
+
+  @step[order=1]
+    Upgrade ESLint to version 9.x in package.json:
+    - eslint: ^8.x.x → ^9.0.0
+    Install the compatibility utility for gradual migration:
+    - @eslint/eslintrc (for FlatCompat helper)
+    - @eslint/js (for recommended config)
+    - globals (for environment globals definitions)
+  @end
+
+  @step[order=2]
+    Create eslint.config.js (or eslint.config.mjs for ESM projects).
+    The flat config uses an array of config objects instead of a single
+    object with nested extends/overrides.
+
+    Before (.eslintrc.js):
+      module.exports = {
+        env: { browser: true, node: true, es2021: true },
+        extends: ['eslint:recommended', 'plugin:react/recommended'],
+        plugins: ['react', 'react-hooks'],
+        rules: { 'no-unused-vars': 'warn' },
+        overrides: [{
+          files: ['*.test.ts'],
+          env: { jest: true }
+        }]
+      };
+
+    After (eslint.config.js):
+      import js from '@eslint/js';
+      import react from 'eslint-plugin-react';
+      import reactHooks from 'eslint-plugin-react-hooks';
+      import globals from 'globals';
+
+      export default [
+        js.configs.recommended,
+        {
+          files: ['**/*.{js,jsx,ts,tsx}'],
+          plugins: { react, 'react-hooks': reactHooks },
+          languageOptions: {
+            globals: { ...globals.browser, ...globals.node },
+            ecmaVersion: 2021,
+            sourceType: 'module',
+          },
+          rules: { 'no-unused-vars': 'warn' },
+        },
+        {
+          files: ['**/*.test.ts'],
+          languageOptions: {
+            globals: globals.jest,
+          },
+        },
+      ];
+  @end
+
+  @step[order=3]
+    Migrate plugin references to flat config format:
+    - Plugins are now objects in the plugins property, not string references
+    - Plugin rules no longer need plugin-name/ prefix in the plugins object key
+    - Shareable configs from plugins use their exported flat configs
+    - Replace plugin:xxx/recommended with the plugin's flat config export
+
+    For plugins without flat config support, use FlatCompat:
+      import { FlatCompat } from '@eslint/eslintrc';
+      const compat = new FlatCompat();
+      export default [
+        ...compat.extends('plugin:legacy-plugin/recommended'),
+        // ... other config
+      ];
+  @end
+
+  @step[order=4]
+    Migrate environment definitions:
+    - env: { browser: true } → languageOptions: { globals: globals.browser }
+    - env: { node: true } → languageOptions: { globals: globals.node }
+    - env: { es2021: true } → languageOptions: { ecmaVersion: 2021 }
+    - env: { jest: true } → languageOptions: { globals: globals.jest }
+    - env: { mocha: true } → languageOptions: { globals: globals.mocha }
+
+    The `globals` package provides all standard environment globals.
+  @end
+
+  @step[order=5]
+    Migrate overrides to file-specific config objects:
+    - Each override becomes a separate object in the config array
+    - The `files` property uses glob patterns (same as overrides.files)
+    - Negative patterns use `ignores` property
+
+    Before:
+      overrides: [
+        { files: ['*.ts'], parser: '@typescript-eslint/parser' },
+        { files: ['*.test.*'], rules: { 'no-console': 'off' } }
+      ]
+
+    After:
+      [
+        { files: ['**/*.ts'], languageOptions: { parser: tsParser } },
+        { files: ['**/*.test.*'], rules: { 'no-console': 'off' } }
+      ]
+  @end
+
+  @step[order=6]
+    Migrate .eslintignore to the ignores property:
+    - .eslintignore file content moves into a config object with only ignores
+    - Global ignores must be in a config object with NO other keys
+
+    Before (.eslintignore):
+      node_modules/
+      dist/
+      coverage/
+
+    After (in eslint.config.js):
+      export default [
+        { ignores: ['node_modules/', 'dist/', 'coverage/'] },
+        // ... rest of config
+      ];
+  @end
+
+  @step[order=7]
+    Clean up legacy files:
+    - Delete .eslintrc, .eslintrc.js, .eslintrc.json, or .eslintrc.yml
+    - Delete .eslintignore (if migrated to eslint.config.js ignores)
+    - Update package.json scripts that reference eslintrc flags
+    - Remove --ext flag from ESLint CLI commands (flat config uses files patterns)
+    - Update CI/CD configuration files that reference legacy config
+  @end
+
+  @verify
+    No remaining `.eslintrc` file in any format (js, json, yml, yaml).
+    No remaining `.eslintignore` file.
+    An `eslint.config.js` or `eslint.config.mjs` exists at project root.
+    No remaining `--ext` flags in package.json lint scripts.
+    All rules from the original config are present in the new flat config.
+    The `extends` keyword does not appear in eslint.config.js (use array composition).
+  @end
+
+  @fallback
+    If a plugin does not export a flat config, wrap it with FlatCompat
+    and add a comment noting the plugin needs updating.
+
+    If the project uses a monorepo with per-package ESLint configs,
+    migrate the root config first and flag sub-package configs for
+    individual migration.
+
+    If custom ESLint rules are defined locally, they need manual
+    adaptation to the flat config plugin format (export as an object
+    with rules property).
+  @end
+
+  @output_contract
+    ESLint runs successfully with the new flat config.
+    All previously enforced rules still apply.
+    No new lint errors introduced by the migration itself.
+    Legacy configuration files removed.
+    CI/CD pipeline lint step passes.
+  @end
+@end
