@@ -186,12 +186,12 @@ examples/
 
 ## Roadmap
 
-- [ ] Multi-view compilation — `aif compile --view author`, `--view llm`, `--view api`
-- [ ] Undefined terms lint — detect terms in claims not defined in `@definition` blocks
-- [ ] Reusable skill templates — `@skill[extends="base-debugging"]` inheritance
-- [ ] Citation precision benchmark — chunked retrieval accuracy with ground-truth Q&A
-- [ ] LSP / editor integration — syntax highlighting, lint-on-save, go-to-definition
-- [ ] crates.io publish — `cargo install aif-cli` from the registry
+- [x] Multi-view compilation — `aif compile --view author|llm|api`
+- [x] Undefined terms lint — detect terms in claims not defined in `@definition` blocks
+- [x] Reusable skill templates — `@skill[extends="base-debugging"]` inheritance
+- [x] Citation precision benchmark — chunked retrieval accuracy with ground-truth Q&A
+- [x] LSP / editor integration — syntax highlighting, lint-on-save, go-to-definition
+- [x] crates.io publish — `cargo install aif-cli` from the registry
 
 ## Citation
 
@@ -215,7 +215,7 @@ This project was built almost entirely through AI-assisted development using [**
 
 [![Download on the App Store](https://img.shields.io/badge/Download-App_Store-black?style=for-the-badge&logo=apple&logoColor=white)](https://apps.apple.com/app/claw-ssh-ai-terminal/id6740686929)
 
-From initial design through 8 implementation phases, 120+ commits, 11 Rust crates, 5 benchmark suites, and 210+ tests — all authored, reviewed, and shipped from an iPhone via ClawTerminal's AI agent integration.
+From initial design through 9 implementation phases, 120+ commits, 12 Rust crates, 6 benchmark suites, and 220+ tests — all authored, reviewed, and shipped from an iPhone via ClawTerminal's AI agent integration.
 
 ## License
 

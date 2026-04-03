@@ -29,6 +29,8 @@ pub enum DocLintCheck {
     EmptyFootnotes,
     /// Tables should have at least one header and one data row.
     MalformedTables,
+    /// Terms used in @claim blocks that are not defined in any @definition block.
+    UndefinedTerms,
     /// Chunk has no incoming or outgoing links (isolated node).
     OrphanedChunks,
     /// Sequential chunks from the same document lack a Continuation link.
@@ -257,7 +259,150 @@ pub fn lint_document(doc: &Document) -> Vec<DocLintResult> {
         }
     }
 
+    // 9. Undefined terms — collect defined terms from @definition blocks, check @claim blocks
+    let mut defined_terms: BTreeSet<String> = BTreeSet::new();
+    let mut claim_blocks: Vec<(Option<String>, Vec<Inline>)> = Vec::new();
+    collect_definitions_and_claims(&doc.blocks, &mut defined_terms, &mut claim_blocks);
+
+    if claim_blocks.is_empty() || defined_terms.is_empty() {
+        // No claims or no definitions — nothing to check
+        results.push(DocLintResult::pass(DocLintCheck::UndefinedTerms));
+    } else {
+        let mut found_undefined = false;
+        for (block_id, content) in &claim_blocks {
+            let undefined = find_undefined_inline_terms(content, &defined_terms);
+            for undef in &undefined {
+                results.push(DocLintResult::fail(
+                    DocLintCheck::UndefinedTerms,
+                    DocLintSeverity::Warning,
+                    format!(
+                        "Claim references term '{}' which is not defined in any @definition block",
+                        undef
+                    ),
+                    block_id.clone(),
+                ));
+                found_undefined = true;
+            }
+        }
+        if !found_undefined {
+            results.push(DocLintResult::pass(DocLintCheck::UndefinedTerms));
+        }
+    }
+
     results
+}
+
+/// Extract the defined term from a @definition block's content.
+/// Heuristics:
+/// 1. First Strong or Emphasis inline → that's the term
+/// 2. Text before "is", "means", or ":" → that's the term
+fn extract_defined_term(content: &[Inline]) -> Option<String> {
+    // Try first Strong/Emphasis inline
+    for inline in content {
+        match inline {
+            Inline::Strong { content } | Inline::Emphasis { content } => {
+                let text = inlines_to_plain_text(content);
+                let trimmed = text.trim().to_string();
+                if !trimmed.is_empty() {
+                    return Some(trimmed.to_lowercase());
+                }
+            }
+            _ => {}
+        }
+    }
+    // Fallback: text before "is"/"means"/":"
+    let full_text = inlines_to_plain_text(content);
+    for separator in &[" is ", " means ", ": "] {
+        if let Some(pos) = full_text.find(separator) {
+            let term = full_text[..pos].trim();
+            if !term.is_empty() && term.len() < 100 {
+                return Some(term.to_lowercase());
+            }
+        }
+    }
+    None
+}
+
+/// Collect defined terms and claim block content from blocks recursively.
+fn collect_definitions_and_claims(
+    blocks: &[Block],
+    defined_terms: &mut BTreeSet<String>,
+    claim_blocks: &mut Vec<(Option<String>, Vec<Inline>)>,
+) {
+    for block in blocks {
+        match &block.kind {
+            BlockKind::SemanticBlock {
+                block_type: SemanticBlockType::Definition,
+                content,
+                ..
+            } => {
+                if let Some(term) = extract_defined_term(content) {
+                    defined_terms.insert(term);
+                }
+            }
+            BlockKind::SemanticBlock {
+                block_type: SemanticBlockType::Claim,
+                attrs,
+                content,
+                ..
+            } => {
+                claim_blocks.push((attrs.id.clone(), content.clone()));
+            }
+            BlockKind::Section { children, .. } => {
+                collect_definitions_and_claims(children, defined_terms, claim_blocks);
+            }
+            BlockKind::SkillBlock { children, .. } => {
+                collect_definitions_and_claims(children, defined_terms, claim_blocks);
+            }
+            BlockKind::BlockQuote { content } => {
+                collect_definitions_and_claims(content, defined_terms, claim_blocks);
+            }
+            _ => {}
+        }
+    }
+}
+
+/// Simple plain text extraction from inlines.
+fn inlines_to_plain_text(inlines: &[Inline]) -> String {
+    let mut result = String::new();
+    for inline in inlines {
+        match inline {
+            Inline::Text { text } => result.push_str(text),
+            Inline::Strong { content } | Inline::Emphasis { content } => {
+                result.push_str(&inlines_to_plain_text(content));
+            }
+            Inline::InlineCode { code } => result.push_str(code),
+            Inline::Link { text, .. } => {
+                result.push_str(&inlines_to_plain_text(text));
+            }
+            Inline::Footnote { content } => {
+                result.push_str(&inlines_to_plain_text(content));
+            }
+            Inline::SoftBreak | Inline::HardBreak => result.push(' '),
+            _ => {}
+        }
+    }
+    result
+}
+
+/// Check claim inlines for Strong/Emphasis terms that aren't defined.
+fn find_undefined_inline_terms(
+    content: &[Inline],
+    defined_terms: &BTreeSet<String>,
+) -> Vec<String> {
+    let mut undefined = Vec::new();
+    for inline in content {
+        match inline {
+            Inline::Strong { content } | Inline::Emphasis { content } => {
+                let term = inlines_to_plain_text(content).trim().to_lowercase();
+                if !term.is_empty() && !defined_terms.contains(&term) {
+                    undefined.push(inlines_to_plain_text(content).trim().to_string());
+                }
+            }
+            _ => {}
+        }
+    }
+    undefined
 }
 
 /// Recursively collect IDs, claims, evidence, references, and issues from blocks.
@@ -1082,6 +1227,162 @@ mod tests {
             .collect();
         assert_eq!(missing.len(), 1);
     }
+
+    // --- Undefined terms lint tests ---
+
+    #[test]
+    fn undefined_term_detected() {
+        let doc = Document {
+            metadata: [("title".into(), "T".into())].into(),
+            blocks: vec![
+                Block {
+                    kind: BlockKind::SemanticBlock {
+                        block_type: SemanticBlockType::Definition,
+                        attrs: Attrs::default(),
+                        title: None,
+                        content: vec![
+                            Inline::Strong {
+                                content: vec![Inline::Text { text: "Token Budget".into() }],
+                            },
+                            Inline::Text { text: " is the max tokens per chunk.".into() },
+                        ],
+                    },
+                    span: span(),
+                },
+                Block {
+                    kind: BlockKind::SemanticBlock {
+                        block_type: SemanticBlockType::Claim,
+                        attrs: Attrs { id: Some("c1".into()), ..Default::default() },
+                        title: None,
+                        content: vec![
+                            Inline::Text { text: "The ".into() },
+                            Inline::Strong {
+                                content: vec![Inline::Text { text: "Chunk Graph".into() }],
+                            },
+                            Inline::Text { text: " improves retrieval.".into() },
+                        ],
+                    },
+                    span: span(),
+                },
+            ],
+        };
+        let results = lint_document(&doc);
+        let undef: Vec<_> = results.iter()
+            .filter(|r| r.check == DocLintCheck::UndefinedTerms && !r.passed)
+            .collect();
+        assert_eq!(undef.len(), 1);
+        assert!(undef[0].message.contains("Chunk Graph"));
+    }
+
+    #[test]
+    fn defined_term_passes() {
+        let doc = Document {
+            metadata: [("title".into(), "T".into())].into(),
+            blocks: vec![
+                Block {
+                    kind: BlockKind::SemanticBlock {
+                        block_type: SemanticBlockType::Definition,
+                        attrs: Attrs::default(),
+                        title: None,
+                        content: vec![
+                            Inline::Strong {
+                                content: vec![Inline::Text { text: "Token Budget".into() }],
+                            },
+                            Inline::Text { text: " is the max tokens.".into() },
+                        ],
+                    },
+                    span: span(),
+                },
+                Block {
+                    kind: BlockKind::SemanticBlock {
+                        block_type: SemanticBlockType::Claim,
+                        attrs: Attrs { id: Some("c1".into()), ..Default::default() },
+                        title: None,
+                        content: vec![
+                            Inline::Text { text: "The ".into() },
+                            Inline::Strong {
+                                content: vec![Inline::Text { text: "Token Budget".into() }],
+                            },
+                            Inline::Text { text: " controls chunking.".into() },
+                        ],
+                    },
+                    span: span(),
+                },
+            ],
+        };
+        let results = lint_document(&doc);
+        let undef = results.iter()
+            .find(|r| r.check == DocLintCheck::UndefinedTerms)
+            .unwrap();
+        assert!(undef.passed);
+    }
+
+    #[test]
+    fn no_definitions_skips_check() {
+        let doc = Document {
+            metadata: [("title".into(), "T".into())].into(),
+            blocks: vec![Block {
+                kind: BlockKind::SemanticBlock {
+                    block_type: SemanticBlockType::Claim,
+                    attrs: Attrs { id: Some("c1".into()), ..Default::default() },
+                    title: None,
+                    content: vec![
+                        Inline::Strong {
+                            content: vec![Inline::Text { text: "Something".into() }],
+                        },
+                    ],
+                },
+                span: span(),
+            }],
+        };
+        let results = lint_document(&doc);
+        let undef = results.iter()
+            .find(|r| r.check == DocLintCheck::UndefinedTerms)
+            .unwrap();
+        assert!(undef.passed); // No definitions → nothing to check
+    }
+
+    #[test]
+    fn definition_term_from_text_separator() {
+        // Test the fallback heuristic: "Term is ..."
+        let doc = Document {
+            metadata: [("title".into(), "T".into())].into(),
+            blocks: vec![
+                Block {
+                    kind: BlockKind::SemanticBlock {
+                        block_type: SemanticBlockType::Definition,
+                        attrs: Attrs::default(),
+                        title: None,
+                        content: vec![
+                            Inline::Text { text: "Semantic block is a typed container.".into() },
+                        ],
+                    },
+                    span: span(),
+                },
+                Block {
+                    kind: BlockKind::SemanticBlock {
+                        block_type: SemanticBlockType::Claim,
+                        attrs: Attrs { id: Some("c1".into()), ..Default::default() },
+                        title: None,
+                        content: vec![
+                            Inline::Strong {
+                                content: vec![Inline::Text { text: "Semantic block".into() }],
+                            },
+                            Inline::Text { text: " improves structure.".into() },
+                        ],
+                    },
+                    span: span(),
+                },
+            ],
+        };
+        let results = lint_document(&doc);
+        let undef = results.iter()
+            .find(|r| r.check == DocLintCheck::UndefinedTerms)
+            .unwrap();
+        assert!(undef.passed);
+    }
+
+    // --- Chunk graph lint tests ---
 
     #[test]
     fn dependency_cycle_detected() {

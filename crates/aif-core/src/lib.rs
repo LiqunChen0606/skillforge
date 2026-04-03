@@ -7,3 +7,4 @@ pub mod lint;
 pub mod schema;
 pub mod text;
 pub mod config;
+pub mod view;
