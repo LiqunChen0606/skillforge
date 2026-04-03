@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: "If you use AIF in your research or workflows, please cite it as below."
+type: software
+title: "AIF: AI-native Interchange Format and SkillForge Toolkit"
+authors:
+  - family-names: Chen
+    given-names: Liqun
+url: "https://github.com/LiqunChen0606/aif"
+repository-code: "https://github.com/LiqunChen0606/aif"
+license: Apache-2.0
+version: 0.1.0
+date-released: "2026-04-02"
+abstract: >-
+  AIF is a semantic document format and Rust toolchain for LLMs.
+  Compiles typed documents to 12+ formats with the best structure-per-token
+  ratio: full semantic types at 22% fewer tokens than Markdown.
+  Skills in AIF LML format improve LLM compliance by 10 percentage points
+  vs raw Markdown. Includes document cleaning/normalization for HTML, PDF,
+  and Markdown; typed skill authoring with versioning and eval pipelines;
+  and a codebase migration engine with LLM-powered verification and repair.
+keywords:
+  - llm
+  - semantic-format
+  - document-compiler
+  - skill-authoring
+  - token-efficiency
+  - ai-native

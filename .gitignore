@@ -5,3 +5,9 @@ __pycache__/
 node_modules/
 dist/
 package-lock.json
+
+# Internal development docs (kept locally, not published)
+CLAUDE.md
+docs/
+data/
+.claude/

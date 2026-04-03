@@ -1,27 +1,50 @@
-# AIF: AI-native Interchange Format
+# AIF — AI-native Interchange Format
 
-> Write once in concise semantic syntax. Compile to 12+ formats. The **best structure-per-token ratio** for LLMs. Forge typed skills. Migrate codebases.
+> **AIF** is a semantic document format and Rust toolchain (**SkillForge**) that compiles typed, structured documents into 12+ output formats — giving LLMs full semantic structure at fewer tokens than raw Markdown. Author skills for Claude, Codex, and Gemini. Clean and normalize HTML, PDF, and Markdown for LLM consumption. Migrate codebases with typed, verifiable migration skills.
 
-AIF is a semantic document format and Rust toolchain — **SkillForge** — that gives LLMs typed, structured documents while keeping token costs comparable to plain text extraction. Write in concise AIF syntax, compile to HTML, PDF, Markdown, JSON, binary, and 5 levels of LLM-optimized output.
+![Language](https://img.shields.io/badge/Language-Rust-orange)
+![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Linux%20%7C%20Windows-blue)
+![Formats](https://img.shields.io/badge/Output_Formats-12+-green)
+![License](https://img.shields.io/badge/License-Apache--2.0%20%7C%20MIT-lightgrey)
+![Skills](https://img.shields.io/badge/Skills-Claude%20%7C%20Codex%20%7C%20Gemini-blueviolet)
 
-## The Problem: Structure vs. Tokens
+**Latest:** v0.1.0 — Semantic inference engine, LLM-assisted classification, async migration with Anthropic API, skill execution quality benchmark (LML +10pp vs Markdown), cleaned HTML baseline benchmarks.
 
-Every document format forces a trade-off between structure and token cost:
+---
+
+## Why AIF?
+
+Every document format forces a trade-off between **structure** and **token cost**:
 
 | What you send | Tokens (10 articles) | Structure | Roundtrip |
 |---------------|---------------------|-----------|-----------|
-| Cleaned HTML text | **544K** | **None** — stripped to text | No |
-| Raw PDF text | 561K | **None** — flat string | No |
-| **AIF LML Aggressive** | **981K** | **Full semantic** (typed blocks) | **Yes** |
+| Cleaned HTML text | **544K** | None — stripped to text | No |
+| Raw PDF text | 561K | None — flat string | No |
+| **AIF LML Aggressive** | **981K** | **Full semantic types** | **Yes** |
 | Raw Markdown | 1,263K | Basic (headings, lists) | Partial |
 | Raw HTML | 5,500K | Full + presentational bloat | Yes |
 
-**The insight:** Plain text extraction (cleaned HTML 544K, PDF-text 561K) is cheapest but gives the LLM zero structure — no headings, sections, tables, or typed blocks. AIF LML Aggressive costs **80% more tokens than flat text** but carries typed sections, claims, evidence, tables, figures — and the LLM can reason about document structure, not just content. It's **22% cheaper than raw Markdown** while providing far richer semantics.
+**AIF is the only format that preserves full semantic types at fewer tokens than Markdown.** Plain text extraction is cheapest but gives the LLM zero structure. AIF costs 80% more tokens than flat text, but the LLM can reason about typed sections, claims, evidence, tables — not just content. It's **22% cheaper than Markdown** with far richer semantics.
+
+### Does Format Actually Affect LLM Behavior?
+
+Yes. We benchmarked skill execution across 4 formats — same skill, same task, same model:
+
+| Format | Tokens | Overall Compliance |
+|--------|--------|--------------------|
+| **LML Aggressive** | **1,012** | **0.97** |
+| JSON IR | 4,732 | 0.95 |
+| HTML | 1,485 | 0.91 |
+| Raw Markdown | 1,067 | 0.87 |
+
+**LML Aggressive: +10 percentage points** over raw Markdown at 5% fewer tokens. The explicit typed tags (`@step:`, `@verify:`, `@red_flag:`) help the LLM identify and follow each instruction block. See [full benchmark](benchmarks/skill-execution/).
+
+---
 
 ## Install
 
 ```bash
-# From source (recommended)
+# From source
 cargo install --path crates/aif-cli
 
 # Then use anywhere
@@ -30,247 +53,85 @@ aif import doc.md --infer-semantics
 aif lint doc.aif
 ```
 
-Or build the workspace for development:
-
-```bash
-cargo build --workspace
-cargo test --workspace
-```
-
 ## Quick Start
 
 ```bash
 # Compile to any format
-aif compile doc.aif --format html
-aif compile doc.aif --format lml-aggressive
-aif compile doc.aif --format pdf
+aif compile doc.aif --format lml-aggressive   # Best for LLM context
+aif compile doc.aif --format html             # Web publishing
+aif compile doc.aif --format pdf              # Print-ready
 
-# Import from Markdown, HTML, or PDF
-aif import doc.md
-aif import page.html --strip-chrome
-aif import paper.pdf
+# Import and clean documents for LLMs
+aif import doc.md                             # Markdown → typed IR
+aif import page.html --strip-chrome           # HTML → clean semantic IR
+aif import paper.pdf                          # PDF → structured blocks
+aif import doc.md --infer-semantics           # + auto-detect semantic types
+aif import doc.md --infer-llm                 # + LLM-assisted classification
 
-# Lint a document for structural issues
-aif lint doc.aif
+# Validate documents
+aif lint doc.aif                              # 9 structural quality checks
+aif skill eval skill.aif --stage 1            # Skill-specific lint (7 checks)
 
-# Run the skill eval pipeline
-aif skill eval skill.aif --stage 1
-
-# Run a codebase migration
+# Migration skills
+aif migrate validate migration.aif
 aif migrate run --skill migration.aif --source ./src --output ./migrated
 ```
 
-## Migration Skills: Automate Codebase Transformations
+---
 
-This is AIF's most distinctive feature. Write a **typed migration skill** in AIF syntax. The engine chunks your codebase, applies the skill per-chunk with LLM verification, auto-repairs failures, and generates a rich report.
+## Key Features
 
-### How It Works
-
-```
-migration.aif ──→ Validate ──→ Chunk source ──→ Apply per-chunk ──→ Verify ──→ Repair loop ──→ Report
-                    │              │                  │               │            │
-                    │         file/dir/token      LLM callback    static regex   up to N
-                    │           strategy                          + semantic     iterations
-                    ▼                                              checks
-              Skill has required
-              @precondition, @step,
-              @verify, @output_contract
-```
-
-### Example: Next.js 13 → 15 Migration
+### Semantic Document Authoring
 
 ```aif
-@skill[name="nextjs-13-to-15", version="1.0", profile="migration"]
-
-  @precondition
-    Next.js 13.x project with app/ router using synchronous request APIs.
-  @end
-
-  @step[order=1]
-    Convert synchronous `cookies()`, `headers()`, `params`, `searchParams`
-    to async: `const cookieStore = await cookies()`.
-  @end
-
-  @step[order=2]
-    Replace implicit caching with explicit `force-cache` directives.
-    Add `export const fetchCache = 'force-cache'` where needed.
-  @end
-
-  @verify
-    - No remaining synchronous cookies()/headers() calls
-    - All fetch() calls have explicit cache directive
-    - TypeScript compilation succeeds with Next.js 15 types
-  @end
-
-  @red_flag
-    Don't migrate dynamic route params without checking all usage sites.
-    Partial async migration causes runtime errors — migrate entire files.
-  @end
-
-  @example
-    Before:
-    ```typescript
-    export default function Page({ params }: { params: { id: string } }) {
-      const { id } = params;
-    ```
-    After:
-    ```typescript
-    export default async function Page({ params }: { params: Promise<{ id: string }> }) {
-      const { id } = await params;
-    ```
-  @end
-
-  @output_contract
-    All files compile with Next.js 15. No synchronous request API usage remains.
-  @end
-@end
-```
-
-### Run It
-
-```bash
-# Validate your migration skill is well-formed
-aif migrate validate migration.aif
-
-# Execute the migration
-aif migrate run \
-  --skill migration.aif \
-  --source ./src \
-  --output ./migrated \
-  --strategy file \
-  --max-repairs 3 \
-  --report text
-```
-
-The engine generates a rich AIF report with: executive summary, risk assessment (Low/Medium/High/Critical), verification analysis, per-chunk pass/fail, failure patterns, and actionable recommendations.
-
-**Three production-quality examples included:** Next.js 13→15 (7 steps), ESLint flat config (7 steps), TypeScript strict mode (8 steps). See [examples/migrations/](examples/migrations/) for skills and [detailed migration guide](examples/migrations/README.md).
-
-## Semantic Blocks
-
-Unlike Markdown, AIF natively supports typed semantic content:
-
-```aif
-@claim[id=c1]
+@claim[id=c1, refs=e1]
   AIF preserves document meaning, not just appearance.
 @end
 
 @evidence[id=e1]
-  Benchmark shows 82.2% token savings with 100% semantic compliance.
+  Benchmark: 22% fewer tokens than Markdown with full semantic types.
 @end
 
-@definition[id=def1]
-  Token-Normalized Outcome (TNO) measures semantic fidelity per token spent.
-@end
-
-@callout[type=warning]
-  Excessive use of JSON IR inflates token counts by 81%.
-@end
+@table[id=results, refs=c1]: Token Comparison
+| Format | Tokens | Structure |
+| Cleaned HTML | 544K | None |
+| AIF LML | 981K | Full semantic |
+| Raw Markdown | 1,263K | Basic |
 ```
 
-These types are preserved across all output formats — the LLM knows a `@claim` is a claim, not just a paragraph. This enables document-level semantic linting: `aif lint` checks for broken references, claims without evidence, duplicate IDs, orphaned media, and malformed tables.
+Typed blocks (`@claim`, `@evidence`, `@definition`, `@table`, `@figure`) are preserved across all 12 output formats. `aif lint` validates cross-references, evidence chains, and structural integrity. See [rich content examples](examples/rich-content/) for tables, SVG figures, audio/video metadata, and cross-reference demos.
 
-**Rich content beyond text:** AIF also handles tables with captions, SVG figures with dimensions/MIME metadata, audio/video with duration and poster frames, and cross-references (`refs=id1,id2`) between any blocks. See the [rich content examples](examples/rich-content/) for a full walkthrough with compilation demos and roundtrip fidelity comparison.
+### Skill Authoring for AI Agents
 
-## Skill Profiles
-
-Structured AI skill documents with versioning, integrity hashing, and a 3-stage eval pipeline:
+Write structured, verifiable skills for Claude Code, Codex, and Gemini:
 
 ```aif
-@skill[name="debugging", version="1.0", priority="high"]
-  @precondition
-    User has reported a bug or test failure.
-  @end
-
+@skill[name="code-review", version="1.0"]
   @step[order=1]
-    Reproduce the issue with a minimal test case.
+    Understand the PR context before reviewing code.
   @end
-
   @verify
-    Fix resolves the issue without regressions.
+    Every blocking issue includes a concrete fix.
+  @end
+  @red_flag
+    Don't bikeshed on style while missing logic bugs.
   @end
 @end
 ```
 
-```bash
-# Skill lifecycle
-aif skill import skill.md -f lml-aggressive    # Import from Markdown
-aif skill verify skill.aif                      # Check integrity hash
-aif skill diff old.aif new.aif                  # Semantic diff
-aif skill bump skill.aif                        # Auto-version bump
-aif skill eval skill.aif --stage 1              # Structural lint
-aif skill eval skill.aif                        # Full 3-stage eval
+Full lifecycle: `aif skill import` (MD→AIF), `aif skill export` (AIF→MD), `aif skill verify` (integrity hash), `aif skill diff` (semantic diff), `aif skill bump` (auto-version), `aif skill eval` (3-stage quality pipeline). See [skills guide](examples/skills/) for authoring, validation, and deployment to Claude Code / Codex.
 
-# Skill chaining & marketplace
-aif skill chain skill.aif                       # Resolve dependency order
-aif skill search "debugging" --tags rust        # Search remote registry
-aif skill publish skill.aif                     # Publish to registry
+### Migration Engine
+
+Typed migration skills with automated verification and repair:
+
+```bash
+aif migrate run --skill nextjs-13-to-15.aif --source ./src --output ./migrated
 ```
 
-### Change Classification
+Pipeline: validate skill → chunk source files → apply per-chunk (LLM) → verify (static regex + semantic) → repair loop → generate AIF report. Three production examples included. See [migration guide](examples/migrations/).
 
-| Classification | Examples | Semver Impact |
-|---------------|----------|---------------|
-| **Breaking** | Removed step, changed precondition | Major |
-| **Additive** | New step, new example, new fallback | Minor |
-| **Cosmetic** | Rewording text, reordering within block | Patch |
-
-### Skill Execution Quality (Does the LLM Actually Follow Better?)
-
-Tested 3 scenarios (SQL injection review, clean code approval, eval() detection) across 4 formats. The LLM executes each skill and a judge scores compliance.
-
-| Format | Tokens | Step Coverage | Constraints | Output Contract | **Overall** |
-|--------|--------|--------------|-------------|-----------------|-------------|
-| **LML Aggressive** | **1,012** | **1.00** | **0.95** | **0.97** | **0.97** |
-| JSON IR | 4,732 | 1.00 | 0.92 | 0.97 | 0.95 |
-| HTML | 1,485 | 0.95 | 0.88 | 0.93 | 0.91 |
-| Raw Markdown | 1,067 | 0.97 | 0.85 | 0.87 | 0.87 |
-
-**LML Aggressive wins:** 10 percentage points better than raw Markdown at 5% fewer tokens. The explicit typed tags (`@step:`, `@verify:`, `@red_flag:`) help the LLM identify and follow each instruction block. See [full results](benchmarks/skill-execution/results.json).
-
-## Benchmark Results
-
-### Structure-per-Token: Why AIF Matters
-
-| Format | Tokens | Structure | Roundtrip | Best For |
-|--------|--------|-----------|-----------|----------|
-| Raw PDF text | 561K | None — flat string | No | Cheap Q&A, summarization |
-| Cleaned HTML text | ~600K\* | None — stripped to text | No | Fair text-only baseline |
-| Raw Markdown | 1.26M | Basic (headings, lists) | Partial | General documents |
-| **AIF LML Aggressive** | **980K** | **Full semantic types** | **Yes** | **Structured reasoning, agents** |
-| Raw HTML | 5.5M | Full + presentational | Yes | Browser rendering |
-
-\* Run `python benchmarks/document-tokens/benchmark.py` for exact numbers on your content.
-
-**Key takeaway:** PDF-text and cleaned HTML are cheapest but carry zero structure. AIF is the **only format that preserves full semantic types at fewer tokens than raw Markdown.**
-
-### Document Token Efficiency (10 Wikipedia Articles)
-
-Baseline: Raw HTML (5.5M tokens). All comparisons are vs Raw HTML.
-
-| Format | Total Tokens | vs Raw HTML | Structure |
-|--------|-------------|-------------|-----------|
-| Raw HTML (baseline) | 5,500,132 | — | Full + chrome |
-| **Cleaned HTML text** | **543,584** | **+90.1% saved** | **None** |
-| Raw PDF (text) | 561,449 | +89.8% saved | None |
-| Raw Markdown | 1,263,434 | +77.0% saved | Basic |
-| AIF Markdown (RT) | 1,010,020 | +81.6% saved | Basic + provenance |
-| AIF LML Standard | 985,864 | +82.1% saved | Full semantic |
-| **AIF LML Aggressive** | **980,626** | **+82.2% saved** | **Full semantic** |
-
-> **Honest comparison:** Cleaned HTML text (544K) and PDF text (561K) are cheapest — but carry zero structure. AIF LML Aggressive uses **80% more tokens than flat text** in exchange for typed sections, claims, evidence, tables, and lossless roundtrip. It uses **22% fewer tokens than raw Markdown** while providing far richer semantics. The "82% vs raw HTML" stat is real but raw HTML includes massive presentational markup — compare against cleaned HTML or Markdown for a fairer picture.
-
-### Skill Token Efficiency (10 AI Skills)
-
-| Format | Total Tokens | vs SKILL.md | Compliance | TNO |
-|--------|-------------|-------------|------------|-----|
-| **Markdown (RT)** | **38,755** | **+1.9% saved** | **100%** | **1.05** |
-| SKILL.md (baseline) | 39,506 | — | — | — |
-| LML Aggressive | 39,514 | ~0% | 100% | 0.99 |
-| HTML | 44,427 | -12.5% | 100% | 0.82 |
-| JSON IR | 71,640 | -81.3% | 100% | 0.49 |
-
-> Full reports: [Benchmark Dashboard](benchmarks/index.html) | [Document Report](benchmarks/document-tokens/report.html) | [Skill Report](benchmarks/skill-tokens/report.html)
+---
 
 ## Architecture
 
@@ -285,126 +146,67 @@ Baseline: Raw HTML (5.5M tokens). All comparisons are vs Raw HTML.
                PDF)
 ```
 
-### Workspace Crates
-
 | Crate | Purpose |
 |-------|---------|
-| `aif-core` | AST types, spans, errors, document lint, JSON Schema, shared utilities |
-| `aif-parser` | Logos-based lexer + parser (`.aif` → AST) |
-| `aif-html` | HTML compiler + importer (roundtrip + generic modes, readability extraction) |
+| `aif-core` | AST, document lint (9 checks), semantic inference, chunk graphs, JSON Schema |
+| `aif-parser` | Logos-based lexer + block/inline parser |
+| `aif-html` | HTML compiler + two-layer importer (AIF roundtrip + generic + readability) |
 | `aif-markdown` | Markdown compiler + pulldown-cmark importer |
-| `aif-lml` | LML compiler — 5 prose modes, bidirectional parser, hybrid format, semantic compression |
-| `aif-binary` | Binary serialization — wire (postcard) and token-optimized with full roundtrip |
-| `aif-skill` | Skill profiles — validation, hashing, versioning, diff, registry, chaining, marketplace, eval |
-| `aif-pdf` | PDF export + import + document chunking (4 strategies) + chunk graphs |
-| `aif-eval` | Eval pipeline — structural lint, behavioral compliance, scenario tests |
-| `aif-migrate` | Migration engine — chunked pipeline, repair loops, verification, AIF reports |
-| `aif-cli` | CLI: `compile`, `import`, `lint`, `dump-ir`, `skill`, `schema`, `chunk`, `config`, `migrate` |
+| `aif-lml` | 5 LML prose modes, bidirectional parser, hybrid format, compression |
+| `aif-binary` | Wire (postcard) and token-optimized binary with full roundtrip |
+| `aif-skill` | Validation, hashing, versioning, diff, registry, chaining, marketplace |
+| `aif-pdf` | PDF export + import + 4 chunking strategies + chunk graphs |
+| `aif-eval` | 3-stage eval pipeline: structural lint → behavioral compliance → effectiveness |
+| `aif-migrate` | Chunked migration engine with LLM apply, verification, repair loops |
+| `aif-cli` | CLI: `compile`, `import`, `lint`, `skill`, `chunk`, `migrate`, `config`, `schema` |
 
-## All Output Formats
+## Benchmarks
 
-| Format | Command Flag | Use Case |
-|--------|-------------|----------|
-| HTML | `--format html` | Browser rendering, web publishing |
-| Markdown | `--format markdown` | Human editing, GitHub display |
-| LML Standard | `--format lml` | Full semantic tags for LLM context |
-| LML Compact | `--format lml-compact` | Standard minus @example blocks |
-| LML Conservative | `--format lml-conservative` | Abbreviated tags with legend |
-| LML Moderate | `--format lml-moderate` | Conservative + flatten wrappers |
-| LML Aggressive | `--format lml-aggressive` | Minimal delimiters, best efficiency |
-| LML Hybrid | `--format lml-hybrid` | LML text + base64 binary blocks |
-| JSON IR | `--format json` | Typed AST for SDK/tooling |
-| Binary Wire | `--format binary-wire` | Compact postcard for transport |
-| Binary Token | `--format binary-token` | Token-aware binary encoding |
-| PDF | `--format pdf` | Print-ready document export |
+| Benchmark | Key Finding |
+|-----------|-------------|
+| [Document tokens](benchmarks/document-tokens/) | Cleaned HTML 544K, AIF LML 981K, Raw MD 1,263K, Raw HTML 5.5M |
+| [Skill tokens](benchmarks/skill-tokens/) | 100% semantic compliance across all formats, TNO 1.05 for Markdown RT |
+| [Skill execution](benchmarks/skill-execution/) | LML Aggressive 0.97 vs Raw Markdown 0.87 overall compliance |
+| [Chunking quality](benchmarks/chunking/) | 4 strategies compared: self-containment, size variance, budget compliance |
+| [Roundtrip fidelity](benchmarks/roundtrip/) | JSON 1.00 (lossless), HTML 0.93, Markdown 0.57 |
 
-## Document Chunking
+Open [benchmarks/index.html](benchmarks/index.html) for the visual dashboard.
 
-Split documents into addressable chunks for RAG pipelines:
+## Examples
 
-```bash
-aif chunk split doc.aif --strategy section -o chunks/
-aif chunk split doc.aif --strategy token-budget --max-tokens 4096 -o chunks/
-aif chunk graph doc1.aif doc2.aif -o graph.json
 ```
-
-Four strategies: Section, TokenBudget, Semantic, FixedBlocks. Chunk graphs support typed edges: Evidence, Dependency, Continuation, CrossReference, Refutation.
-
-## Cross-Language SDKs
-
-Generated from JSON Schema for type-safe AIF document handling:
-
-- **Python** (`sdks/python/`) — Pydantic v2 models
-- **TypeScript** (`sdks/typescript/`) — TypeScript interfaces + Zod schemas
-
-```bash
-python scripts/generate_sdks.py          # Generate
-python scripts/generate_sdks.py --check  # CI validation
+examples/
+├── documents/       # General AIF documents and format conversions
+├── skills/          # AI agent skills + Claude Code plugins in AIF (with authoring guide)
+├── migrations/      # Codebase migration skills + reports (with detailed guide)
+└── rich-content/    # Tables, SVG figures, audio/video metadata, cross-references
 ```
-
-## HTML Import
-
-Two-layer importer: AIF-roundtrip mode reconstructs exact AST types from `aif-*` CSS classes; generic mode maps standard HTML tags. Readability extraction strips page chrome.
-
-```bash
-aif import page.html                # Auto-detect mode
-aif import article.html --strip-chrome  # Strip nav/header/footer
-```
-
-## Build & Test
-
-```bash
-cargo build --workspace        # Build all crates
-cargo test --workspace         # Run all tests
-cargo run -p aif-cli -- --help # CLI usage
-```
-
-## Design Documents
-
-- [Original Proposal](docs/proposal.md) — full rationale and architecture vision
-- [Skill Profile Design](docs/plans/2026-03-30-skill-profile-design.md)
-- [Binary IR & Versioning](docs/plans/2026-03-31-binary-ir-versioning-design.md)
-- [PDF & Document Chunking](docs/plans/2026-03-31-pdf-chunking-design.md)
-- [Skill Chaining & Marketplace](docs/plans/2026-03-31-skill-chaining-marketplace-design.md)
-- [Cross-Language SDK](docs/plans/2026-03-31-multi-language-sdk-design.md)
-- [Skill Eval Pipeline](docs/plans/2026-04-01-skill-eval-pipeline-design.md)
-- [Migration Skill System](docs/plans/2026-04-02-migration-skill-system-design.md)
-- [HTML Importer](docs/plans/2026-04-02-html-importer.md)
 
 ## Roadmap
 
-### Done
+- [ ] Multi-view compilation — `aif compile --view author`, `--view llm`, `--view api`
+- [ ] Undefined terms lint — detect terms in claims not defined in `@definition` blocks
+- [ ] Reusable skill templates — `@skill[extends="base-debugging"]` inheritance
+- [ ] Citation precision benchmark — chunked retrieval accuracy with ground-truth Q&A
+- [ ] LSP / editor integration — syntax highlighting, lint-on-save, go-to-definition
+- [ ] crates.io publish — `cargo install aif-cli` from the registry
 
-- [x] Core parser, AST, 12+ output formats (HTML, MD, LML x5, JSON, binary x2, PDF)
-- [x] Markdown, HTML, PDF import with readability extraction
-- [x] Skill profiles: validation, hashing, versioning, diff, registry, chaining, marketplace
-- [x] Skill eval pipeline (3-stage: structural lint, behavioral compliance, effectiveness)
-- [x] Migration engine with typed skills, static+LLM verification, repair loops
-- [x] Document-level semantic linting (9 checks + evidence linkage)
-- [x] Import provenance tracking (`_aif_source_format`, `_aif_import_mode`)
-- [x] Chunk graph with ParentContext links, transitive dependency queries
-- [x] Semantic inference engine (8 pattern rules, `--infer-semantics` flag)
-- [x] Roundtrip quality benchmarks (AIF→HTML→AIF, AIF→MD→AIF, AIF→JSON→AIF)
-- [x] Chunk graph lint (orphaned chunks, missing continuation, dependency cycles)
-- [x] Cross-language SDKs (Python Pydantic, TypeScript Zod)
-- [x] AIF plugin skills (6 claude-code plugins converted)
+## Citation
 
-### Recently Completed
+If you find AIF useful in your research or workflows, please cite:
 
-- [x] Re-run benchmarks with cleaned HTML baseline (544K tokens — 90.1% saved vs raw HTML)
-- [x] LLM-assisted semantic inference (pattern rules first, then LLM for unmatched blocks via `--infer-llm`)
-- [x] Async migration engine with real LLM calls (Anthropic API, env `AIF_LLM_API_KEY`)
-- [x] **Skill execution quality benchmark** — LLM follows skills 10 percentage points better in AIF LML (0.97) vs raw Markdown (0.87)
-
-### TBD — Next Phases
-
-- [ ] **Multi-view compilation** — named profiles: `aif compile --view author`, `--view llm`, `--view api`, `--view print`
-- [ ] **Undefined terms lint** — detect terms used in claims/evidence not defined in any `@definition` block
-- [ ] **Reusable skill templates** — `@skill[extends="base-debugging"]` inheritance
-- [ ] **Citation precision benchmark** — measure chunked retrieval accuracy vs raw Markdown chunks with ground-truth Q&A pairs
-- [ ] **Table/figure fidelity benchmark** — cell-for-cell comparison across import→export roundtrips
-- [ ] **LSP / editor integration** — language server for `.aif` files with syntax highlighting, lint-on-save, go-to-definition for `refs`
-- [ ] **crates.io publish** — publish `aif-cli` and library crates for `cargo install aif-cli`
+```bibtex
+@software{aif2026,
+  author       = {Liqun Chen},
+  title        = {{AIF}: {AI}-native Interchange Format and SkillForge Toolkit},
+  year         = {2026},
+  url          = {https://github.com/LiqunChen0606/aif},
+  note         = {Semantic document compiler, skill toolkit, and format cleaner for LLMs.
+                  Best structure-per-token ratio: full semantic types at 22\% fewer
+                  tokens than Markdown. Skills in AIF LML format improve LLM compliance
+                  by 10 percentage points vs raw Markdown.}
+}
+```
 
 ## License
 
