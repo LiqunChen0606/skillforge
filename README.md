@@ -209,6 +209,14 @@ If you find SkillForge useful in your research or workflows, please cite:
 }
 ```
 
+## Built With
+
+This project was built almost entirely through AI-assisted development using [**ClawTerminal**](https://github.com/LiqunChen0606/clawterminal-docs) — an iOS SSH terminal + AI chatroom that connects your iPhone, iPad, or Apple Watch to Claude, Codex, Gemini, and Aider on remote servers.
+
+[![Download on the App Store](https://img.shields.io/badge/Download-App_Store-black?style=for-the-badge&logo=apple&logoColor=white)](https://apps.apple.com/app/claw-ssh-ai-terminal/id6740686929)
+
+From initial design through 8 implementation phases, 120+ commits, 11 Rust crates, 5 benchmark suites, and 210+ tests — all authored, reviewed, and shipped from an iPhone via ClawTerminal's AI agent integration.
+
 ## License
 
 Apache-2.0 OR MIT (dual-licensed)
