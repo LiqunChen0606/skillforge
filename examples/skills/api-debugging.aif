@@ -1,0 +1,26 @@
+#title: API Debugging Skill
+#summary: Specialized debugging for API and network issues, extending the base debugging skill
+
+@skill[name="api-debugging", version="1.0.0", extends="base-debugging", description="Use when debugging API failures, network issues, or HTTP errors"]
+
+  @precondition
+    An API endpoint is returning errors, timeouts, or unexpected responses. Network connectivity is available.
+  @end
+
+  @step[order=3]
+    **Inspect request/response cycle.** Use `curl -v` or browser dev tools to capture the full HTTP exchange: headers, status code, body. Check for CORS, auth, and content-type mismatches.
+  @end
+
+  @step[order=5]
+    **Check upstream dependencies.** Verify that databases, caches, and third-party APIs the endpoint depends on are healthy. Use health check endpoints where available.
+  @end
+
+  @tool
+    `curl -v` for HTTP inspection, `jq` for JSON parsing, `openssl s_client` for TLS debugging, API-specific CLI tools (e.g., `aws`, `gcloud`).
+  @end
+
+  @example
+    API returns 502 Bad Gateway. Steps: (1) curl the endpoint directly — see timeout after 30s. (2) Check upstream service — it's down. (3) Root cause: upstream deployment broke health checks. Fix: roll back upstream, add circuit breaker.
+  @end
+
+@end

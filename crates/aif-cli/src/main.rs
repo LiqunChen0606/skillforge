@@ -28,6 +28,9 @@ enum Commands {
         /// Input format: aif (default) or json (AIF JSON IR)
         #[arg(long, default_value = "aif")]
         input_format: String,
+        /// View mode: author (full), llm (stripped for LLM), api (only tool/contract/precondition)
+        #[arg(long)]
+        view: Option<String>,
     },
     /// Import a Markdown, HTML, or PDF file to AIF IR (JSON)
     Import {
@@ -175,6 +178,14 @@ enum SkillAction {
         /// Output format: text (default) or json
         #[arg(long, default_value = "text")]
         report: String,
+    },
+    /// Resolve skill inheritance (extends attribute) and output the merged skill
+    Resolve {
+        /// Input .aif skill file with extends attribute
+        input: PathBuf,
+        /// Output file (defaults to stdout)
+        #[arg(short, long)]
+        output: Option<PathBuf>,
     },
 }
 
@@ -926,6 +937,31 @@ fn handle_skill(action: SkillAction) {
                 std::process::exit(1);
             }
         }
+        SkillAction::Resolve { input, output } => {
+            let source = read_source(&input);
+            let doc = parse_aif(&source);
+
+            let skill_block = find_skill_block(&doc.blocks).unwrap_or_else(|| {
+                eprintln!("No skill block found in {}", input.display());
+                std::process::exit(1);
+            });
+
+            let registry = load_local_registry();
+            match aif_skill::inherit::resolve_inheritance(skill_block, &registry) {
+                Ok(resolved) => {
+                    let resolved_doc = aif_core::ast::Document {
+                        metadata: doc.metadata.clone(),
+                        blocks: vec![resolved],
+                    };
+                    let json = serde_json::to_string_pretty(&resolved_doc).unwrap();
+                    write_output(&json, output.as_ref());
+                }
+                Err(e) => {
+                    eprintln!("Inheritance resolution failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
     }
 }
 
@@ -1078,6 +1114,7 @@ fn main() {
             format,
             output,
             input_format,
+            view,
         } => {
             let doc = match input_format.as_str() {
                 "json" => {
@@ -1091,6 +1128,22 @@ fn main() {
                     let source = read_source(&input);
                     parse_aif(&source)
                 }
+            };
+
+            // Apply view filter if specified
+            let doc = if let Some(view_name) = &view {
+                match aif_core::view::ViewMode::from_str(view_name) {
+                    Some(mode) => aif_core::view::filter_for_view(&doc, mode),
+                    None => {
+                        eprintln!(
+                            "Unknown view mode: {}. Supported: author, llm, api",
+                            view_name
+                        );
+                        std::process::exit(1);
+                    }
+                }
+            } else {
+                doc
             };
 
             // Binary and PDF formats need raw byte output, not text

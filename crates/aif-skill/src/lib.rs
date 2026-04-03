@@ -14,3 +14,4 @@ pub mod remote;
 pub mod resolver;
 pub mod lint;
 pub mod eval;
+pub mod inherit;
