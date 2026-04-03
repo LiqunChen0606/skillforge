@@ -1,12 +1,19 @@
 [package]
 name = "aif-migrate"
+description = "Migration engine — chunked pipeline with repair loops and verification for codebase migrations"
 version.workspace = true
 edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords = ["llm", "migration", "codebase", "refactoring", "skill"]
+categories = ["development-tools"]
+publish = false
 
 [dependencies]
 aif-core = { workspace = true }
-aif-skill = { path = "../aif-skill" }
-aif-eval = { path = "../aif-eval" }
+aif-skill = { workspace = true }
+aif-eval = { workspace = true }
 regex = "1"
 reqwest = { version = "0.12", features = ["json"] }
 serde = { workspace = true }
@@ -15,5 +22,5 @@ tokio = { version = "1", features = ["rt-multi-thread"] }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
-aif-parser = { path = "../aif-parser" }
-aif-html = { path = "../aif-html" }
+aif-parser = { workspace = true }
+aif-html = { workspace = true }

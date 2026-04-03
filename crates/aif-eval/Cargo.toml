@@ -1,11 +1,18 @@
 [package]
 name = "aif-eval"
+description = "Eval pipeline — structural lint, behavioral compliance, and scenario testing for AIF skills"
 version.workspace = true
 edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords = ["llm", "eval", "testing", "compliance", "skill"]
+categories = ["development-tools::testing"]
+publish = false
 
 [dependencies]
 aif-core = { workspace = true }
-aif-skill = { path = "../aif-skill" }
+aif-skill = { workspace = true }
 reqwest = { version = "0.12", features = ["json"] }
 tokio = { version = "1", features = ["rt", "macros"] }
 serde = { workspace = true }
@@ -13,4 +20,4 @@ serde_json = { workspace = true }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
-aif-parser = { path = "../aif-parser" }
+aif-parser = { workspace = true }

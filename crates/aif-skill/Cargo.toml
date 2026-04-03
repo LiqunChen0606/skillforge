@@ -1,7 +1,13 @@
 [package]
 name = "aif-skill"
+description = "Skill profiles — validation, hashing, versioning, diff, registry, chaining, and marketplace"
 version.workspace = true
 edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords = ["llm", "skill", "validation", "registry", "versioning"]
+categories = ["text-processing"]
 
 [dependencies]
 aif-core = { workspace = true }
@@ -11,5 +17,5 @@ serde_json = { workspace = true }
 
 [dev-dependencies]
 aif-core = { workspace = true }
-aif-parser = { path = "../aif-parser" }
+aif-parser = { workspace = true }
 tempfile = "3"

@@ -1,10 +1,11 @@
 [package]
 name = "aif-cli"
+description = "AIF SkillForge — semantic document compiler, skill toolkit, and format cleaner for LLMs"
 version.workspace = true
 edition.workspace = true
-description = "AIF SkillForge — semantic document compiler, skill toolkit, and format cleaner for LLMs"
-license = "Apache-2.0 OR MIT"
-repository = "https://github.com/LiqunChen0606/skillforge"
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
 keywords = ["llm", "document", "semantic", "skill", "token-efficient"]
 categories = ["command-line-utilities", "text-processing"]
 
@@ -14,23 +15,23 @@ path = "src/main.rs"
 
 [dependencies]
 aif-core = { workspace = true, features = ["llm"] }
-aif-parser = { path = "../aif-parser" }
-aif-html = { path = "../aif-html" }
-aif-markdown = { path = "../aif-markdown" }
-aif-lml = { path = "../aif-lml" }
-aif-skill = { path = "../aif-skill" }
-aif-binary = { path = "../aif-binary" }
-aif-pdf = { path = "../aif-pdf" }
-aif-eval = { path = "../aif-eval" }
-aif-migrate = { path = "../aif-migrate" }
+aif-parser = { workspace = true }
+aif-html = { workspace = true }
+aif-markdown = { workspace = true }
+aif-lml = { workspace = true }
+aif-skill = { workspace = true }
+aif-binary = { workspace = true }
+aif-pdf = { workspace = true }
+aif-eval = { workspace = true }
+aif-migrate = { workspace = true }
 clap = { version = "4", features = ["derive"] }
 serde_json = { workspace = true }
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 
 [dev-dependencies]
 aif-core = { workspace = true }
-aif-parser = { path = "../aif-parser" }
-aif-html = { path = "../aif-html" }
-aif-markdown = { path = "../aif-markdown" }
-aif-lml = { path = "../aif-lml" }
+aif-parser = { workspace = true }
+aif-html = { workspace = true }
+aif-markdown = { workspace = true }
+aif-lml = { workspace = true }
 serde_json = { workspace = true }

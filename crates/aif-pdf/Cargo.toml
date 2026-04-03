@@ -1,7 +1,13 @@
 [package]
 name = "aif-pdf"
+description = "PDF export (krilla) and import (pdf_oxide) with document chunking strategies"
 version.workspace = true
 edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords = ["llm", "document", "pdf", "chunking", "semantic"]
+categories = ["text-processing"]
 
 [dependencies]
 aif-core = { workspace = true }

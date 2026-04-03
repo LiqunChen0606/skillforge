@@ -1,7 +1,13 @@
 [package]
 name = "aif-parser"
+description = "Logos-based lexer and block/inline parser for AIF semantic documents"
 version.workspace = true
 edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords = ["llm", "document", "parser", "lexer", "semantic"]
+categories = ["text-processing", "parsing"]
 
 [dependencies]
 aif-core = { workspace = true }

@@ -12,23 +12,28 @@ members = [
     "crates/aif-pdf",
     "crates/aif-eval",
     "crates/aif-migrate",
+    "crates/aif-lsp",
 ]
 
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
-license = "Apache-2.0"
+license = "Apache-2.0 OR MIT"
+repository = "https://github.com/LiqunChen0606/skillforge"
+homepage = "https://github.com/LiqunChen0606/skillforge"
+keywords = ["llm", "document", "semantic", "skill", "token-efficient"]
+categories = ["text-processing"]
 
 [workspace.dependencies]
-aif-core = { path = "crates/aif-core" }
-aif-parser = { path = "crates/aif-parser" }
-aif-html = { path = "crates/aif-html" }
-aif-markdown = { path = "crates/aif-markdown" }
-aif-lml = { path = "crates/aif-lml" }
-aif-skill = { path = "crates/aif-skill" }
-aif-binary = { path = "crates/aif-binary" }
-aif-pdf = { path = "crates/aif-pdf" }
-aif-eval = { path = "crates/aif-eval" }
-aif-migrate = { path = "crates/aif-migrate" }
+aif-core = { path = "crates/aif-core", version = "0.1.0" }
+aif-parser = { path = "crates/aif-parser", version = "0.1.0" }
+aif-html = { path = "crates/aif-html", version = "0.1.0" }
+aif-markdown = { path = "crates/aif-markdown", version = "0.1.0" }
+aif-lml = { path = "crates/aif-lml", version = "0.1.0" }
+aif-skill = { path = "crates/aif-skill", version = "0.1.0" }
+aif-binary = { path = "crates/aif-binary", version = "0.1.0" }
+aif-pdf = { path = "crates/aif-pdf", version = "0.1.0" }
+aif-eval = { path = "crates/aif-eval", version = "0.1.0" }
+aif-migrate = { path = "crates/aif-migrate", version = "0.1.0" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

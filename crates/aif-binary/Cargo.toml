@@ -1,7 +1,13 @@
 [package]
 name = "aif-binary"
+description = "Binary serialization for AIF documents — wire (postcard) and token-optimized formats"
 version.workspace = true
 edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords = ["llm", "document", "binary", "serialization", "postcard"]
+categories = ["encoding"]
 
 [dependencies]
 aif-core = { workspace = true }

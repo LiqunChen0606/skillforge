@@ -1,7 +1,13 @@
 [package]
 name = "aif-core"
+description = "Core AST types, spans, errors, and shared utilities for the AIF semantic document format"
 version.workspace = true
 edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords = ["llm", "document", "semantic", "ast", "parser"]
+categories = ["text-processing", "data-structures"]
 
 [features]
 default = []

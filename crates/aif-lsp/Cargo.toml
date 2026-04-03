@@ -1,0 +1,21 @@
+[package]
+name = "aif-lsp"
+description = "Language Server Protocol implementation for AIF semantic documents"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords = ["llm", "document", "lsp", "editor", "semantic"]
+categories = ["development-tools", "text-editors"]
+
+[[bin]]
+name = "aif-lsp"
+path = "src/main.rs"
+
+[dependencies]
+aif-core = { workspace = true }
+aif-parser = { workspace = true }
+tower-lsp = "0.20"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "io-std"] }
+serde_json = { workspace = true }

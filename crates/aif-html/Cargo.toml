@@ -1,7 +1,13 @@
 [package]
 name = "aif-html"
+description = "HTML compiler and importer for AIF semantic documents with roundtrip and readability modes"
 version.workspace = true
 edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords = ["llm", "document", "html", "semantic", "importer"]
+categories = ["text-processing"]
 
 [dependencies]
 aif-core = { workspace = true }
@@ -9,7 +15,7 @@ ego-tree = "0.10"
 scraper = "0.22"
 
 [dev-dependencies]
-aif-parser = { path = "../aif-parser" }
+aif-parser = { workspace = true }
 insta = { version = "1", features = ["yaml"] }
 pretty_assertions = "1"
 serde_json = { workspace = true }

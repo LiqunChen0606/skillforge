@@ -1,7 +1,13 @@
 [package]
 name = "aif-markdown"
+description = "Markdown compiler and pulldown-cmark importer for AIF semantic documents"
 version.workspace = true
 edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords = ["llm", "document", "markdown", "semantic", "importer"]
+categories = ["text-processing"]
 
 [dependencies]
 aif-core = { workspace = true }
@@ -9,6 +15,6 @@ pulldown-cmark = "0.12"
 
 [dev-dependencies]
 aif-core = { workspace = true }
-aif-parser = { path = "../aif-parser" }
+aif-parser = { workspace = true }
 insta = { version = "1", features = ["yaml"] }
 pretty_assertions = "1"
