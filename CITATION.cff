@@ -5,8 +5,8 @@ title: "AIF: AI-native Interchange Format and SkillForge Toolkit"
 authors:
   - family-names: Chen
     given-names: Liqun
-url: "https://github.com/LiqunChen0606/aif"
-repository-code: "https://github.com/LiqunChen0606/aif"
+url: "https://github.com/LiqunChen0606/skillforge"
+repository-code: "https://github.com/LiqunChen0606/skillforge"
 license: Apache-2.0
 version: 0.1.0
 date-released: "2026-04-02"

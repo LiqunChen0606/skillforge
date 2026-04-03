@@ -1,6 +1,8 @@
-# AIF — AI-native Interchange Format
+# SkillForge
 
-> **AIF** is a semantic document format and Rust toolchain (**SkillForge**) that compiles typed, structured documents into 12+ output formats — giving LLMs full semantic structure at fewer tokens than raw Markdown. Author skills for Claude, Codex, and Gemini. Clean and normalize HTML, PDF, and Markdown for LLM consumption. Migrate codebases with typed, verifiable migration skills.
+### Semantic Document Compiler & AI Skill Toolkit
+
+> **SkillForge** is a Rust toolchain built on the **AIF** (AI-native Interchange Format) that compiles typed, structured documents into 12+ output formats — giving LLMs full semantic structure at fewer tokens than raw Markdown. Author skills for Claude, Codex, and Gemini. Clean and normalize HTML, PDF, and Markdown for LLM consumption. Migrate codebases with typed, verifiable migration skills.
 
 ![Language](https://img.shields.io/badge/Language-Rust-orange)
 ![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Linux%20%7C%20Windows-blue)
@@ -200,7 +202,7 @@ If you find AIF useful in your research or workflows, please cite:
   author       = {Liqun Chen},
   title        = {{AIF}: {AI}-native Interchange Format and SkillForge Toolkit},
   year         = {2026},
-  url          = {https://github.com/LiqunChen0606/aif},
+  url          = {https://github.com/LiqunChen0606/skillforge},
   note         = {Semantic document compiler, skill toolkit, and format cleaner for LLMs.
                   Best structure-per-token ratio: full semantic types at 22\% fewer
                   tokens than Markdown. Skills in AIF LML format improve LLM compliance

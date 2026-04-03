@@ -4,7 +4,7 @@ version.workspace = true
 edition.workspace = true
 description = "AIF SkillForge — semantic document compiler, skill toolkit, and format cleaner for LLMs"
 license = "Apache-2.0 OR MIT"
-repository = "https://github.com/LiqunChen0606/aif"
+repository = "https://github.com/LiqunChen0606/skillforge"
 keywords = ["llm", "document", "semantic", "skill", "token-efficient"]
 categories = ["command-line-utilities", "text-processing"]
 
