@@ -14,7 +14,7 @@
 
 ---
 
-## Why AIF?
+## Why SkillForge?
 
 Every document format forces a trade-off between **structure** and **token cost**:
 
@@ -26,7 +26,7 @@ Every document format forces a trade-off between **structure** and **token cost*
 | Raw Markdown | 1,263K | Basic (headings, lists) | Partial |
 | Raw HTML | 5,500K | Full + presentational bloat | Yes |
 
-**AIF is the only format that preserves full semantic types at fewer tokens than Markdown.** Plain text extraction is cheapest but gives the LLM zero structure. AIF costs 80% more tokens than flat text, but the LLM can reason about typed sections, claims, evidence, tables — not just content. It's **22% cheaper than Markdown** with far richer semantics.
+**SkillForge's LML Aggressive is the only format that preserves full semantic types at fewer tokens than Markdown.** Plain text extraction is cheapest but gives the LLM zero structure. LML costs 80% more tokens than flat text, but the LLM can reason about typed sections, claims, evidence, tables — not just content. It's **22% cheaper than Markdown** with far richer semantics.
 
 ### Does Format Actually Affect LLM Behavior?
 
@@ -152,7 +152,7 @@ Pipeline: validate skill → chunk source files → apply per-chunk (LLM) → ve
 |-------|---------|
 | `aif-core` | AST, document lint (9 checks), semantic inference, chunk graphs, JSON Schema |
 | `aif-parser` | Logos-based lexer + block/inline parser |
-| `aif-html` | HTML compiler + two-layer importer (AIF roundtrip + generic + readability) |
+| `aif-html` | HTML compiler + two-layer importer (roundtrip + generic + readability) |
 | `aif-markdown` | Markdown compiler + pulldown-cmark importer |
 | `aif-lml` | 5 LML prose modes, bidirectional parser, hybrid format, compression |
 | `aif-binary` | Wire (postcard) and token-optimized binary with full roundtrip |
@@ -166,7 +166,7 @@ Pipeline: validate skill → chunk source files → apply per-chunk (LLM) → ve
 
 | Benchmark | Key Finding |
 |-----------|-------------|
-| [Document tokens](benchmarks/document-tokens/) | Cleaned HTML 544K, AIF LML 981K, Raw MD 1,263K, Raw HTML 5.5M |
+| [Document tokens](benchmarks/document-tokens/) | Cleaned HTML 544K, LML Aggressive 981K, Raw MD 1,263K, Raw HTML 5.5M |
 | [Skill tokens](benchmarks/skill-tokens/) | 100% semantic compliance across all formats, TNO 1.05 for Markdown RT |
 | [Skill execution](benchmarks/skill-execution/) | LML Aggressive 0.97 vs Raw Markdown 0.87 overall compliance |
 | [Chunking quality](benchmarks/chunking/) | 4 strategies compared: self-containment, size variance, budget compliance |
@@ -178,8 +178,8 @@ Open [benchmarks/index.html](benchmarks/index.html) for the visual dashboard.
 
 ```
 examples/
-├── documents/       # General AIF documents and format conversions
-├── skills/          # AI agent skills + Claude Code plugins in AIF (with authoring guide)
+├── documents/       # General documents and format conversions
+├── skills/          # AI agent skills + Claude Code plugins (with authoring guide)
 ├── migrations/      # Codebase migration skills + reports (with detailed guide)
 └── rich-content/    # Tables, SVG figures, audio/video metadata, cross-references
 ```
@@ -195,18 +195,17 @@ examples/
 
 ## Citation
 
-If you find AIF useful in your research or workflows, please cite:
+If you find SkillForge useful in your research or workflows, please cite:
 
 ```bibtex
-@software{aif2026,
+@software{skillforge2026,
   author       = {Liqun Chen},
-  title        = {{AIF}: {AI}-native Interchange Format and SkillForge Toolkit},
+  title        = {{SkillForge}: Semantic Document Compiler and {AI} Skill Toolkit},
   year         = {2026},
   url          = {https://github.com/LiqunChen0606/skillforge},
-  note         = {Semantic document compiler, skill toolkit, and format cleaner for LLMs.
-                  Best structure-per-token ratio: full semantic types at 22\% fewer
-                  tokens than Markdown. Skills in AIF LML format improve LLM compliance
-                  by 10 percentage points vs raw Markdown.}
+  note         = {Built on the AIF (AI-native Interchange Format). Best structure-per-token
+                  ratio: full semantic types at 22\% fewer tokens than Markdown. Skills in
+                  LML format improve LLM compliance by 10 percentage points vs raw Markdown.}
 }
 ```
 
