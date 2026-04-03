@@ -28,7 +28,7 @@ from pathlib import Path
 import anthropic
 
 MODEL = "claude-opus-4-6"
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 AIF_CLI = PROJECT_ROOT / "target" / "release" / "aif-cli"
 SKILLS_DIR = PROJECT_ROOT / "tests" / "fixtures" / "skills"
 
@@ -998,13 +998,13 @@ def main():
     print()
 
     # ── Generate HTML Report ──
-    html_path = PROJECT_ROOT / "benchmarks" / "skill_benchmark_report.html"
+    html_path = PROJECT_ROOT / "benchmarks" / "skill-tokens" / "report.html"
     generate_html_report(results, totals, skill_count, html_path)
     print(f"HTML report saved to {html_path}")
     print()
 
     # Save results with statistics
-    output_path = PROJECT_ROOT / "benchmarks" / "skill_results.json"
+    output_path = PROJECT_ROOT / "benchmarks" / "skill-tokens" / "results.json"
     totals_out = {}
     for key, _, _ in FORMATS:
         totals_out[f"{key}_tokens"] = totals[f"{key}_tokens"]

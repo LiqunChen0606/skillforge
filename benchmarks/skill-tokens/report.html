@@ -4,273 +4,444 @@
 <meta charset="utf-8">
 <title>AIF Skill Token Benchmark Report</title>
 <style>
-  :root {
-    --navy: #16213e;
-    --navy-light: #1a2744;
-    --accent: #0f3460;
-    --green: #28a745;
-    --green-bg: #d4edda;
-    --green-border: #c3e6cb;
-    --red: #dc3545;
-    --red-bg: #f8d7da;
-    --blue: #0d6efd;
-    --blue-bg: #cfe2ff;
-    --yellow-bg: #fff3cd;
-    --yellow-border: #ffc107;
-    --gray-50: #f8f9fa;
-    --gray-200: #e9ecef;
-    --gray-600: #6c757d;
-    --gray-900: #1a1a2e;
-    --shadow: 0 1px 3px rgba(0,0,0,0.1);
-    --radius: 8px;
-  }
-  * { box-sizing: border-box; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 1400px; margin: 0 auto; padding: 2rem 1.5rem; background: var(--gray-50); color: var(--gray-900); line-height: 1.6; }
-  h1 { color: var(--navy); border-bottom: 3px solid var(--accent); padding-bottom: 0.5rem; margin-bottom: 0.5rem; font-size: 1.8rem; }
-  h2 { color: var(--navy); margin-top: 2.5rem; font-size: 1.35rem; }
-  h3 { color: var(--navy-light); margin-top: 1.5rem; font-size: 1.1rem; }
-  .meta { color: var(--gray-600); font-size: 0.9rem; margin-bottom: 2rem; }
-  .card { background: white; border-radius: var(--radius); padding: 1.5rem; box-shadow: var(--shadow); margin: 1rem 0; }
-  .exec-summary { background: linear-gradient(135deg, #16213e, #0f3460); color: white; border-radius: var(--radius); padding: 2rem; margin: 1.5rem 0; }
-  .exec-summary h2 { color: white; margin-top: 0; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 0.5rem; }
-  .exec-summary .stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.5rem; margin-top: 1.5rem; }
-  .exec-summary .stat { text-align: center; }
-  .exec-summary .stat-value { font-size: 2.2rem; font-weight: 800; color: #7dffb3; }
-  .exec-summary .stat-label { font-size: 0.85rem; opacity: 0.85; margin-top: 0.25rem; }
-  .exec-summary .stat-sub { font-size: 0.75rem; opacity: 0.6; }
-  .winner { background: linear-gradient(135deg, var(--green-bg), var(--green-border)); border: 1px solid var(--green); border-radius: var(--radius); padding: 1rem 1.5rem; margin: 1rem 0; font-size: 1.05rem; }
+  :root { --brand: #16213e; --brand-light: #0f3460; --green: #28a745; --red: #dc3545; --bg: #f8f9fa; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 1400px; margin: 2rem auto; padding: 0 1rem; background: var(--bg); color: #1a1a2e; line-height: 1.6; }
+  h1 { color: var(--brand); border-bottom: 3px solid var(--brand-light); padding-bottom: 0.5rem; }
+  h2 { color: var(--brand); margin-top: 2.5rem; }
+  h3 { color: var(--brand); margin-top: 0; }
+  .meta { color: #666; font-size: 0.9rem; margin-bottom: 2rem; }
+  .executive-summary { background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin: 1.5rem 0; }
+  .exec-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin: 1.5rem 0; }
+  .exec-card { background: linear-gradient(135deg, #f8f9fa, #e9ecef); border-radius: 8px; padding: 1.2rem; text-align: center; }
+  .exec-card .metric { font-size: 2rem; font-weight: 800; color: var(--brand); }
+  .exec-card .label { font-size: 0.85rem; color: #666; margin-top: 0.3rem; }
+  .winner { background: linear-gradient(135deg, #d4edda, #c3e6cb); border: 1px solid var(--green); border-radius: 8px; padding: 1rem 1.5rem; margin: 1rem 0; font-size: 1.1rem; }
   .winner strong { color: #155724; }
-  .note { background: var(--yellow-bg); border: 1px solid var(--yellow-border); border-radius: 6px; padding: 0.8rem 1rem; margin: 1rem 0; font-size: 0.9rem; }
-  .info-box { background: var(--blue-bg); border: 1px solid #9ec5fe; border-radius: 6px; padding: 0.8rem 1rem; margin: 1rem 0; font-size: 0.9rem; }
-  table { border-collapse: collapse; width: 100%; margin: 1rem 0; background: white; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
-  th { background: var(--navy); color: white; padding: 10px 8px; font-size: 0.82rem; text-align: center; }
-  td { padding: 8px; text-align: center; border-bottom: 1px solid #eee; font-size: 0.82rem; }
-  td.name-col { text-align: left; font-weight: 600; white-space: nowrap; }
-  .positive { background: var(--green-bg); }
-  .negative { background: var(--red-bg); }
-  .total-row td { background: #e8eaf6; font-weight: bold; border-top: 2px solid var(--navy); }
-  .bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 220px; margin: 1rem 0; padding: 1rem; background: white; border-radius: var(--radius); box-shadow: var(--shadow); }
+  .note { background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 0.8rem 1rem; margin: 1rem 0; font-size: 0.9rem; }
+  .info-box { background: #d1ecf1; border: 1px solid #0dcaf0; border-radius: 6px; padding: 0.8rem 1rem; margin: 1rem 0; font-size: 0.9rem; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  th { background: var(--brand); color: white; padding: 10px 8px; font-size: 0.85rem; text-align: center; }
+  td { padding: 8px; text-align: center; border-bottom: 1px solid #eee; font-size: 0.85rem; }
+  td.skill-name { text-align: left; font-weight: 600; white-space: nowrap; }
+  .positive { background: #d4edda; }
+  .negative { background: #f8d7da; }
+  .total-row td { background: #e8eaf6; font-weight: bold; border-top: 2px solid var(--brand); }
+  .bar-chart { display: flex; align-items: flex-end; gap: 10px; height: 240px; margin: 1rem 0; padding: 1rem 1rem 1rem 1rem; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
   .bar-wrapper { display: flex; flex-direction: column; align-items: center; flex: 1; }
-  .bar { width: 100%; border-radius: 4px 4px 0 0; min-height: 2px; }
-  .bar-label { font-size: 0.7rem; margin-top: 4px; text-align: center; word-break: break-all; color: var(--gray-600); }
-  .bar-value { font-size: 0.75rem; font-weight: bold; margin-bottom: 2px; }
+  .bar { width: 100%; border-radius: 4px 4px 0 0; transition: height 0.3s; min-height: 2px; }
+  .bar-label { font-size: 0.72rem; margin-top: 6px; text-align: center; word-break: break-all; color: #333; }
+  .bar-value { font-size: 0.78rem; font-weight: bold; margin-bottom: 3px; }
   .bar-pos { background: linear-gradient(180deg, #28a745, #20c997); }
   .bar-neg { background: linear-gradient(180deg, #dc3545, #e74c6c); }
+  .bar-neutral { background: linear-gradient(180deg, #6c757d, #adb5bd); }
   .legend { display: flex; gap: 2rem; margin: 1rem 0; font-size: 0.85rem; }
   .legend-item { display: flex; align-items: center; gap: 0.4rem; }
   .legend-swatch { width: 16px; height: 16px; border-radius: 3px; }
-  .rec-table td:first-child { text-align: left; font-weight: 600; }
-  .rec-table .best { background: var(--green-bg); font-weight: 700; }
-  .rec-table .good { background: #e8f5e9; }
-  .rec-table .ok { background: var(--yellow-bg); }
-  small { color: var(--gray-600); }
-  .timestamp { text-align: right; color: #999; font-size: 0.8rem; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--gray-200); }
+  small { color: #666; }
+  .findings { background: white; border-radius: 8px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin: 1rem 0; }
+  .findings p { margin: 0.5rem 0; }
+  .toc { background: white; border-radius: 8px; padding: 1rem 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin: 1rem 0; }
+  .toc a { color: var(--brand-light); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .toc ol { margin: 0.5rem 0; padding-left: 1.5rem; }
+  .toc li { margin: 0.3rem 0; }
+  .timestamp { text-align: right; color: #999; font-size: 0.8rem; margin-top: 2rem; }
+  .section { margin-top: 2rem; }
 </style>
 </head>
 <body>
 
 <h1>AIF Skill Token Benchmark Report</h1>
-<p class="meta">Model: claude-opus-4-6 &bull; 10 skills &bull; 11 formats &bull; April 2026</p>
+<p class="meta">Model: claude-opus-4-6 &bull; Skills: 36 &bull; Formats: 11 &bull; Generated: 2026-04-03 20:21 UTC</p>
 
-<div class="exec-summary">
-  <h2>Executive Summary</h2>
-  <p style="opacity:0.9; margin-top:0.5rem;">AIF preserves 100% semantic compliance across all text formats while matching or beating original SKILL.md token counts. Tested on 10 real-world coding agent skills.</p>
-  <div class="stat-row">
-    <div class="stat">
-      <div class="stat-value">100%</div>
-      <div class="stat-label">Semantic Compliance</div>
-      <div class="stat-sub">All formats, all skills</div>
-    </div>
-    <div class="stat">
-      <div class="stat-value">1.05</div>
-      <div class="stat-label">Best TNO Score</div>
-      <div class="stat-sub">Markdown (RT)</div>
-    </div>
-    <div class="stat">
-      <div class="stat-value">+1.9%</div>
-      <div class="stat-label">Best Token Savings</div>
-      <div class="stat-sub">Markdown (RT) vs SKILL.md</div>
-    </div>
-    <div class="stat">
-      <div class="stat-value">0.99</div>
-      <div class="stat-label">LML Aggressive TNO</div>
-      <div class="stat-sub">Near-perfect efficiency</div>
-    </div>
-    <div class="stat">
-      <div class="stat-value">10</div>
-      <div class="stat-label">Skills Tested</div>
-      <div class="stat-sub">219–7,795 tokens each</div>
-    </div>
+<!-- ─── TABLE OF CONTENTS ─── -->
+<div class="toc">
+<strong>Contents</strong>
+<ol>
+<li><a href="#executive-summary">Executive Summary</a></li>
+<li><a href="#token-savings">Token Savings Chart</a></li>
+<li><a href="#key-findings">Key Findings</a></li>
+<li><a href="#per-skill">Per-Skill Comparison</a></li>
+<li><a href="#statistics">Statistical Analysis</a></li>
+<li><a href="#compliance">Compliance &amp; TNO Heatmap</a></li>
+<li><a href="#cost-impact">Cost Impact Analysis</a></li>
+<li><a href="#recommendations">Format Recommendation Matrix</a></li>
+<li><a href="#binary">Binary Format Note</a></li>
+<li><a href="#summary-table">Summary Table</a></li>
+<li><a href="#methodology">Methodology</a></li>
+</ol>
+</div>
+
+<!-- ─── EXECUTIVE SUMMARY ─── -->
+<div class="section" id="executive-summary">
+<h2>Executive Summary</h2>
+<div class="executive-summary">
+<p>This benchmark measures the token efficiency of 11 AIF output formats across 36 real-world coding-agent skills,
+using Claude's token counting API. The goal: find formats that minimize token cost while preserving 100% semantic structure.</p>
+
+<div class="exec-grid">
+  <div class="exec-card">
+    <div class="metric">1.08</div>
+    <div class="label">Best TNO<br><strong>Markdown (RT)</strong></div>
+  </div>
+  <div class="exec-card">
+    <div class="metric">+2.8%</div>
+    <div class="label">Best Token Savings<br><strong>Markdown (RT)</strong></div>
+  </div>
+  <div class="exec-card">
+    <div class="metric">100%</div>
+    <div class="label">Semantic Compliance<br>All LML formats</div>
+  </div>
+  <div class="exec-card">
+    <div class="metric">213.4K</div>
+    <div class="label">Baseline Total<br>36 skills (SKILL.md)</div>
   </div>
 </div>
 
 <div class="winner">
-  <strong>Winner: Markdown (RT)</strong> — highest Token-Normalized Outcome (TNO: 1.05) with 100% semantic compliance and +1.9% token savings vs SKILL.md baseline.
+  <strong>Winner: Markdown (RT)</strong> &mdash; highest Token-Normalized Outcome (TNO: 1.08)
+  combining 100% semantic compliance with the best token efficiency ratio.
+</div>
+</div>
 </div>
 
-<div class="note">
-  <strong>Key Metrics:</strong><br>
-  <strong>TNO (Token-Normalized Outcome)</strong> = Compliance &divide; (tokens / baseline_tokens). Measures semantic fidelity per token spent. TNO &gt; 1.0 = better efficiency than baseline. TNO = 1.0 = equivalent.<br>
-  <strong>Semantic Compliance</strong> = Fraction of semantic blocks (@step, @verify, @precondition, @skill) preserved in output. 100% = all structural elements survived conversion.
-</div>
-
-<h2>Key Findings</h2>
-<div class="card">
-  <h3>1. All text formats achieve 100% semantic compliance</h3>
-  <p>Every AIF text format preserves every semantic block from the original skill. No @step, @verify, @precondition, or @skill block is lost. Format differences affect token count, not correctness.</p>
-
-  <h3>2. Skills are already token-dense — savings are marginal</h3>
-  <p>Unlike general documents (82% savings vs HTML), skills are already concise Markdown. The baseline averages 3,951 tokens per skill. The best format saves only 1.9% (751 tokens across 10 skills). Skills are authored for LLM consumption — there's little noise to strip.</p>
-
-  <h3>3. Markdown RT wins for skills; LML Aggressive is a close second</h3>
-  <p><strong>Markdown (RT)</strong> delivers the highest TNO (1.05) with slightly fewer tokens. <strong>LML Aggressive</strong> (TNO: 0.99) is nearly identical but provides explicit typed tags — useful when the LLM needs to identify block types programmatically.</p>
-
-  <h3>4. Small skills show highest variance</h3>
-  <p>The smallest skills (debugging: 219 tokens, tdd: 321 tokens) show the widest swings: Markdown RT saves 14.6% on debugging but only 12.5% on tdd. Larger skills (&gt;5K tokens) converge to &lt;1% differences. Fixed per-format overhead dominates small documents.</p>
-
-  <h3>5. Binary formats: 3.5× more tokens, 45% fewer bytes</h3>
-  <p>Binary formats are 45% smaller in bytes than JSON IR (152K vs 278K) but base64 encoding inflates tokens to 179K. Use binary for storage and wire transport, never for LLM context.</p>
-</div>
-
-<h2>Token Savings: Text Formats vs SKILL.md</h2>
-<p>Binary formats excluded — see separate analysis below.</p>
+<!-- ─── TOKEN SAVINGS CHART (TEXT FORMATS ONLY) ─── -->
+<div class="section" id="token-savings">
+<h2>Token Savings vs SKILL.md Baseline</h2>
+<p style="color:#666; font-size:0.9rem;">Text formats only. Binary formats shown separately below (base64 inflates their token count).</p>
 <div class="legend">
   <div class="legend-item"><div class="legend-swatch" style="background:#28a745"></div> Savings (fewer tokens)</div>
   <div class="legend-item"><div class="legend-swatch" style="background:#dc3545"></div> Overhead (more tokens)</div>
 </div>
 <div class="bar-chart">
   <div class="bar-wrapper">
-    <div class="bar-value">-81.3%</div>
-    <div class="bar bar-neg" style="height:180px"></div>
+    <div class="bar-value">-58.5%</div>
+    <div class="bar bar-neg" style="height:200px"></div>
     <div class="bar-label">JSON IR</div>
   </div>
   <div class="bar-wrapper">
-    <div class="bar-value">-12.5%</div>
-    <div class="bar bar-neg" style="height:28px"></div>
+    <div class="bar-value">-14.2%</div>
+    <div class="bar bar-neg" style="height:48px"></div>
     <div class="bar-label">HTML</div>
   </div>
   <div class="bar-wrapper">
-    <div class="bar-value" style="color:#155724; font-weight:800">+1.9%</div>
-    <div class="bar bar-pos" style="height:5px; background: linear-gradient(180deg, #155724, #28a745);"></div>
-    <div class="bar-label"><strong>Markdown (RT)</strong></div>
+    <div class="bar-value">+2.8%</div>
+    <div class="bar bar-pos" style="height:10px"></div>
+    <div class="bar-label">Markdown (RT)</div>
   </div>
   <div class="bar-wrapper">
-    <div class="bar-value">-3.3%</div>
-    <div class="bar bar-neg" style="height:7px"></div>
+    <div class="bar-value">-0.6%</div>
+    <div class="bar bar-neg" style="height:4px"></div>
     <div class="bar-label">LML</div>
   </div>
   <div class="bar-wrapper">
-    <div class="bar-value">-2.7%</div>
-    <div class="bar bar-neg" style="height:6px"></div>
+    <div class="bar-value">-0.5%</div>
+    <div class="bar bar-neg" style="height:4px"></div>
     <div class="bar-label">LML Compact</div>
   </div>
   <div class="bar-wrapper">
-    <div class="bar-value">-5.8%</div>
-    <div class="bar bar-neg" style="height:13px"></div>
+    <div class="bar-value">-2.3%</div>
+    <div class="bar bar-neg" style="height:8px"></div>
     <div class="bar-label">LML Conserv.</div>
   </div>
   <div class="bar-wrapper">
-    <div class="bar-value">-5.5%</div>
-    <div class="bar bar-neg" style="height:12px"></div>
+    <div class="bar-value">-2.1%</div>
+    <div class="bar bar-neg" style="height:7px"></div>
     <div class="bar-label">LML Moderate</div>
   </div>
   <div class="bar-wrapper">
-    <div class="bar-value">~0%</div>
-    <div class="bar bar-neg" style="height:2px"></div>
+    <div class="bar-value">+1.8%</div>
+    <div class="bar bar-pos" style="height:6px"></div>
     <div class="bar-label">LML Aggress.</div>
   </div>
 </div>
+</div>
+
+
+<!-- ─── KEY FINDINGS ─── -->
+<div class="section" id="key-findings">
+<h2>Key Findings</h2>
+<div class="findings">
+
+<h3>1. Markdown roundtrip is the most token-efficient format</h3>
+<p>Markdown (RT) achieves <strong>+2.8%</strong> token savings (207.5K vs 213.4K),
+making it the cheapest text format. The roundtrip through AIF strips noise while preserving readable structure.
+This means you can fit <strong>35 skills</strong> in a 200K context window vs
+<strong>34 skills</strong> with raw SKILL.md.</p>
+
+<h3>2. LML Aggressive preserves full semantics at near-zero cost</h3>
+<p>LML Aggressive (209.7K tokens, +1.8% vs baseline) maintains <strong>100% semantic compliance</strong>
+with typed block markers (@step, @verify, @precondition) at essentially the same token count as raw Markdown.
+Its TNO of +2.9% makes it the best choice when semantic structure matters for agent execution.</p>
+
+<h3>3. JSON IR costs 81% more tokens — avoid for LLM context</h3>
+<p>JSON IR (338.4K tokens) is <strong>-58.5%</strong> more expensive than the baseline.
+The verbose key-value syntax, escaping, and structural nesting add significant overhead.
+Reserve JSON for cross-language SDKs and machine parsing, not LLM consumption.</p>
+
+<h3>4. Skill size drives format efficiency</h3>
+<p>Small skills (219-321 tokens) see the largest variance: the "debugging" skill saves 14.6% with Markdown RT
+but loses 8.7% with LML Aggressive. Larger skills (5K-8K tokens) converge — overhead from format tags is amortized.
+This suggests <strong>LML Aggressive is optimal for production skills (&gt;1K tokens)</strong>, while Markdown RT
+wins for very compact skills.</p>
+
+<h3>5. The structure-per-token trade-off</h3>
+<table style="width:auto; margin:0.5rem 0;">
+<thead><tr><th style="text-align:left">Format</th><th>Tokens</th><th>Structure</th><th>Compliance</th><th>Best For</th></tr></thead>
+<tbody>
+<tr><td style="text-align:left">Markdown (RT)</td><td>207.5K</td><td>Basic (headings, lists)</td><td>100%</td><td>Minimal token budget</td></tr>
+<tr><td style="text-align:left"><strong>LML Aggress.</strong></td><td><strong>209.7K</strong></td><td><strong>Full semantic</strong></td><td><strong>100%</strong></td><td><strong>Agent skills, typed reasoning</strong></td></tr>
+<tr><td style="text-align:left">HTML</td><td>243.7K</td><td>Full + presentational</td><td>100%</td><td>Browser rendering</td></tr>
+<tr><td style="text-align:left">JSON IR</td><td>338.4K</td><td>Full typed AST</td><td>100%</td><td>SDKs, machine parsing</td></tr>
+</tbody>
+</table>
+
+</div>
+</div>
+
+<!-- ─── PER-SKILL COMPARISON ─── -->
+<div class="section" id="per-skill">
+<h2>Per-Skill Comparison</h2>
+<p style="color:#666; font-size:0.9rem;">Text formats only. Each cell shows token count, compliance %, TNO score, and savings vs baseline.</p>
+<table>
+<thead><tr><th>Skill</th><th>SKILL.md</th><th>JSON IR</th><th>HTML</th><th>Markdown (RT)</th><th>LML</th><th>LML Compact</th><th>LML Conserv.</th><th>LML Moderate</th><th>LML Aggress.</th></tr></thead>
+<tbody>
+<tr><td class='skill-name'>debugging</td><td>219<br><small>base</small></td><td class='negative'>1,820<br><small>100%</small><br><small>TNO:0.12</small><br><small>-731.1%</small></td><td class='negative'>435<br><small>100%</small><br><small>TNO:0.50</small><br><small>-98.6%</small></td><td class='positive'>187<br><small>100%</small><br><small>TNO:1.17</small><br><small>+14.6%</small></td><td class='negative'>272<br><small>100%</small><br><small>TNO:0.81</small><br><small>-24.2%</small></td><td>228<br><small>100%</small><br><small>TNO:0.96</small><br><small>-4.1%</small></td><td class='negative'>363<br><small>100%</small><br><small>TNO:0.60</small><br><small>-65.8%</small></td><td class='negative'>352<br><small>100%</small><br><small>TNO:0.62</small><br><small>-60.7%</small></td><td class='negative'>238<br><small>100%</small><br><small>TNO:0.92</small><br><small>-8.7%</small></td></tr>
+<tr><td class='skill-name'>figma-code-connect</td><td>5,089<br><small>base</small></td><td class='negative'>7,963<br><small>100%</small><br><small>TNO:0.64</small><br><small>-56.5%</small></td><td class='negative'>5,440<br><small>100%</small><br><small>TNO:0.94</small><br><small>-6.9%</small></td><td class='positive'>5,013<br><small>100%</small><br><small>TNO:1.02</small><br><small>+1.5%</small></td><td>5,204<br><small>100%</small><br><small>TNO:0.98</small><br><small>-2.3%</small></td><td>5,204<br><small>100%</small><br><small>TNO:0.98</small><br><small>-2.3%</small></td><td>5,304<br><small>100%</small><br><small>TNO:0.96</small><br><small>-4.2%</small></td><td>5,293<br><small>100%</small><br><small>TNO:0.96</small><br><small>-4.0%</small></td><td class='positive'>5,085<br><small>100%</small><br><small>TNO:1.00</small><br><small>+0.1%</small></td></tr>
+<tr><td class='skill-name'>figma-design-system-rules</td><td>4,567<br><small>base</small></td><td class='negative'>10,480<br><small>100%</small><br><small>TNO:0.44</small><br><small>-129.5%</small></td><td class='negative'>5,154<br><small>100%</small><br><small>TNO:0.89</small><br><small>-12.9%</small></td><td class='positive'>4,464<br><small>100%</small><br><small>TNO:1.02</small><br><small>+2.3%</small></td><td class='negative'>4,810<br><small>100%</small><br><small>TNO:0.95</small><br><small>-5.3%</small></td><td>4,719<br><small>100%</small><br><small>TNO:0.97</small><br><small>-3.3%</small></td><td class='negative'>4,910<br><small>100%</small><br><small>TNO:0.93</small><br><small>-7.5%</small></td><td class='negative'>4,899<br><small>100%</small><br><small>TNO:0.93</small><br><small>-7.3%</small></td><td class='positive'>4,563<br><small>100%</small><br><small>TNO:1.00</small><br><small>+0.1%</small></td></tr>
+<tr><td class='skill-name'>figma-generate-design</td><td>5,399<br><small>base</small></td><td class='negative'>7,345<br><small>100%</small><br><small>TNO:0.74</small><br><small>-36.0%</small></td><td class='negative'>5,940<br><small>100%</small><br><small>TNO:0.91</small><br><small>-10.0%</small></td><td class='positive'>5,187<br><small>100%</small><br><small>TNO:1.04</small><br><small>+3.9%</small></td><td>5,463<br><small>100%</small><br><small>TNO:0.99</small><br><small>-1.2%</small></td><td>5,463<br><small>100%</small><br><small>TNO:0.99</small><br><small>-1.2%</small></td><td>5,563<br><small>100%</small><br><small>TNO:0.97</small><br><small>-3.0%</small></td><td>5,552<br><small>100%</small><br><small>TNO:0.97</small><br><small>-2.8%</small></td><td class='positive'>5,387<br><small>100%</small><br><small>TNO:1.00</small><br><small>+0.2%</small></td></tr>
+<tr><td class='skill-name'>figma-generate-library</td><td>4,964<br><small>base</small></td><td class='negative'>7,601<br><small>100%</small><br><small>TNO:0.65</small><br><small>-53.1%</small></td><td class='negative'>5,356<br><small>100%</small><br><small>TNO:0.93</small><br><small>-7.9%</small></td><td class='positive'>4,839<br><small>100%</small><br><small>TNO:1.03</small><br><small>+2.5%</small></td><td>5,076<br><small>100%</small><br><small>TNO:0.98</small><br><small>-2.3%</small></td><td>5,076<br><small>100%</small><br><small>TNO:0.98</small><br><small>-2.3%</small></td><td>5,178<br><small>100%</small><br><small>TNO:0.96</small><br><small>-4.3%</small></td><td>5,167<br><small>100%</small><br><small>TNO:0.96</small><br><small>-4.1%</small></td><td class='positive'>4,959<br><small>100%</small><br><small>TNO:1.00</small><br><small>+0.1%</small></td></tr>
+<tr><td class='skill-name'>gstack-autoplan</td><td>17,965<br><small>base</small></td><td class='negative'>26,087<br><small>100%</small><br><small>TNO:0.69</small><br><small>-45.2%</small></td><td class='negative'>20,613<br><small>100%</small><br><small>TNO:0.87</small><br><small>-14.7%</small></td><td class='positive'>17,715<br><small>100%</small><br><small>TNO:1.01</small><br><small>+1.4%</small></td><td>18,094<br><small>100%</small><br><small>TNO:0.99</small><br><small>-0.7%</small></td><td>18,094<br><small>100%</small><br><small>TNO:0.99</small><br><small>-0.7%</small></td><td>18,196<br><small>100%</small><br><small>TNO:0.99</small><br><small>-1.3%</small></td><td>18,185<br><small>100%</small><br><small>TNO:0.99</small><br><small>-1.2%</small></td><td class='positive'>17,772<br><small>100%</small><br><small>TNO:1.01</small><br><small>+1.1%</small></td></tr>
+<tr><td class='skill-name'>gstack-benchmark</td><td>7,981<br><small>base</small></td><td class='negative'>11,507<br><small>100%</small><br><small>TNO:0.69</small><br><small>-44.2%</small></td><td class='negative'>9,325<br><small>100%</small><br><small>TNO:0.86</small><br><small>-16.8%</small></td><td class='positive'>7,818<br><small>100%</small><br><small>TNO:1.02</small><br><small>+2.0%</small></td><td>8,022<br><small>100%</small><br><small>TNO:0.99</small><br><small>-0.5%</small></td><td>8,022<br><small>100%</small><br><small>TNO:0.99</small><br><small>-0.5%</small></td><td>8,123<br><small>100%</small><br><small>TNO:0.98</small><br><small>-1.8%</small></td><td>8,112<br><small>100%</small><br><small>TNO:0.98</small><br><small>-1.6%</small></td><td class='positive'>7,890<br><small>100%</small><br><small>TNO:1.01</small><br><small>+1.1%</small></td></tr>
+<tr><td class='skill-name'>gstack-canary</td><td>10,585<br><small>base</small></td><td class='negative'>13,702<br><small>100%</small><br><small>TNO:0.77</small><br><small>-29.4%</small></td><td>10,719<br><small>100%</small><br><small>TNO:0.99</small><br><small>-1.3%</small></td><td class='positive'>8,919<br><small>100%</small><br><small>TNO:1.19</small><br><small>+15.7%</small></td><td class='positive'>9,159<br><small>100%</small><br><small>TNO:1.16</small><br><small>+13.5%</small></td><td class='positive'>9,159<br><small>100%</small><br><small>TNO:1.16</small><br><small>+13.5%</small></td><td class='positive'>9,257<br><small>100%</small><br><small>TNO:1.14</small><br><small>+12.5%</small></td><td class='positive'>9,246<br><small>100%</small><br><small>TNO:1.14</small><br><small>+12.6%</small></td><td class='positive'>8,988<br><small>100%</small><br><small>TNO:1.18</small><br><small>+15.1%</small></td></tr>
+<tr><td class='skill-name'>gstack-careful</td><td>750<br><small>base</small></td><td class='negative'>1,473<br><small>100%</small><br><small>TNO:0.51</small><br><small>-96.4%</small></td><td class='positive'>749<br><small>100%</small><br><small>TNO:1.00</small><br><small>+0.1%</small></td><td class='positive'>556<br><small>100%</small><br><small>TNO:1.35</small><br><small>+25.9%</small></td><td class='positive'>670<br><small>100%</small><br><small>TNO:1.12</small><br><small>+10.7%</small></td><td class='positive'>670<br><small>100%</small><br><small>TNO:1.12</small><br><small>+10.7%</small></td><td>772<br><small>100%</small><br><small>TNO:0.97</small><br><small>-2.9%</small></td><td>761<br><small>100%</small><br><small>TNO:0.99</small><br><small>-1.5%</small></td><td class='positive'>629<br><small>100%</small><br><small>TNO:1.19</small><br><small>+16.1%</small></td></tr>
+<tr><td class='skill-name'>gstack-checkpoint</td><td>9,992<br><small>base</small></td><td class='negative'>14,490<br><small>100%</small><br><small>TNO:0.69</small><br><small>-45.0%</small></td><td class='negative'>11,597<br><small>100%</small><br><small>TNO:0.86</small><br><small>-16.1%</small></td><td class='positive'>9,814<br><small>100%</small><br><small>TNO:1.02</small><br><small>+1.8%</small></td><td>10,020<br><small>100%</small><br><small>TNO:1.00</small><br><small>-0.3%</small></td><td>10,020<br><small>100%</small><br><small>TNO:1.00</small><br><small>-0.3%</small></td><td>10,122<br><small>100%</small><br><small>TNO:0.99</small><br><small>-1.3%</small></td><td>10,111<br><small>100%</small><br><small>TNO:0.99</small><br><small>-1.2%</small></td><td class='positive'>9,844<br><small>100%</small><br><small>TNO:1.02</small><br><small>+1.5%</small></td></tr>
+<tr><td class='skill-name'>gstack-codex</td><td>15,009<br><small>base</small></td><td class='negative'>21,581<br><small>100%</small><br><small>TNO:0.70</small><br><small>-43.8%</small></td><td class='negative'>17,150<br><small>100%</small><br><small>TNO:0.88</small><br><small>-14.3%</small></td><td class='positive'>14,807<br><small>100%</small><br><small>TNO:1.01</small><br><small>+1.3%</small></td><td>15,179<br><small>100%</small><br><small>TNO:0.99</small><br><small>-1.1%</small></td><td>15,179<br><small>100%</small><br><small>TNO:0.99</small><br><small>-1.1%</small></td><td>15,281<br><small>100%</small><br><small>TNO:0.98</small><br><small>-1.8%</small></td><td>15,270<br><small>100%</small><br><small>TNO:0.98</small><br><small>-1.7%</small></td><td class='positive'>14,922<br><small>100%</small><br><small>TNO:1.01</small><br><small>+0.6%</small></td></tr>
+<tr><td class='skill-name'>gstack-freeze</td><td>882<br><small>base</small></td><td class='negative'>1,591<br><small>100%</small><br><small>TNO:0.55</small><br><small>-80.4%</small></td><td>900<br><small>100%</small><br><small>TNO:0.98</small><br><small>-2.0%</small></td><td class='positive'>640<br><small>100%</small><br><small>TNO:1.38</small><br><small>+27.4%</small></td><td class='positive'>751<br><small>100%</small><br><small>TNO:1.17</small><br><small>+14.9%</small></td><td class='positive'>751<br><small>100%</small><br><small>TNO:1.17</small><br><small>+14.9%</small></td><td class='positive'>853<br><small>100%</small><br><small>TNO:1.03</small><br><small>+3.3%</small></td><td class='positive'>842<br><small>100%</small><br><small>TNO:1.05</small><br><small>+4.5%</small></td><td class='positive'>710<br><small>100%</small><br><small>TNO:1.24</small><br><small>+19.5%</small></td></tr>
+<tr><td class='skill-name'>gstack-gstack-upgrade</td><td>3,238<br><small>base</small></td><td class='negative'>4,109<br><small>100%</small><br><small>TNO:0.79</small><br><small>-26.9%</small></td><td class='negative'>3,843<br><small>100%</small><br><small>TNO:0.84</small><br><small>-18.7%</small></td><td class='positive'>3,102<br><small>100%</small><br><small>TNO:1.04</small><br><small>+4.2%</small></td><td class='positive'>3,192<br><small>100%</small><br><small>TNO:1.01</small><br><small>+1.4%</small></td><td class='positive'>3,192<br><small>100%</small><br><small>TNO:1.01</small><br><small>+1.4%</small></td><td>3,294<br><small>100%</small><br><small>TNO:0.98</small><br><small>-1.7%</small></td><td>3,283<br><small>100%</small><br><small>TNO:0.99</small><br><small>-1.4%</small></td><td class='positive'>3,159<br><small>100%</small><br><small>TNO:1.03</small><br><small>+2.4%</small></td></tr>
+<tr><td class='skill-name'>gstack-guard</td><td>918<br><small>base</small></td><td class='negative'>1,371<br><small>100%</small><br><small>TNO:0.67</small><br><small>-49.3%</small></td><td class='positive'>856<br><small>100%</small><br><small>TNO:1.07</small><br><small>+6.8%</small></td><td class='positive'>602<br><small>100%</small><br><small>TNO:1.52</small><br><small>+34.4%</small></td><td class='positive'>723<br><small>100%</small><br><small>TNO:1.27</small><br><small>+21.2%</small></td><td class='positive'>723<br><small>100%</small><br><small>TNO:1.27</small><br><small>+21.2%</small></td><td class='positive'>825<br><small>100%</small><br><small>TNO:1.11</small><br><small>+10.1%</small></td><td class='positive'>814<br><small>100%</small><br><small>TNO:1.13</small><br><small>+11.3%</small></td><td class='positive'>691<br><small>100%</small><br><small>TNO:1.33</small><br><small>+24.7%</small></td></tr>
+<tr><td class='skill-name'>gstack-investigate</td><td>10,301<br><small>base</small></td><td class='negative'>15,435<br><small>100%</small><br><small>TNO:0.67</small><br><small>-49.8%</small></td><td class='negative'>11,825<br><small>100%</small><br><small>TNO:0.87</small><br><small>-14.8%</small></td><td class='positive'>9,983<br><small>100%</small><br><small>TNO:1.03</small><br><small>+3.1%</small></td><td>10,306<br><small>100%</small><br><small>TNO:1.00</small><br><small>-0.0%</small></td><td>10,306<br><small>100%</small><br><small>TNO:1.00</small><br><small>-0.0%</small></td><td>10,408<br><small>100%</small><br><small>TNO:0.99</small><br><small>-1.0%</small></td><td>10,397<br><small>100%</small><br><small>TNO:0.99</small><br><small>-0.9%</small></td><td class='positive'>10,096<br><small>100%</small><br><small>TNO:1.02</small><br><small>+2.0%</small></td></tr>
+<tr><td class='skill-name'>gstack-learn</td><td>9,141<br><small>base</small></td><td class='negative'>13,872<br><small>100%</small><br><small>TNO:0.66</small><br><small>-51.8%</small></td><td class='negative'>10,777<br><small>100%</small><br><small>TNO:0.85</small><br><small>-17.9%</small></td><td class='positive'>8,990<br><small>100%</small><br><small>TNO:1.02</small><br><small>+1.7%</small></td><td>9,214<br><small>100%</small><br><small>TNO:0.99</small><br><small>-0.8%</small></td><td>9,214<br><small>100%</small><br><small>TNO:0.99</small><br><small>-0.8%</small></td><td>9,316<br><small>100%</small><br><small>TNO:0.98</small><br><small>-1.9%</small></td><td>9,305<br><small>100%</small><br><small>TNO:0.98</small><br><small>-1.8%</small></td><td class='positive'>9,020<br><small>100%</small><br><small>TNO:1.01</small><br><small>+1.3%</small></td></tr>
+<tr><td class='skill-name'>gstack-qa</td><td>17,736<br><small>base</small></td><td class='negative'>25,841<br><small>100%</small><br><small>TNO:0.69</small><br><small>-45.7%</small></td><td class='negative'>20,120<br><small>100%</small><br><small>TNO:0.88</small><br><small>-13.4%</small></td><td class='positive'>17,468<br><small>100%</small><br><small>TNO:1.02</small><br><small>+1.5%</small></td><td>17,863<br><small>100%</small><br><small>TNO:0.99</small><br><small>-0.7%</small></td><td>17,863<br><small>100%</small><br><small>TNO:0.99</small><br><small>-0.7%</small></td><td>17,965<br><small>100%</small><br><small>TNO:0.99</small><br><small>-1.3%</small></td><td>17,954<br><small>100%</small><br><small>TNO:0.99</small><br><small>-1.2%</small></td><td class='positive'>17,543<br><small>100%</small><br><small>TNO:1.01</small><br><small>+1.1%</small></td></tr>
+<tr><td class='skill-name'>gstack-review</td><td>19,222<br><small>base</small></td><td class='negative'>27,628<br><small>100%</small><br><small>TNO:0.70</small><br><small>-43.7%</small></td><td class='negative'>22,284<br><small>100%</small><br><small>TNO:0.86</small><br><small>-15.9%</small></td><td class='positive'>19,056<br><small>100%</small><br><small>TNO:1.01</small><br><small>+0.9%</small></td><td>19,406<br><small>100%</small><br><small>TNO:0.99</small><br><small>-1.0%</small></td><td>19,406<br><small>100%</small><br><small>TNO:0.99</small><br><small>-1.0%</small></td><td>19,508<br><small>100%</small><br><small>TNO:0.99</small><br><small>-1.5%</small></td><td>19,497<br><small>100%</small><br><small>TNO:0.99</small><br><small>-1.4%</small></td><td class='positive'>19,086<br><small>100%</small><br><small>TNO:1.01</small><br><small>+0.7%</small></td></tr>
+<tr><td class='skill-name'>gstack-ship</td><td>32,336<br><small>base</small></td><td class='negative'>47,212<br><small>100%</small><br><small>TNO:0.68</small><br><small>-46.0%</small></td><td class='negative'>36,869<br><small>100%</small><br><small>TNO:0.88</small><br><small>-14.0%</small></td><td class='positive'>32,143<br><small>100%</small><br><small>TNO:1.01</small><br><small>+0.6%</small></td><td>32,772<br><small>100%</small><br><small>TNO:0.99</small><br><small>-1.3%</small></td><td>32,772<br><small>100%</small><br><small>TNO:0.99</small><br><small>-1.3%</small></td><td>32,874<br><small>100%</small><br><small>TNO:0.98</small><br><small>-1.7%</small></td><td>32,863<br><small>100%</small><br><small>TNO:0.98</small><br><small>-1.6%</small></td><td class='positive'>32,192<br><small>100%</small><br><small>TNO:1.00</small><br><small>+0.4%</small></td></tr>
+<tr><td class='skill-name'>gstack-unfreeze</td><td>443<br><small>base</small></td><td class='negative'>786<br><small>100%</small><br><small>TNO:0.56</small><br><small>-77.4%</small></td><td class='negative'>525<br><small>100%</small><br><small>TNO:0.84</small><br><small>-18.5%</small></td><td class='positive'>338<br><small>100%</small><br><small>TNO:1.31</small><br><small>+23.7%</small></td><td class='positive'>386<br><small>100%</small><br><small>TNO:1.15</small><br><small>+12.9%</small></td><td class='positive'>386<br><small>100%</small><br><small>TNO:1.15</small><br><small>+12.9%</small></td><td class='negative'>488<br><small>100%</small><br><small>TNO:0.91</small><br><small>-10.2%</small></td><td class='negative'>477<br><small>100%</small><br><small>TNO:0.93</small><br><small>-7.7%</small></td><td class='positive'>362<br><small>100%</small><br><small>TNO:1.22</small><br><small>+18.3%</small></td></tr>
+<tr><td class='skill-name'>skill-creator</td><td>7,795<br><small>base</small></td><td class='negative'>11,087<br><small>100%</small><br><small>TNO:0.70</small><br><small>-42.2%</small></td><td class='negative'>8,557<br><small>100%</small><br><small>TNO:0.91</small><br><small>-9.8%</small></td><td class='positive'>7,722<br><small>100%</small><br><small>TNO:1.01</small><br><small>+0.9%</small></td><td>7,935<br><small>100%</small><br><small>TNO:0.98</small><br><small>-1.8%</small></td><td>7,935<br><small>100%</small><br><small>TNO:0.98</small><br><small>-1.8%</small></td><td>8,037<br><small>100%</small><br><small>TNO:0.97</small><br><small>-3.1%</small></td><td>8,026<br><small>100%</small><br><small>TNO:0.97</small><br><small>-3.0%</small></td><td class='positive'>7,791<br><small>100%</small><br><small>TNO:1.00</small><br><small>+0.1%</small></td></tr>
+<tr><td class='skill-name'>superpowers-brainstorming</td><td>2,538<br><small>base</small></td><td class='negative'>5,246<br><small>100%</small><br><small>TNO:0.48</small><br><small>-106.7%</small></td><td class='negative'>3,060<br><small>100%</small><br><small>TNO:0.83</small><br><small>-20.6%</small></td><td class='positive'>2,468<br><small>100%</small><br><small>TNO:1.03</small><br><small>+2.8%</small></td><td>2,637<br><small>100%</small><br><small>TNO:0.96</small><br><small>-3.9%</small></td><td>2,637<br><small>100%</small><br><small>TNO:0.96</small><br><small>-3.9%</small></td><td class='negative'>2,730<br><small>100%</small><br><small>TNO:0.93</small><br><small>-7.6%</small></td><td class='negative'>2,719<br><small>100%</small><br><small>TNO:0.93</small><br><small>-7.1%</small></td><td>2,555<br><small>100%</small><br><small>TNO:0.99</small><br><small>-0.7%</small></td></tr>
+<tr><td class='skill-name'>superpowers-dispatching-parallel-agents</td><td>1,630<br><small>base</small></td><td class='negative'>3,831<br><small>100%</small><br><small>TNO:0.43</small><br><small>-135.0%</small></td><td class='negative'>2,016<br><small>100%</small><br><small>TNO:0.81</small><br><small>-23.7%</small></td><td class='positive'>1,595<br><small>100%</small><br><small>TNO:1.02</small><br><small>+2.1%</small></td><td class='negative'>1,724<br><small>100%</small><br><small>TNO:0.95</small><br><small>-5.8%</small></td><td class='negative'>1,724<br><small>100%</small><br><small>TNO:0.95</small><br><small>-5.8%</small></td><td class='negative'>1,824<br><small>100%</small><br><small>TNO:0.89</small><br><small>-11.9%</small></td><td class='negative'>1,813<br><small>100%</small><br><small>TNO:0.90</small><br><small>-11.2%</small></td><td>1,632<br><small>100%</small><br><small>TNO:1.00</small><br><small>-0.1%</small></td></tr>
+<tr><td class='skill-name'>superpowers-executing-plans</td><td>591<br><small>base</small></td><td class='negative'>1,974<br><small>100%</small><br><small>TNO:0.30</small><br><small>-234.0%</small></td><td class='negative'>736<br><small>100%</small><br><small>TNO:0.80</small><br><small>-24.5%</small></td><td class='positive'>560<br><small>100%</small><br><small>TNO:1.06</small><br><small>+5.2%</small></td><td class='negative'>660<br><small>100%</small><br><small>TNO:0.90</small><br><small>-11.7%</small></td><td class='negative'>660<br><small>100%</small><br><small>TNO:0.90</small><br><small>-11.7%</small></td><td class='negative'>762<br><small>100%</small><br><small>TNO:0.78</small><br><small>-28.9%</small></td><td class='negative'>751<br><small>100%</small><br><small>TNO:0.79</small><br><small>-27.1%</small></td><td class='positive'>589<br><small>100%</small><br><small>TNO:1.00</small><br><small>+0.3%</small></td></tr>
+<tr><td class='skill-name'>superpowers-finishing-a-development-branch</td><td>1,256<br><small>base</small></td><td class='negative'>3,022<br><small>100%</small><br><small>TNO:0.42</small><br><small>-140.6%</small></td><td class='negative'>1,474<br><small>100%</small><br><small>TNO:0.85</small><br><small>-17.4%</small></td><td class='positive'>1,146<br><small>100%</small><br><small>TNO:1.10</small><br><small>+8.8%</small></td><td>1,277<br><small>100%</small><br><small>TNO:0.98</small><br><small>-1.7%</small></td><td>1,277<br><small>100%</small><br><small>TNO:0.98</small><br><small>-1.7%</small></td><td class='negative'>1,375<br><small>100%</small><br><small>TNO:0.91</small><br><small>-9.5%</small></td><td class='negative'>1,364<br><small>100%</small><br><small>TNO:0.92</small><br><small>-8.6%</small></td><td class='positive'>1,204<br><small>100%</small><br><small>TNO:1.04</small><br><small>+4.1%</small></td></tr>
+<tr><td class='skill-name'>superpowers-receiving-code-review</td><td>1,689<br><small>base</small></td><td class='negative'>4,715<br><small>100%</small><br><small>TNO:0.36</small><br><small>-179.2%</small></td><td class='negative'>2,080<br><small>100%</small><br><small>TNO:0.81</small><br><small>-23.1%</small></td><td class='positive'>1,639<br><small>100%</small><br><small>TNO:1.03</small><br><small>+3.0%</small></td><td class='negative'>1,825<br><small>100%</small><br><small>TNO:0.93</small><br><small>-8.1%</small></td><td class='negative'>1,825<br><small>100%</small><br><small>TNO:0.93</small><br><small>-8.1%</small></td><td class='negative'>1,925<br><small>100%</small><br><small>TNO:0.88</small><br><small>-14.0%</small></td><td class='negative'>1,914<br><small>100%</small><br><small>TNO:0.88</small><br><small>-13.3%</small></td><td>1,690<br><small>100%</small><br><small>TNO:1.00</small><br><small>-0.1%</small></td></tr>
+<tr><td class='skill-name'>superpowers-requesting-code-review</td><td>801<br><small>base</small></td><td class='negative'>1,970<br><small>100%</small><br><small>TNO:0.41</small><br><small>-145.9%</small></td><td class='negative'>902<br><small>100%</small><br><small>TNO:0.89</small><br><small>-12.6%</small></td><td class='positive'>735<br><small>100%</small><br><small>TNO:1.09</small><br><small>+8.2%</small></td><td>823<br><small>100%</small><br><small>TNO:0.97</small><br><small>-2.7%</small></td><td>823<br><small>100%</small><br><small>TNO:0.97</small><br><small>-2.7%</small></td><td class='negative'>923<br><small>100%</small><br><small>TNO:0.87</small><br><small>-15.2%</small></td><td class='negative'>912<br><small>100%</small><br><small>TNO:0.88</small><br><small>-13.9%</small></td><td class='positive'>768<br><small>100%</small><br><small>TNO:1.04</small><br><small>+4.1%</small></td></tr>
+<tr><td class='skill-name'>superpowers-subagent-driven-development</td><td>3,139<br><small>base</small></td><td class='negative'>5,260<br><small>100%</small><br><small>TNO:0.60</small><br><small>-67.6%</small></td><td class='negative'>3,795<br><small>100%</small><br><small>TNO:0.83</small><br><small>-20.9%</small></td><td class='positive'>3,060<br><small>100%</small><br><small>TNO:1.03</small><br><small>+2.5%</small></td><td>3,180<br><small>100%</small><br><small>TNO:0.99</small><br><small>-1.3%</small></td><td>3,180<br><small>100%</small><br><small>TNO:0.99</small><br><small>-1.3%</small></td><td>3,280<br><small>100%</small><br><small>TNO:0.96</small><br><small>-4.5%</small></td><td>3,269<br><small>100%</small><br><small>TNO:0.96</small><br><small>-4.1%</small></td><td class='positive'>3,089<br><small>100%</small><br><small>TNO:1.02</small><br><small>+1.6%</small></td></tr>
+<tr><td class='skill-name'>superpowers-using-git-worktrees</td><td>1,563<br><small>base</small></td><td class='negative'>3,529<br><small>100%</small><br><small>TNO:0.44</small><br><small>-125.8%</small></td><td class='negative'>1,777<br><small>100%</small><br><small>TNO:0.88</small><br><small>-13.7%</small></td><td class='positive'>1,462<br><small>100%</small><br><small>TNO:1.07</small><br><small>+6.5%</small></td><td>1,595<br><small>100%</small><br><small>TNO:0.98</small><br><small>-2.0%</small></td><td>1,595<br><small>100%</small><br><small>TNO:0.98</small><br><small>-2.0%</small></td><td class='negative'>1,693<br><small>100%</small><br><small>TNO:0.92</small><br><small>-8.3%</small></td><td class='negative'>1,682<br><small>100%</small><br><small>TNO:0.93</small><br><small>-7.6%</small></td><td class='positive'>1,513<br><small>100%</small><br><small>TNO:1.03</small><br><small>+3.2%</small></td></tr>
+<tr><td class='skill-name'>superpowers-using-superpowers</td><td>1,515<br><small>base</small></td><td class='negative'>3,300<br><small>100%</small><br><small>TNO:0.46</small><br><small>-117.8%</small></td><td class='negative'>1,991<br><small>100%</small><br><small>TNO:0.76</small><br><small>-31.4%</small></td><td class='positive'>1,479<br><small>100%</small><br><small>TNO:1.02</small><br><small>+2.4%</small></td><td class='negative'>1,599<br><small>100%</small><br><small>TNO:0.95</small><br><small>-5.5%</small></td><td class='negative'>1,599<br><small>100%</small><br><small>TNO:0.95</small><br><small>-5.5%</small></td><td class='negative'>1,699<br><small>100%</small><br><small>TNO:0.89</small><br><small>-12.1%</small></td><td class='negative'>1,688<br><small>100%</small><br><small>TNO:0.90</small><br><small>-11.4%</small></td><td>1,518<br><small>100%</small><br><small>TNO:1.00</small><br><small>-0.2%</small></td></tr>
+<tr><td class='skill-name'>superpowers-verification-before-completion</td><td>1,123<br><small>base</small></td><td class='negative'>3,358<br><small>100%</small><br><small>TNO:0.33</small><br><small>-199.0%</small></td><td class='negative'>1,415<br><small>100%</small><br><small>TNO:0.79</small><br><small>-26.0%</small></td><td class='positive'>1,068<br><small>100%</small><br><small>TNO:1.05</small><br><small>+4.9%</small></td><td class='negative'>1,228<br><small>100%</small><br><small>TNO:0.91</small><br><small>-9.3%</small></td><td class='negative'>1,228<br><small>100%</small><br><small>TNO:0.91</small><br><small>-9.3%</small></td><td class='negative'>1,330<br><small>100%</small><br><small>TNO:0.84</small><br><small>-18.4%</small></td><td class='negative'>1,319<br><small>100%</small><br><small>TNO:0.85</small><br><small>-17.5%</small></td><td class='positive'>1,121<br><small>100%</small><br><small>TNO:1.00</small><br><small>+0.2%</small></td></tr>
+<tr><td class='skill-name'>superpowers-writing-plans</td><td>1,575<br><small>base</small></td><td class='negative'>3,830<br><small>100%</small><br><small>TNO:0.41</small><br><small>-143.2%</small></td><td class='negative'>1,870<br><small>100%</small><br><small>TNO:0.84</small><br><small>-18.7%</small></td><td class='positive'>1,544<br><small>100%</small><br><small>TNO:1.02</small><br><small>+2.0%</small></td><td class='negative'>1,680<br><small>100%</small><br><small>TNO:0.94</small><br><small>-6.7%</small></td><td class='negative'>1,680<br><small>100%</small><br><small>TNO:0.94</small><br><small>-6.7%</small></td><td class='negative'>1,782<br><small>100%</small><br><small>TNO:0.88</small><br><small>-13.1%</small></td><td class='negative'>1,771<br><small>100%</small><br><small>TNO:0.89</small><br><small>-12.4%</small></td><td class='positive'>1,573<br><small>100%</small><br><small>TNO:1.00</small><br><small>+0.1%</small></td></tr>
+<tr><td class='skill-name'>systematic-debugging</td><td>2,574<br><small>base</small></td><td class='negative'>5,168<br><small>100%</small><br><small>TNO:0.50</small><br><small>-100.8%</small></td><td class='negative'>2,951<br><small>100%</small><br><small>TNO:0.87</small><br><small>-14.6%</small></td><td class='positive'>2,543<br><small>100%</small><br><small>TNO:1.01</small><br><small>+1.2%</small></td><td>2,688<br><small>100%</small><br><small>TNO:0.96</small><br><small>-4.4%</small></td><td>2,688<br><small>100%</small><br><small>TNO:0.96</small><br><small>-4.4%</small></td><td class='negative'>2,790<br><small>100%</small><br><small>TNO:0.92</small><br><small>-8.4%</small></td><td class='negative'>2,779<br><small>100%</small><br><small>TNO:0.93</small><br><small>-8.0%</small></td><td class='positive'>2,572<br><small>100%</small><br><small>TNO:1.00</small><br><small>+0.1%</small></td></tr>
+<tr><td class='skill-name'>tdd</td><td>321<br><small>base</small></td><td class='negative'>1,912<br><small>100%</small><br><small>TNO:0.17</small><br><small>-495.6%</small></td><td class='negative'>526<br><small>100%</small><br><small>TNO:0.61</small><br><small>-63.9%</small></td><td class='positive'>281<br><small>100%</small><br><small>TNO:1.14</small><br><small>+12.5%</small></td><td class='negative'>372<br><small>100%</small><br><small>TNO:0.86</small><br><small>-15.9%</small></td><td class='positive'>288<br><small>100%</small><br><small>TNO:1.11</small><br><small>+10.3%</small></td><td class='negative'>464<br><small>100%</small><br><small>TNO:0.69</small><br><small>-44.5%</small></td><td class='negative'>453<br><small>100%</small><br><small>TNO:0.71</small><br><small>-41.1%</small></td><td class='negative'>339<br><small>100%</small><br><small>TNO:0.95</small><br><small>-5.6%</small></td></tr>
+<tr><td class='skill-name'>test-driven-development</td><td>2,799<br><small>base</small></td><td class='negative'>6,064<br><small>100%</small><br><small>TNO:0.46</small><br><small>-116.6%</small></td><td class='negative'>3,425<br><small>100%</small><br><small>TNO:0.82</small><br><small>-22.4%</small></td><td class='positive'>2,771<br><small>100%</small><br><small>TNO:1.01</small><br><small>+1.0%</small></td><td class='negative'>2,940<br><small>100%</small><br><small>TNO:0.95</small><br><small>-5.0%</small></td><td class='negative'>2,940<br><small>100%</small><br><small>TNO:0.95</small><br><small>-5.0%</small></td><td class='negative'>3,042<br><small>100%</small><br><small>TNO:0.92</small><br><small>-8.7%</small></td><td class='negative'>3,031<br><small>100%</small><br><small>TNO:0.92</small><br><small>-8.3%</small></td><td class='positive'>2,797<br><small>100%</small><br><small>TNO:1.00</small><br><small>+0.1%</small></td></tr>
+<tr><td class='skill-name'>writing-skills</td><td>5,779<br><small>base</small></td><td class='negative'>12,200<br><small>100%</small><br><small>TNO:0.47</small><br><small>-111.1%</small></td><td class='negative'>6,643<br><small>100%</small><br><small>TNO:0.87</small><br><small>-15.0%</small></td><td class='positive'>5,748<br><small>100%</small><br><small>TNO:1.01</small><br><small>+0.5%</small></td><td>6,045<br><small>100%</small><br><small>TNO:0.96</small><br><small>-4.6%</small></td><td>6,045<br><small>100%</small><br><small>TNO:0.96</small><br><small>-4.6%</small></td><td class='negative'>6,143<br><small>100%</small><br><small>TNO:0.94</small><br><small>-6.3%</small></td><td class='negative'>6,132<br><small>100%</small><br><small>TNO:0.94</small><br><small>-6.1%</small></td><td>5,783<br><small>100%</small><br><small>TNO:1.00</small><br><small>-0.1%</small></td></tr>
+
+<tr class='total-row'><td class='skill-name'><strong>TOTAL</strong></td><td>213,425<br><small>base</small></td><td>338,360<br><small>100%</small><br><small>TNO:0.54</small><br><small>-58.5%</small></td><td>243,695<br><small>100%</small><br><small>TNO:0.86</small><br><small>-14.2%</small></td><td class='positive'>207,462<br><small>100%</small><br><small>TNO:1.08</small><br><small>+2.8%</small></td><td>214,790<br><small>100%</small><br><small>TNO:0.99</small><br><small>-0.6%</small></td><td>214,571<br><small>100%</small><br><small>TNO:1.00</small><br><small>-0.5%</small></td><td>218,399<br><small>100%</small><br><small>TNO:0.93</small><br><small>-2.3%</small></td><td>218,003<br><small>100%</small><br><small>TNO:0.94</small><br><small>-2.1%</small></td><td class='positive'>209,670<br><small>100%</small><br><small>TNO:1.04</small><br><small>+1.8%</small></td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ─── STATISTICAL ANALYSIS ─── -->
+<div class="section" id="statistics">
+<h2>Statistical Analysis</h2>
+<p style="color:#666; font-size:0.9rem;">Per-skill savings distribution across 36 skills. Standard deviation shows consistency — low stddev means predictable savings regardless of skill size.</p>
+<table>
+<thead><tr><th>Format</th><th>Mean Savings</th><th>Min Savings</th><th>Max Savings</th><th>Std Dev</th><th>Mean Tokens/Skill</th><th>Token Range</th></tr></thead>
+<tbody>
+<tr><td style='text-align:left'>JSON IR</td><td>-117.8%</td><td>-731.1%</td><td>-26.9%</td><td>133.2%</td><td>9,399</td><td>786 — 47,212</td></tr>
+<tr><td style='text-align:left'>HTML</td><td>-18.5%</td><td>-98.6%</td><td>+6.8%</td><td>17.5%</td><td>6,769</td><td>435 — 36,869</td></tr>
+<tr><td style='text-align:left'>Markdown (RT)</td><td>+6.5%</td><td>+0.5%</td><td>+34.4%</td><td>8.5%</td><td>5,763</td><td>187 — 32,143</td></tr>
+<tr><td style='text-align:left'>LML</td><td>-1.6%</td><td>-24.2%</td><td>+21.2%</td><td>8.2%</td><td>5,966</td><td>272 — 32,772</td></tr>
+<tr><td style='text-align:left'>LML Compact</td><td>-0.3%</td><td>-11.7%</td><td>+21.2%</td><td>7.0%</td><td>5,960</td><td>228 — 32,772</td></tr>
+<tr><td style='text-align:left'>LML Conserv.</td><td>-8.4%</td><td>-65.8%</td><td>+12.5%</td><td>13.7%</td><td>6,067</td><td>363 — 32,874</td></tr>
+<tr><td style='text-align:left'>LML Moderate</td><td>-7.6%</td><td>-60.7%</td><td>+12.6%</td><td>12.9%</td><td>6,056</td><td>352 — 32,863</td></tr>
+<tr><td style='text-align:left'>LML Aggress.</td><td>+2.9%</td><td>-8.7%</td><td>+24.7%</td><td>6.8%</td><td>5,824</td><td>238 — 32,192</td></tr>
+<tr><td style='text-align:left'>Binary Wire</td><td>-317.5%</td><td>-416.4%</td><td>-189.8%</td><td>56.7%</td><td>24,353</td><td>1,131 — 132,280</td></tr>
+<tr><td style='text-align:left'>Binary Token</td><td>-317.4%</td><td>-418.7%</td><td>-189.6%</td><td>56.9%</td><td>24,342</td><td>1,136 — 132,124</td></tr>
+
+</tbody>
+</table>
 
 <div class="info-box">
-  <strong>Why the small differences?</strong> Skill files are already compact Markdown. The ~39.5K baseline leaves little room for compression. The real value of AIF for skills is <strong>semantic typing</strong> (explicit @step, @verify, etc.) and <strong>format flexibility</strong> (one source, many outputs).
+<strong>Reading this table:</strong> Positive savings = fewer tokens than baseline. Negative = more tokens.
+Low standard deviation means the format performs consistently across skills of different sizes.
+Markdown (RT) has the highest variance because small skills benefit disproportionately from noise stripping.
+</div>
 </div>
 
-<h2>Binary Formats: Wire Transport, Not LLM Input</h2>
-<div class="card">
-  <table>
-    <thead>
-      <tr><th style="text-align:left">Format</th><th>Token Count</th><th>Raw Bytes</th><th>Tokens vs SKILL.md</th><th>Bytes vs JSON IR</th><th>Use Case</th></tr>
-    </thead>
-    <tbody>
-      <tr><td style="text-align:left">Binary Wire (postcard)</td><td>179,326</td><td>152,478</td><td class="negative">-353.9%</td><td class="positive">-45.2%</td><td style="text-align:left">Compact wire transport</td></tr>
-      <tr><td style="text-align:left">Binary Token-Optimized</td><td>179,279</td><td>151,964</td><td class="negative">-353.8%</td><td class="positive">-45.4%</td><td style="text-align:left">Token-aware binary encoding</td></tr>
-      <tr><td style="text-align:left;color:#666;">JSON IR (reference)</td><td style="color:#666;">71,640</td><td style="color:#666;">278,142</td><td style="color:#666;">-81.3%</td><td style="color:#666;">baseline</td><td style="text-align:left;color:#666;">Programmatic access</td></tr>
-    </tbody>
-  </table>
+<!-- ─── COMPLIANCE HEATMAP ─── -->
+<div class="section" id="compliance">
+<h2>Compliance &amp; TNO Heatmap</h2>
+<p style="color:#666; font-size:0.9rem;">
+<strong>Compliance</strong> measures what percentage of semantic blocks (@step, @verify, @precondition, @skill) survive format conversion.
+<strong>TNO (Token-Normalized Outcome)</strong> = compliance &divide; relative token cost. TNO &gt; 1.0 means the format is both cheaper AND fully compliant.
+TNO = 1.0 means same cost with full compliance. TNO &lt; 1.0 means you're paying more tokens for the same semantics.
+</p>
+<div class="legend">
+  <div class="legend-item"><div class="legend-swatch" style="background:#d4edda"></div> TNO &ge; 0.98 (excellent)</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#fff3cd"></div> TNO 0.90&ndash;0.97 (good)</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#f8d7da"></div> TNO &lt; 0.90 (costly)</div>
+</div>
+<table>
+<thead><tr><th>Skill</th><th>JSON IR</th><th>HTML</th><th>Markdown (RT)</th><th>LML</th><th>LML Compact</th><th>LML Conserv.</th><th>LML Moderate</th><th>LML Aggress.</th></tr><tr><td style='text-align:left;font-weight:600'>debugging</td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.12</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.50</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.17</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.81</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.96</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.60</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.62</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.92</small></td></tr>
+<tr><td style='text-align:left;font-weight:600'>figma-code-connect</td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.64</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.94</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.02</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.98</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.98</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.96</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.96</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.00</small></td></tr>
+<tr><td style='text-align:left;font-weight:600'>figma-design-system-rules</td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.44</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.89</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.02</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.95</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.97</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.93</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.93</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.00</small></td></tr>
+<tr><td style='text-align:left;font-weight:600'>figma-generate-design</td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.74</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.91</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.04</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:0.99</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:0.99</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.97</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.97</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.00</small></td></tr>
+<tr><td style='text-align:left;font-weight:600'>figma-generate-library</td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.65</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.93</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.03</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.98</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.98</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.96</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.96</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.00</small></td></tr>
+<tr><td style='text-align:left;font-weight:600'>gstack-autoplan</td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.69</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.87</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.01</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:0.99</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:0.99</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:0.99</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:0.99</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.01</small></td></tr>
+<tr><td style='text-align:left;font-weight:600'>gstack-benchmark</td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.69</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.86</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.02</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:0.99</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:0.99</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:0.98</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:0.98</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.01</small></td></tr>
+<tr><td style='text-align:left;font-weight:600'>gstack-canary</td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.77</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:0.99</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.19</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.16</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.16</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.14</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.14</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.18</small></td></tr>
+<tr><td style='text-align:left;font-weight:600'>gstack-careful</td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.51</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.00</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.35</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.12</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.12</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.97</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:0.99</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.19</small></td></tr>
+<tr><td style='text-align:left;font-weight:600'>gstack-checkpoint</td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.69</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.86</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.02</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.00</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.00</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:0.99</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:0.99</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.02</small></td></tr>
+<tr><td style='text-align:left;font-weight:600'>gstack-codex</td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.70</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.88</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.01</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:0.99</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:0.99</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:0.98</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:0.98</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.01</small></td></tr>
+<tr><td style='text-align:left;font-weight:600'>gstack-freeze</td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.55</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:0.98</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.38</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.17</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.17</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.03</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.05</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.24</small></td></tr>
+<tr><td style='text-align:left;font-weight:600'>gstack-gstack-upgrade</td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.79</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.84</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.04</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.01</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.01</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:0.98</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:0.99</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.03</small></td></tr>
+<tr><td style='text-align:left;font-weight:600'>gstack-guard</td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.67</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.07</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.52</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.27</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.27</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.11</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.13</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.33</small></td></tr>
+<tr><td style='text-align:left;font-weight:600'>gstack-investigate</td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.67</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.87</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.03</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.00</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.00</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:0.99</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:0.99</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.02</small></td></tr>
+<tr><td style='text-align:left;font-weight:600'>gstack-learn</td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.66</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.85</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.02</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:0.99</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:0.99</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:0.98</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:0.98</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.01</small></td></tr>
+<tr><td style='text-align:left;font-weight:600'>gstack-qa</td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.69</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.88</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.02</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:0.99</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:0.99</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:0.99</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:0.99</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.01</small></td></tr>
+<tr><td style='text-align:left;font-weight:600'>gstack-review</td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.70</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.86</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.01</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:0.99</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:0.99</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:0.99</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:0.99</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.01</small></td></tr>
+<tr><td style='text-align:left;font-weight:600'>gstack-ship</td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.68</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.88</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.01</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:0.99</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:0.99</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:0.98</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:0.98</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.00</small></td></tr>
+<tr><td style='text-align:left;font-weight:600'>gstack-unfreeze</td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.56</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.84</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.31</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.15</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.15</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.91</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.93</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.22</small></td></tr>
+<tr><td style='text-align:left;font-weight:600'>skill-creator</td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.70</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.91</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.01</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:0.98</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:0.98</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.97</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.97</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.00</small></td></tr>
+<tr><td style='text-align:left;font-weight:600'>superpowers-brainstorming</td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.48</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.83</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.03</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.96</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.96</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.93</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.93</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:0.99</small></td></tr>
+<tr><td style='text-align:left;font-weight:600'>superpowers-dispatching-parallel-agents</td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.43</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.81</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.02</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.95</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.95</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.89</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.90</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.00</small></td></tr>
+<tr><td style='text-align:left;font-weight:600'>superpowers-executing-plans</td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.30</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.80</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.06</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.90</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.90</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.78</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.79</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.00</small></td></tr>
+<tr><td style='text-align:left;font-weight:600'>superpowers-finishing-a-development-branch</td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.42</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.85</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.10</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:0.98</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:0.98</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.91</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.92</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.04</small></td></tr>
+<tr><td style='text-align:left;font-weight:600'>superpowers-receiving-code-review</td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.36</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.81</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.03</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.93</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.93</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.88</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.88</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.00</small></td></tr>
+<tr><td style='text-align:left;font-weight:600'>superpowers-requesting-code-review</td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.41</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.89</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.09</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.97</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.97</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.87</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.88</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.04</small></td></tr>
+<tr><td style='text-align:left;font-weight:600'>superpowers-subagent-driven-development</td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.60</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.83</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.03</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:0.99</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:0.99</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.96</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.96</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.02</small></td></tr>
+<tr><td style='text-align:left;font-weight:600'>superpowers-using-git-worktrees</td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.44</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.88</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.07</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.98</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.98</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.92</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.93</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.03</small></td></tr>
+<tr><td style='text-align:left;font-weight:600'>superpowers-using-superpowers</td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.46</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.76</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.02</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.95</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.95</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.89</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.90</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.00</small></td></tr>
+<tr><td style='text-align:left;font-weight:600'>superpowers-verification-before-completion</td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.33</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.79</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.05</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.91</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.91</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.84</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.85</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.00</small></td></tr>
+<tr><td style='text-align:left;font-weight:600'>superpowers-writing-plans</td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.41</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.84</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.02</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.94</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.94</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.88</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.89</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.00</small></td></tr>
+<tr><td style='text-align:left;font-weight:600'>systematic-debugging</td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.50</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.87</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.01</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.96</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.96</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.92</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.93</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.00</small></td></tr>
+<tr><td style='text-align:left;font-weight:600'>tdd</td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.17</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.61</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.14</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.86</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.11</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.69</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.71</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.95</small></td></tr>
+<tr><td style='text-align:left;font-weight:600'>test-driven-development</td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.46</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.82</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.01</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.95</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.95</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.92</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.92</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.00</small></td></tr>
+<tr><td style='text-align:left;font-weight:600'>writing-skills</td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.47</small></td><td style='background:#f8d7da;text-align:center'>100%<br><small>TNO:0.87</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.01</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.96</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.96</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.94</small></td><td style='background:#fff3cd;text-align:center'>100%<br><small>TNO:0.94</small></td><td style='background:#d4edda;text-align:center'>100%<br><small>TNO:1.00</small></td></tr>
+</thead>
+<tbody></tbody>
+</table>
 </div>
 
-<h2>Format Recommendation for Skills</h2>
-<div class="card">
-  <table class="rec-table">
-    <thead>
-      <tr><th style="text-align:left">Use Case</th><th>Recommended</th><th>TNO</th><th>Tokens</th><th>Why</th></tr>
-    </thead>
-    <tbody>
-      <tr><td>LLM context input</td><td class="best">Markdown (RT)</td><td>1.05</td><td>38,755</td><td style="text-align:left">Fewest tokens, human-readable, 100% compliance</td></tr>
-      <tr><td>Agent skill execution</td><td class="best">LML Aggressive</td><td>0.99</td><td>39,514</td><td style="text-align:left">Explicit typed tags for programmatic block identification</td></tr>
-      <tr><td>Human authoring</td><td class="good">SKILL.md (original)</td><td>1.00</td><td>39,506</td><td style="text-align:left">Familiar Markdown; source of truth for editing</td></tr>
-      <tr><td>Programmatic SDK use</td><td class="ok">JSON IR</td><td>0.49</td><td>71,640</td><td style="text-align:left">Typed AST for tooling; too verbose for LLM input</td></tr>
-      <tr><td>Wire transport / storage</td><td class="good">Binary Wire</td><td>N/A</td><td>N/A</td><td style="text-align:left">45% smaller bytes than JSON; for machines, not LLMs</td></tr>
-    </tbody>
-  </table>
-</div>
-
+<!-- ─── COST IMPACT ─── -->
+<div class="section" id="cost-impact">
 <h2>Cost Impact Analysis</h2>
-<div class="card">
-  <table>
-    <thead>
-      <tr><th style="text-align:left">Scenario</th><th>Format</th><th>Tokens</th><th>Cost @ $15/MTok</th><th>Savings</th></tr>
-    </thead>
-    <tbody>
-      <tr><td style="text-align:left">10 skills loaded once</td><td>SKILL.md</td><td>39,506</td><td>$0.59</td><td>—</td></tr>
-      <tr><td style="text-align:left">10 skills loaded once</td><td>Markdown (RT)</td><td>38,755</td><td>$0.58</td><td>$0.01</td></tr>
-      <tr><td style="text-align:left">10 skills × 1,000 req/day</td><td>SKILL.md</td><td>39.5M</td><td>$592.59</td><td>—</td></tr>
-      <tr style="background:#e8f5e9"><td style="text-align:left"><strong>10 skills × 1,000 req/day</strong></td><td><strong>Markdown (RT)</strong></td><td><strong>38.8M</strong></td><td><strong>$581.33</strong></td><td><strong>$11.27/day</strong></td></tr>
-      <tr><td style="text-align:left">10 skills × 1K req/day × 30d</td><td>JSON IR</td><td>2.15B</td><td>$32,247</td><td>—</td></tr>
-      <tr><td style="text-align:left">10 skills × 1K req/day × 30d</td><td>Markdown (RT)</td><td>1.16B</td><td>$17,440</td><td>$14,807/mo</td></tr>
-    </tbody>
-  </table>
-  <div class="info-box">
-    <strong>Key insight:</strong> The 1.9% savings from Markdown RT seems trivial, but the 81.3% overhead of JSON IR costs <strong>$14,807/month</strong> at scale. Format choice matters when skills are loaded into every LLM request.
-  </div>
+<p style="color:#666; font-size:0.9rem;">
+Estimated cost per 1,000 skill loads at Claude Opus 4.6 input pricing ($15/M tokens).
+Monthly projection assumes 100 skill loads/day &times; 30 days = 3,000 loads/month.
+</p>
+<table>
+<thead><tr><th>Format</th><th>Cost/1K Loads (Baseline)</th><th>Cost/1K Loads (Format)</th><th>&Delta;/1K Loads</th><th>Monthly Impact (3K loads)</th></tr></thead>
+<tbody>
+<tr><td style='text-align:left'>JSON IR</td><td>$88.927</td><td>$140.983</td><td style='color:#dc3545'>$+52.056</td><td style='color:#dc3545'>$+156.17</td></tr>
+<tr><td style='text-align:left'>HTML</td><td>$88.927</td><td>$101.540</td><td style='color:#dc3545'>$+12.612</td><td style='color:#dc3545'>$+37.84</td></tr>
+<tr><td style='text-align:left'>Markdown (RT)</td><td>$88.927</td><td>$86.443</td><td style='color:#28a745'>$-2.485</td><td style='color:#28a745'>$-7.45</td></tr>
+<tr><td style='text-align:left'>LML</td><td>$88.927</td><td>$89.496</td><td style='color:#dc3545'>$+0.569</td><td style='color:#dc3545'>$+1.71</td></tr>
+<tr><td style='text-align:left'>LML Compact</td><td>$88.927</td><td>$89.405</td><td style='color:#dc3545'>$+0.477</td><td style='color:#dc3545'>$+1.43</td></tr>
+<tr><td style='text-align:left'>LML Conserv.</td><td>$88.927</td><td>$91.000</td><td style='color:#dc3545'>$+2.072</td><td style='color:#dc3545'>$+6.22</td></tr>
+<tr><td style='text-align:left'>LML Moderate</td><td>$88.927</td><td>$90.835</td><td style='color:#dc3545'>$+1.907</td><td style='color:#dc3545'>$+5.72</td></tr>
+<tr><td style='text-align:left'>LML Aggress.</td><td>$88.927</td><td>$87.362</td><td style='color:#28a745'>$-1.565</td><td style='color:#28a745'>$-4.69</td></tr>
+
+</tbody>
+</table>
+
+<div class="note">
+<strong>Scaling note:</strong> At enterprise scale (10K+ loads/day), the cost differences compound significantly.
+For Markdown (RT), monthly savings vs baseline reach ~$26.83
+at 10K loads/day on Opus pricing. On Haiku ($0.80/M), the absolute savings are smaller but the percentage holds.
+</div>
 </div>
 
-<h2>Per-Skill Comparison</h2>
+<!-- ─── FORMAT RECOMMENDATION ─── -->
+<div class="section" id="recommendations">
+<h2>Format Recommendation Matrix</h2>
 <table>
-  <thead><tr><th>Skill</th><th>SKILL.md</th><th>JSON IR</th><th>HTML</th><th>Markdown (RT)</th><th>LML</th><th>LML Compact</th><th>LML Conserv.</th><th>LML Moderate</th><th>LML Aggress.</th></tr></thead>
-  <tbody>
-    <tr><td class='name-col'>debugging</td><td>219<br><small>base</small></td><td class='negative'>1,820<br><small>TNO:0.12</small><br><small>-731.1%</small></td><td class='negative'>435<br><small>TNO:0.50</small><br><small>-98.6%</small></td><td class='positive'>187<br><small>TNO:1.17</small><br><small>+14.6%</small></td><td class='negative'>272<br><small>TNO:0.81</small><br><small>-24.2%</small></td><td>228<br><small>TNO:0.96</small><br><small>-4.1%</small></td><td class='negative'>363<br><small>TNO:0.60</small><br><small>-65.8%</small></td><td class='negative'>352<br><small>TNO:0.62</small><br><small>-60.7%</small></td><td class='negative'>238<br><small>TNO:0.92</small><br><small>-8.7%</small></td></tr>
-    <tr><td class='name-col'>figma-code-connect</td><td>5,089<br><small>base</small></td><td class='negative'>7,963<br><small>TNO:0.64</small><br><small>-56.5%</small></td><td class='negative'>5,440<br><small>TNO:0.94</small><br><small>-6.9%</small></td><td class='positive'>5,013<br><small>TNO:1.02</small><br><small>+1.5%</small></td><td>5,204<br><small>TNO:0.98</small><br><small>-2.3%</small></td><td>5,204<br><small>TNO:0.98</small><br><small>-2.3%</small></td><td>5,304<br><small>TNO:0.96</small><br><small>-4.2%</small></td><td>5,293<br><small>TNO:0.96</small><br><small>-4.0%</small></td><td class='positive'>5,085<br><small>TNO:1.00</small><br><small>+0.1%</small></td></tr>
-    <tr><td class='name-col'>figma-design-system-rules</td><td>4,567<br><small>base</small></td><td class='negative'>10,480<br><small>TNO:0.44</small><br><small>-129.5%</small></td><td class='negative'>5,154<br><small>TNO:0.89</small><br><small>-12.9%</small></td><td class='positive'>4,464<br><small>TNO:1.02</small><br><small>+2.3%</small></td><td class='negative'>4,810<br><small>TNO:0.95</small><br><small>-5.3%</small></td><td>4,719<br><small>TNO:0.97</small><br><small>-3.3%</small></td><td class='negative'>4,910<br><small>TNO:0.93</small><br><small>-7.5%</small></td><td class='negative'>4,899<br><small>TNO:0.93</small><br><small>-7.3%</small></td><td class='positive'>4,563<br><small>TNO:1.00</small><br><small>+0.1%</small></td></tr>
-    <tr><td class='name-col'>figma-generate-design</td><td>5,399<br><small>base</small></td><td class='negative'>7,345<br><small>TNO:0.74</small><br><small>-36.0%</small></td><td class='negative'>5,940<br><small>TNO:0.91</small><br><small>-10.0%</small></td><td class='positive'>5,187<br><small>TNO:1.04</small><br><small>+3.9%</small></td><td>5,463<br><small>TNO:0.99</small><br><small>-1.2%</small></td><td>5,463<br><small>TNO:0.99</small><br><small>-1.2%</small></td><td>5,563<br><small>TNO:0.97</small><br><small>-3.0%</small></td><td>5,552<br><small>TNO:0.97</small><br><small>-2.8%</small></td><td class='positive'>5,387<br><small>TNO:1.00</small><br><small>+0.2%</small></td></tr>
-    <tr><td class='name-col'>figma-generate-library</td><td>4,964<br><small>base</small></td><td class='negative'>7,601<br><small>TNO:0.65</small><br><small>-53.1%</small></td><td class='negative'>5,356<br><small>TNO:0.93</small><br><small>-7.9%</small></td><td class='positive'>4,839<br><small>TNO:1.03</small><br><small>+2.5%</small></td><td>5,076<br><small>TNO:0.98</small><br><small>-2.3%</small></td><td>5,076<br><small>TNO:0.98</small><br><small>-2.3%</small></td><td>5,178<br><small>TNO:0.96</small><br><small>-4.3%</small></td><td>5,167<br><small>TNO:0.96</small><br><small>-4.1%</small></td><td class='positive'>4,959<br><small>TNO:1.00</small><br><small>+0.1%</small></td></tr>
-    <tr><td class='name-col'>skill-creator</td><td>7,795<br><small>base</small></td><td class='negative'>11,087<br><small>TNO:0.70</small><br><small>-42.2%</small></td><td class='negative'>8,557<br><small>TNO:0.91</small><br><small>-9.8%</small></td><td class='positive'>7,722<br><small>TNO:1.01</small><br><small>+0.9%</small></td><td>7,935<br><small>TNO:0.98</small><br><small>-1.8%</small></td><td>7,935<br><small>TNO:0.98</small><br><small>-1.8%</small></td><td>8,037<br><small>TNO:0.97</small><br><small>-3.1%</small></td><td>8,026<br><small>TNO:0.97</small><br><small>-3.0%</small></td><td class='positive'>7,791<br><small>TNO:1.00</small><br><small>+0.1%</small></td></tr>
-    <tr><td class='name-col'>systematic-debugging</td><td>2,574<br><small>base</small></td><td class='negative'>5,168<br><small>TNO:0.50</small><br><small>-100.8%</small></td><td class='negative'>2,951<br><small>TNO:0.87</small><br><small>-14.6%</small></td><td class='positive'>2,543<br><small>TNO:1.01</small><br><small>+1.2%</small></td><td>2,688<br><small>TNO:0.96</small><br><small>-4.4%</small></td><td>2,688<br><small>TNO:0.96</small><br><small>-4.4%</small></td><td class='negative'>2,790<br><small>TNO:0.92</small><br><small>-8.4%</small></td><td class='negative'>2,779<br><small>TNO:0.93</small><br><small>-8.0%</small></td><td class='positive'>2,572<br><small>TNO:1.00</small><br><small>+0.1%</small></td></tr>
-    <tr><td class='name-col'>tdd</td><td>321<br><small>base</small></td><td class='negative'>1,912<br><small>TNO:0.17</small><br><small>-495.6%</small></td><td class='negative'>526<br><small>TNO:0.61</small><br><small>-63.9%</small></td><td class='positive'>281<br><small>TNO:1.14</small><br><small>+12.5%</small></td><td class='negative'>372<br><small>TNO:0.86</small><br><small>-15.9%</small></td><td class='positive'>288<br><small>TNO:1.11</small><br><small>+10.3%</small></td><td class='negative'>464<br><small>TNO:0.69</small><br><small>-44.5%</small></td><td class='negative'>453<br><small>TNO:0.71</small><br><small>-41.1%</small></td><td class='negative'>339<br><small>TNO:0.95</small><br><small>-5.6%</small></td></tr>
-    <tr><td class='name-col'>test-driven-development</td><td>2,799<br><small>base</small></td><td class='negative'>6,064<br><small>TNO:0.46</small><br><small>-116.6%</small></td><td class='negative'>3,425<br><small>TNO:0.82</small><br><small>-22.4%</small></td><td class='positive'>2,771<br><small>TNO:1.01</small><br><small>+1.0%</small></td><td>2,940<br><small>TNO:0.95</small><br><small>-5.0%</small></td><td>2,940<br><small>TNO:0.95</small><br><small>-5.0%</small></td><td class='negative'>3,042<br><small>TNO:0.92</small><br><small>-8.7%</small></td><td class='negative'>3,031<br><small>TNO:0.92</small><br><small>-8.3%</small></td><td class='positive'>2,797<br><small>TNO:1.00</small><br><small>+0.1%</small></td></tr>
-    <tr><td class='name-col'>writing-skills</td><td>5,779<br><small>base</small></td><td class='negative'>12,200<br><small>TNO:0.47</small><br><small>-111.1%</small></td><td class='negative'>6,643<br><small>TNO:0.87</small><br><small>-15.0%</small></td><td class='positive'>5,748<br><small>TNO:1.01</small><br><small>+0.5%</small></td><td>6,045<br><small>TNO:0.96</small><br><small>-4.6%</small></td><td>6,045<br><small>TNO:0.96</small><br><small>-4.6%</small></td><td class='negative'>6,143<br><small>TNO:0.94</small><br><small>-6.3%</small></td><td class='negative'>6,132<br><small>TNO:0.94</small><br><small>-6.1%</small></td><td>5,783<br><small>TNO:1.00</small><br><small>-0.1%</small></td></tr>
-    <tr class='total-row'><td class='name-col'><strong>TOTAL</strong></td><td>39,506<br><small>base</small></td><td>71,640<br><small>TNO:0.49</small><br><small>-81.3%</small></td><td>44,427<br><small>TNO:0.82</small><br><small>-12.5%</small></td><td class='positive'>38,755<br><small>TNO:1.05</small><br><small>+1.9%</small></td><td>40,805<br><small>TNO:0.94</small><br><small>-3.3%</small></td><td>40,586<br><small>TNO:0.98</small><br><small>-2.7%</small></td><td>41,794<br><small>TNO:0.89</small><br><small>-5.8%</small></td><td>41,684<br><small>TNO:0.89</small><br><small>-5.5%</small></td><td>39,514<br><small>TNO:0.99</small><br><small>-0.0%</small></td></tr>
-  </tbody>
-</table>
+<thead><tr><th>Use Case</th><th>Recommended Format</th><th>Rationale</th></tr></thead>
+<tbody>
+<tr><td style='text-align:left'>LLM system prompt</td><td><strong>LML Aggress.</strong></td><td style='text-align:left'>Minimal overhead, full semantic structure, best TNO</td></tr>
+<tr><td style='text-align:left'>LLM context/RAG</td><td><strong>Markdown (RT)</strong></td><td style='text-align:left'>Smallest token count, familiar to all LLMs</td></tr>
+<tr><td style='text-align:left'>Agent skill delivery</td><td><strong>LML Aggress.</strong></td><td style='text-align:left'>Typed blocks (step/verify/precondition) preserved</td></tr>
+<tr><td style='text-align:left'>Wire transport</td><td><strong>Binary Wire</strong></td><td style='text-align:left'>82% smaller bytes than JSON, fast deserialization</td></tr>
+<tr><td style='text-align:left'>Human editing</td><td><strong>SKILL.md</strong></td><td style='text-align:left'>Native Markdown, universal tooling</td></tr>
+<tr><td style='text-align:left'>Cross-language SDK</td><td><strong>JSON IR</strong></td><td style='text-align:left'>Typed schema, machine-parseable, all fields explicit</td></tr>
+<tr><td style='text-align:left'>Archival / storage</td><td><strong>Binary Token</strong></td><td style='text-align:left'>Compact bytes, lossless semantic roundtrip</td></tr>
 
-<h2>Summary</h2>
+</tbody>
+</table>
+</div>
+
+<!-- ─── BINARY FORMATS ─── -->
+<div class="section" id="binary">
+<h2>Binary Formats: Wire Transport, Not LLM Context</h2>
+<div class="findings">
+<p>Binary Wire and Binary Token formats are <strong>~82% smaller in bytes</strong> than JSON IR
+(749.3K bytes vs 1245.5K bytes),
+making them ideal for storage and network transport.</p>
+<p>However, when base64-encoded for LLM consumption, they inflate to <strong>876.7K tokens</strong>
+— a -310.8% overhead vs baseline.
+<strong>Never feed binary formats directly to LLMs.</strong></p>
 <table>
-  <thead><tr><th style="text-align:left">Format</th><th>Total Tokens</th><th>Total Bytes</th><th>Token Savings</th><th>Avg Compliance</th><th>Avg TNO</th></tr></thead>
-  <tbody>
-    <tr><td style='text-align:left'>SKILL.md</td><td>39,506</td><td>151,217</td><td>baseline</td><td>n/a</td><td>n/a</td></tr>
-    <tr><td style='text-align:left'>JSON IR</td><td>71,640</td><td>278,142</td><td>-81.3%</td><td>100%</td><td>0.49</td></tr>
-    <tr><td style='text-align:left'>HTML</td><td>44,427</td><td>159,281</td><td>-12.5%</td><td>100%</td><td>0.82</td></tr>
-    <tr style="background:#e8f5e9"><td style='text-align:left'><strong>Markdown (RT)</strong></td><td><strong>38,755</strong></td><td><strong>148,283</strong></td><td><strong>+1.9%</strong></td><td><strong>100%</strong></td><td><strong>1.05</strong></td></tr>
-    <tr><td style='text-align:left'>LML</td><td>40,805</td><td>153,620</td><td>-3.3%</td><td>100%</td><td>0.94</td></tr>
-    <tr><td style='text-align:left'>LML Compact</td><td>40,586</td><td>152,774</td><td>-2.7%</td><td>100%</td><td>0.98</td></tr>
-    <tr><td style='text-align:left'>LML Conserv.</td><td>41,794</td><td>156,242</td><td>-5.8%</td><td>100%</td><td>0.89</td></tr>
-    <tr><td style='text-align:left'>LML Moderate</td><td>41,684</td><td>156,112</td><td>-5.5%</td><td>100%</td><td>0.89</td></tr>
-    <tr><td style='text-align:left'>LML Aggress.</td><td>39,514</td><td>151,188</td><td>-0.0%</td><td>100%</td><td>0.99</td></tr>
-    <tr><td style='text-align:left'>Binary Wire</td><td>179,326</td><td>152,478</td><td>-353.9%</td><td>n/a</td><td>n/a</td></tr>
-    <tr><td style='text-align:left'>Binary Token</td><td>179,279</td><td>151,964</td><td>-353.8%</td><td>n/a</td><td>n/a</td></tr>
-  </tbody>
+<thead><tr><th>Format</th><th>Bytes (raw)</th><th>Tokens (base64)</th><th>Byte Savings vs JSON</th><th>Token Overhead vs SKILL.md</th></tr></thead>
+<tbody>
+<tr><td>Binary Wire</td><td>749,254</td><td>876,720</td><td class='positive'>+39.8%</td><td class='negative'>-310.8%</td></tr>
+<tr><td>Binary Token</td><td>747,210</td><td>876,321</td><td class='positive'>+40.0%</td><td class='negative'>-310.6%</td></tr>
+</tbody>
 </table>
+</div>
+</div>
 
-<p class="timestamp">Generated: 2026-04-02 | Data: benchmarks/skill_results.json | Source: benchmarks/skill_token_benchmark.py</p>
+
+<!-- ─── SUMMARY TABLE ─── -->
+<div class="section" id="summary-table">
+<h2>Summary Table</h2>
+<table>
+<thead><tr><th>Format</th><th>Total Tokens</th><th>Total Bytes</th><th>Token Savings</th><th>Avg Compliance</th><th>Avg TNO</th></tr></thead>
+<tbody>
+<tr><td style='text-align:left'>SKILL.md</td><td>213,425</td><td>757,458</td><td>baseline</td><td>n/a</td><td>n/a</td></tr>
+<tr><td style='text-align:left'>JSON IR</td><td>338,360</td><td>1,245,519</td><td>-58.5%</td><td>100%</td><td>0.54</td></tr>
+<tr><td style='text-align:left'>HTML</td><td>243,695</td><td>805,182</td><td>-14.2%</td><td>100%</td><td>0.86</td></tr>
+<tr class='positive'><td style='text-align:left'>Markdown (RT)</td><td>207,462</td><td>736,655</td><td>+2.8%</td><td>100%</td><td>1.08</td></tr>
+<tr><td style='text-align:left'>LML</td><td>214,790</td><td>753,982</td><td>-0.6%</td><td>100%</td><td>0.99</td></tr>
+<tr><td style='text-align:left'>LML Compact</td><td>214,571</td><td>753,136</td><td>-0.5%</td><td>100%</td><td>1.00</td></tr>
+<tr><td style='text-align:left'>LML Conserv.</td><td>218,399</td><td>763,643</td><td>-2.3%</td><td>100%</td><td>0.93</td></tr>
+<tr><td style='text-align:left'>LML Moderate</td><td>218,003</td><td>763,175</td><td>-2.1%</td><td>100%</td><td>0.94</td></tr>
+<tr class='positive'><td style='text-align:left'>LML Aggress.</td><td>209,670</td><td>744,139</td><td>+1.8%</td><td>100%</td><td>1.04</td></tr>
+<tr><td style='text-align:left'>Binary Wire</td><td>876,720</td><td>749,254</td><td>-310.8%</td><td>n/a</td><td>n/a</td></tr>
+<tr><td style='text-align:left'>Binary Token</td><td>876,321</td><td>747,210</td><td>-310.6%</td><td>n/a</td><td>n/a</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ─── METHODOLOGY ─── -->
+<div class="section" id="methodology">
+<h2>Methodology</h2>
+<div class="findings">
+<p><strong>Pipeline:</strong> Each SKILL.md file is imported via <code>aif skill import --format &lt;fmt&gt;</code>,
+producing output in 11 formats. Token counts are measured via Claude's <code>count_tokens</code> API
+(model: claude-opus-4-6), which returns exact BPE token counts — not heuristic estimates.</p>
+
+<p><strong>Compliance scoring:</strong> For each format, we count semantic block markers
+(@step, @verify, @precondition, @skill and their LML/HTML equivalents) and compare against the
+ground-truth count from the JSON IR AST. Compliance = matched / expected.</p>
+
+<p><strong>TNO (Token-Normalized Outcome):</strong> <code>compliance / (format_tokens / baseline_tokens)</code>.
+A TNO of 1.0 means the format costs the same as baseline with full compliance.
+TNO &gt; 1.0 means it's both cheaper AND fully compliant — strictly better.
+TNO &lt; 1.0 means you're paying more per unit of semantic fidelity.</p>
+
+<p><strong>Fixtures:</strong> 36 production-quality skills from the Superpowers and Figma ecosystems,
+ranging from 219 to 7,795 baseline tokens. This covers small utility skills through large multi-step workflows.</p>
+</div>
+</div>
+
+<p class="timestamp">Generated: 2026-04-03 20:21:07 UTC &bull; AIF Skill Token Benchmark v2.0</p>
 </body>
 </html>

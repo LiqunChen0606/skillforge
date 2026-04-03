@@ -1,0 +1,301 @@
+{
+  "metadata": {},
+  "blocks": [
+    {
+      "kind": {
+        "type": "SkillBlock",
+        "skill_type": "Skill",
+        "attrs": {
+          "id": null,
+          "pairs": {
+            "description": "Use when implementation is complete, all tests pass, and you need to decide how to integrate the work - guides completion of development work by presenting structured options for merge, PR, or cleanup",
+            "name": "finishing-a-development-branch"
+          }
+        },
+        "title": [
+          {
+            "type": "Text",
+            "text": "Finishing a Development Branch"
+          }
+        ],
+        "content": [],
+        "children": [
+          {
+            "kind": {
+              "type": "Section",
+              "attrs": {
+                "id": null,
+                "pairs": {}
+              },
+              "title": [
+                {
+                  "type": "Text",
+                  "text": "Overview"
+                }
+              ],
+              "children": [
+                {
+                  "kind": {
+                    "type": "Paragraph",
+                    "content": [
+                      {
+                        "type": "Text",
+                        "text": "Guide completion of development work by presenting clear options and handling chosen workflow.\n\n**Core principle:** Verify tests → Present options → Execute choice → Clean up.\n\n**Announce at start:** \"I'm using the finishing-a-development-branch skill to complete this work.\""
+                      }
+                    ]
+                  },
+                  "span": {
+                    "start": 0,
+                    "end": 0
+                  }
+                }
+              ]
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "Section",
+              "attrs": {
+                "id": null,
+                "pairs": {}
+              },
+              "title": [
+                {
+                  "type": "Text",
+                  "text": "The Process"
+                }
+              ],
+              "children": [
+                {
+                  "kind": {
+                    "type": "Paragraph",
+                    "content": [
+                      {
+                        "type": "Text",
+                        "text": "### Step 1: Verify Tests\n\n**Before presenting options, verify tests pass:**\n\n```bash\n# Run project's test suite\nnpm test / cargo test / pytest / go test ./...\n```\n\n**If tests fail:**\n```\nTests failing (<N> failures). Must fix before completing:\n\n[Show failures]\n\nCannot proceed with merge/PR until tests pass.\n```\n\nStop. Don't proceed to Step 2.\n\n**If tests pass:** Continue to Step 2.\n\n### Step 2: Determine Base Branch\n\n```bash\n# Try common base branches\ngit merge-base HEAD main 2>/dev/null || git merge-base HEAD master 2>/dev/null\n```\n\nOr ask: \"This branch split from main - is that correct?\"\n\n### Step 3: Present Options\n\nPresent exactly these 4 options:\n\n```\nImplementation complete. What would you like to do?\n\n1. Merge back to <base-branch> locally\n2. Push and create a Pull Request\n3. Keep the branch as-is (I'll handle it later)\n4. Discard this work\n\nWhich option?\n```\n\n**Don't add explanation** - keep options concise.\n\n### Step 4: Execute Choice\n\n#### Option 1: Merge Locally\n\n```bash\n# Switch to base branch\ngit checkout <base-branch>\n\n# Pull latest\ngit pull\n\n# Merge feature branch\ngit merge <feature-branch>\n\n# Verify tests on merged result\n<test command>\n\n# If tests pass\ngit branch -d <feature-branch>\n```\n\nThen: Cleanup worktree (Step 5)\n\n#### Option 2: Push and Create PR\n\n```bash\n# Push branch\ngit push -u origin <feature-branch>\n\n# Create PR\ngh pr create --title \"<title>\" --body \"$(cat <<'EOF'"
+                      }
+                    ]
+                  },
+                  "span": {
+                    "start": 0,
+                    "end": 0
+                  }
+                }
+              ]
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "Section",
+              "attrs": {
+                "id": null,
+                "pairs": {}
+              },
+              "title": [
+                {
+                  "type": "Text",
+                  "text": "Summary"
+                }
+              ],
+              "children": [
+                {
+                  "kind": {
+                    "type": "Paragraph",
+                    "content": [
+                      {
+                        "type": "Text",
+                        "text": "<2-3 bullets of what changed>"
+                      }
+                    ]
+                  },
+                  "span": {
+                    "start": 0,
+                    "end": 0
+                  }
+                }
+              ]
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "Section",
+              "attrs": {
+                "id": null,
+                "pairs": {}
+              },
+              "title": [
+                {
+                  "type": "Text",
+                  "text": "Test Plan"
+                }
+              ],
+              "children": [
+                {
+                  "kind": {
+                    "type": "Paragraph",
+                    "content": [
+                      {
+                        "type": "Text",
+                        "text": "- [ ] <verification steps>\nEOF\n)\"\n```\n\nThen: Cleanup worktree (Step 5)\n\n#### Option 3: Keep As-Is\n\nReport: \"Keeping branch <name>. Worktree preserved at <path>.\"\n\n**Don't cleanup worktree.**\n\n#### Option 4: Discard\n\n**Confirm first:**\n```\nThis will permanently delete:\n- Branch <name>\n- All commits: <commit-list>\n- Worktree at <path>\n\nType 'discard' to confirm.\n```\n\nWait for exact confirmation.\n\nIf confirmed:\n```bash\ngit checkout <base-branch>\ngit branch -D <feature-branch>\n```\n\nThen: Cleanup worktree (Step 5)\n\n### Step 5: Cleanup Worktree\n\n**For Options 1, 2, 4:**\n\nCheck if in worktree:\n```bash\ngit worktree list | grep $(git branch --show-current)\n```\n\nIf yes:\n```bash\ngit worktree remove <worktree-path>\n```\n\n**For Option 3:** Keep worktree."
+                      }
+                    ]
+                  },
+                  "span": {
+                    "start": 0,
+                    "end": 0
+                  }
+                }
+              ]
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "Section",
+              "attrs": {
+                "id": null,
+                "pairs": {}
+              },
+              "title": [
+                {
+                  "type": "Text",
+                  "text": "Quick Reference"
+                }
+              ],
+              "children": [
+                {
+                  "kind": {
+                    "type": "Paragraph",
+                    "content": [
+                      {
+                        "type": "Text",
+                        "text": "| Option | Merge | Push | Keep Worktree | Cleanup Branch |\n|--------|-------|------|---------------|----------------|\n| 1. Merge locally | ✓ | - | - | ✓ |\n| 2. Create PR | - | ✓ | ✓ | - |\n| 3. Keep as-is | - | - | ✓ | - |\n| 4. Discard | - | - | - | ✓ (force) |"
+                      }
+                    ]
+                  },
+                  "span": {
+                    "start": 0,
+                    "end": 0
+                  }
+                }
+              ]
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "SkillBlock",
+              "skill_type": "RedFlag",
+              "attrs": {
+                "id": null,
+                "pairs": {}
+              },
+              "title": [
+                {
+                  "type": "Text",
+                  "text": "Common Mistakes"
+                }
+              ],
+              "content": [
+                {
+                  "type": "Text",
+                  "text": "**Problem:** Merge broken code, create failing PR\n**Fix:** Always verify tests before offering options\n**Problem:** \"What should I do next?\" → ambiguous\n**Fix:** Present exactly 4 structured options\n**Problem:** Remove worktree when might need it (Option 2, 3)\n**Fix:** Only cleanup for Options 1 and 4\n**Problem:** Accidentally delete work\n**Fix:** Require typed \"discard\" confirmation"
+                }
+              ],
+              "children": []
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "SkillBlock",
+              "skill_type": "RedFlag",
+              "attrs": {
+                "id": null,
+                "pairs": {}
+              },
+              "title": [
+                {
+                  "type": "Text",
+                  "text": "Red Flags"
+                }
+              ],
+              "content": [
+                {
+                  "type": "Text",
+                  "text": "Proceed with failing tests\nMerge without verifying tests on result\nDelete work without confirmation\nForce-push without explicit request\nVerify tests before offering options\nPresent exactly 4 options\nGet typed confirmation for Option 4\nClean up worktree for Options 1 & 4 only"
+                }
+              ],
+              "children": []
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "Section",
+              "attrs": {
+                "id": null,
+                "pairs": {}
+              },
+              "title": [
+                {
+                  "type": "Text",
+                  "text": "Integration"
+                }
+              ],
+              "children": [
+                {
+                  "kind": {
+                    "type": "Paragraph",
+                    "content": [
+                      {
+                        "type": "Text",
+                        "text": "**Called by:**\n- **subagent-driven-development** (Step 7) - After all tasks complete\n- **executing-plans** (Step 5) - After all batches complete\n\n**Pairs with:**\n- **using-git-worktrees** - Cleans up worktree created by that skill"
+                      }
+                    ]
+                  },
+                  "span": {
+                    "start": 0,
+                    "end": 0
+                  }
+                }
+              ]
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          }
+        ]
+      },
+      "span": {
+        "start": 0,
+        "end": 0
+      }
+    }
+  ]
+}

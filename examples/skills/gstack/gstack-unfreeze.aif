@@ -1,0 +1,74 @@
+{
+  "metadata": {},
+  "blocks": [
+    {
+      "kind": {
+        "type": "SkillBlock",
+        "skill_type": "Skill",
+        "attrs": {
+          "id": null,
+          "pairs": {
+            "allowed-tools": "",
+            "description": "|",
+            "name": "unfreeze",
+            "version": "0.1.0"
+          }
+        },
+        "title": [
+          {
+            "type": "Text",
+            "text": "/unfreeze — Clear Freeze Boundary"
+          }
+        ],
+        "content": [
+          {
+            "type": "Text",
+            "text": "<!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->\n<!-- Regenerate: bun run gen:skill-docs -->\n\n\nRemove the edit restriction set by `/freeze`, allowing edits to all directories.\n\n```bash\nmkdir -p ~/.gstack/analytics\necho '{\"skill\":\"unfreeze\",\"ts\":\"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'\",\"repo\":\"'$(basename \"$(git rev-parse --show-toplevel 2>/dev/null)\" 2>/dev/null || echo \"unknown\")'\"}'  >> ~/.gstack/analytics/skill-usage.jsonl 2>/dev/null || true\n```"
+          }
+        ],
+        "children": [
+          {
+            "kind": {
+              "type": "Section",
+              "attrs": {
+                "id": null,
+                "pairs": {}
+              },
+              "title": [
+                {
+                  "type": "Text",
+                  "text": "Clear the boundary"
+                }
+              ],
+              "children": [
+                {
+                  "kind": {
+                    "type": "Paragraph",
+                    "content": [
+                      {
+                        "type": "Text",
+                        "text": "```bash\nSTATE_DIR=\"${CLAUDE_PLUGIN_DATA:-$HOME/.gstack}\"\nif [ -f \"$STATE_DIR/freeze-dir.txt\" ]; then\n  PREV=$(cat \"$STATE_DIR/freeze-dir.txt\")\n  rm -f \"$STATE_DIR/freeze-dir.txt\"\n  echo \"Freeze boundary cleared (was: $PREV). Edits are now allowed everywhere.\"\nelse\n  echo \"No freeze boundary was set.\"\nfi\n```\n\nTell the user the result. Note that `/freeze` hooks are still registered for the\nsession — they will just allow everything since no state file exists. To re-freeze,\nrun `/freeze` again."
+                      }
+                    ]
+                  },
+                  "span": {
+                    "start": 0,
+                    "end": 0
+                  }
+                }
+              ]
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          }
+        ]
+      },
+      "span": {
+        "start": 0,
+        "end": 0
+      }
+    }
+  ]
+}

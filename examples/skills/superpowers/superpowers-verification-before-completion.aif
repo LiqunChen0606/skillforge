@@ -1,0 +1,391 @@
+{
+  "metadata": {},
+  "blocks": [
+    {
+      "kind": {
+        "type": "SkillBlock",
+        "skill_type": "Skill",
+        "attrs": {
+          "id": null,
+          "pairs": {
+            "description": "Use when about to claim work is complete, fixed, or passing, before committing or creating PRs - requires running verification commands and confirming output before making any success claims; evidence before assertions always",
+            "name": "verification-before-completion"
+          }
+        },
+        "title": [
+          {
+            "type": "Text",
+            "text": "Verification Before Completion"
+          }
+        ],
+        "content": [],
+        "children": [
+          {
+            "kind": {
+              "type": "Section",
+              "attrs": {
+                "id": null,
+                "pairs": {}
+              },
+              "title": [
+                {
+                  "type": "Text",
+                  "text": "Overview"
+                }
+              ],
+              "children": [
+                {
+                  "kind": {
+                    "type": "Paragraph",
+                    "content": [
+                      {
+                        "type": "Text",
+                        "text": "Claiming work is complete without verification is dishonesty, not efficiency.\n\n**Core principle:** Evidence before claims, always.\n\n**Violating the letter of this rule is violating the spirit of this rule.**"
+                      }
+                    ]
+                  },
+                  "span": {
+                    "start": 0,
+                    "end": 0
+                  }
+                }
+              ]
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "Section",
+              "attrs": {
+                "id": null,
+                "pairs": {}
+              },
+              "title": [
+                {
+                  "type": "Text",
+                  "text": "The Iron Law"
+                }
+              ],
+              "children": [
+                {
+                  "kind": {
+                    "type": "Paragraph",
+                    "content": [
+                      {
+                        "type": "Text",
+                        "text": "```\nNO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION EVIDENCE\n```\n\nIf you haven't run the verification command in this message, you cannot claim it passes."
+                      }
+                    ]
+                  },
+                  "span": {
+                    "start": 0,
+                    "end": 0
+                  }
+                }
+              ]
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "Section",
+              "attrs": {
+                "id": null,
+                "pairs": {}
+              },
+              "title": [
+                {
+                  "type": "Text",
+                  "text": "The Gate Function"
+                }
+              ],
+              "children": [
+                {
+                  "kind": {
+                    "type": "Paragraph",
+                    "content": [
+                      {
+                        "type": "Text",
+                        "text": "```\nBEFORE claiming any status or expressing satisfaction:\n\n1. IDENTIFY: What command proves this claim?\n2. RUN: Execute the FULL command (fresh, complete)\n3. READ: Full output, check exit code, count failures\n4. VERIFY: Does output confirm the claim?\n   - If NO: State actual status with evidence\n   - If YES: State claim WITH evidence\n5. ONLY THEN: Make the claim\n\nSkip any step = lying, not verifying\n```"
+                      }
+                    ]
+                  },
+                  "span": {
+                    "start": 0,
+                    "end": 0
+                  }
+                }
+              ]
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "Section",
+              "attrs": {
+                "id": null,
+                "pairs": {}
+              },
+              "title": [
+                {
+                  "type": "Text",
+                  "text": "Common Failures"
+                }
+              ],
+              "children": [
+                {
+                  "kind": {
+                    "type": "Paragraph",
+                    "content": [
+                      {
+                        "type": "Text",
+                        "text": "| Claim | Requires | Not Sufficient |\n|-------|----------|----------------|\n| Tests pass | Test command output: 0 failures | Previous run, \"should pass\" |\n| Linter clean | Linter output: 0 errors | Partial check, extrapolation |\n| Build succeeds | Build command: exit 0 | Linter passing, logs look good |\n| Bug fixed | Test original symptom: passes | Code changed, assumed fixed |\n| Regression test works | Red-green cycle verified | Test passes once |\n| Agent completed | VCS diff shows changes | Agent reports \"success\" |\n| Requirements met | Line-by-line checklist | Tests passing |"
+                      }
+                    ]
+                  },
+                  "span": {
+                    "start": 0,
+                    "end": 0
+                  }
+                }
+              ]
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "Section",
+              "attrs": {
+                "id": null,
+                "pairs": {}
+              },
+              "title": [
+                {
+                  "type": "Text",
+                  "text": "Red Flags - STOP"
+                }
+              ],
+              "children": [
+                {
+                  "kind": {
+                    "type": "Paragraph",
+                    "content": [
+                      {
+                        "type": "Text",
+                        "text": "- Using \"should\", \"probably\", \"seems to\"\n- Expressing satisfaction before verification (\"Great!\", \"Perfect!\", \"Done!\", etc.)\n- About to commit/push/PR without verification\n- Trusting agent success reports\n- Relying on partial verification\n- Thinking \"just this once\"\n- Tired and wanting work over\n- **ANY wording implying success without having run verification**"
+                      }
+                    ]
+                  },
+                  "span": {
+                    "start": 0,
+                    "end": 0
+                  }
+                }
+              ]
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "Section",
+              "attrs": {
+                "id": null,
+                "pairs": {}
+              },
+              "title": [
+                {
+                  "type": "Text",
+                  "text": "Rationalization Prevention"
+                }
+              ],
+              "children": [
+                {
+                  "kind": {
+                    "type": "Paragraph",
+                    "content": [
+                      {
+                        "type": "Text",
+                        "text": "| Excuse | Reality |\n|--------|---------|\n| \"Should work now\" | RUN the verification |\n| \"I'm confident\" | Confidence ≠ evidence |\n| \"Just this once\" | No exceptions |\n| \"Linter passed\" | Linter ≠ compiler |\n| \"Agent said success\" | Verify independently |\n| \"I'm tired\" | Exhaustion ≠ excuse |\n| \"Partial check is enough\" | Partial proves nothing |\n| \"Different words so rule doesn't apply\" | Spirit over letter |"
+                      }
+                    ]
+                  },
+                  "span": {
+                    "start": 0,
+                    "end": 0
+                  }
+                }
+              ]
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "Section",
+              "attrs": {
+                "id": null,
+                "pairs": {}
+              },
+              "title": [
+                {
+                  "type": "Text",
+                  "text": "Key Patterns"
+                }
+              ],
+              "children": [
+                {
+                  "kind": {
+                    "type": "Paragraph",
+                    "content": [
+                      {
+                        "type": "Text",
+                        "text": "**Tests:**\n```\n✅ [Run test command] [See: 34/34 pass] \"All tests pass\"\n❌ \"Should pass now\" / \"Looks correct\"\n```\n\n**Regression tests (TDD Red-Green):**\n```\n✅ Write → Run (pass) → Revert fix → Run (MUST FAIL) → Restore → Run (pass)\n❌ \"I've written a regression test\" (without red-green verification)\n```\n\n**Build:**\n```\n✅ [Run build] [See: exit 0] \"Build passes\"\n❌ \"Linter passed\" (linter doesn't check compilation)\n```\n\n**Requirements:**\n```\n✅ Re-read plan → Create checklist → Verify each → Report gaps or completion\n❌ \"Tests pass, phase complete\"\n```\n\n**Agent delegation:**\n```\n✅ Agent reports success → Check VCS diff → Verify changes → Report actual state\n❌ Trust agent report\n```"
+                      }
+                    ]
+                  },
+                  "span": {
+                    "start": 0,
+                    "end": 0
+                  }
+                }
+              ]
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "Section",
+              "attrs": {
+                "id": null,
+                "pairs": {}
+              },
+              "title": [
+                {
+                  "type": "Text",
+                  "text": "Why This Matters"
+                }
+              ],
+              "children": [
+                {
+                  "kind": {
+                    "type": "Paragraph",
+                    "content": [
+                      {
+                        "type": "Text",
+                        "text": "From 24 failure memories:\n- your human partner said \"I don't believe you\" - trust broken\n- Undefined functions shipped - would crash\n- Missing requirements shipped - incomplete features\n- Time wasted on false completion → redirect → rework\n- Violates: \"Honesty is a core value. If you lie, you'll be replaced.\""
+                      }
+                    ]
+                  },
+                  "span": {
+                    "start": 0,
+                    "end": 0
+                  }
+                }
+              ]
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "Section",
+              "attrs": {
+                "id": null,
+                "pairs": {}
+              },
+              "title": [
+                {
+                  "type": "Text",
+                  "text": "When To Apply"
+                }
+              ],
+              "children": [
+                {
+                  "kind": {
+                    "type": "Paragraph",
+                    "content": [
+                      {
+                        "type": "Text",
+                        "text": "**ALWAYS before:**\n- ANY variation of success/completion claims\n- ANY expression of satisfaction\n- ANY positive statement about work state\n- Committing, PR creation, task completion\n- Moving to next task\n- Delegating to agents\n\n**Rule applies to:**\n- Exact phrases\n- Paraphrases and synonyms\n- Implications of success\n- ANY communication suggesting completion/correctness"
+                      }
+                    ]
+                  },
+                  "span": {
+                    "start": 0,
+                    "end": 0
+                  }
+                }
+              ]
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "Section",
+              "attrs": {
+                "id": null,
+                "pairs": {}
+              },
+              "title": [
+                {
+                  "type": "Text",
+                  "text": "The Bottom Line"
+                }
+              ],
+              "children": [
+                {
+                  "kind": {
+                    "type": "Paragraph",
+                    "content": [
+                      {
+                        "type": "Text",
+                        "text": "**No shortcuts for verification.**\n\nRun the command. Read the output. THEN claim the result.\n\nThis is non-negotiable."
+                      }
+                    ]
+                  },
+                  "span": {
+                    "start": 0,
+                    "end": 0
+                  }
+                }
+              ]
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          }
+        ]
+      },
+      "span": {
+        "start": 0,
+        "end": 0
+      }
+    }
+  ]
+}

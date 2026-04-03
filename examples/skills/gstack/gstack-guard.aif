@@ -1,0 +1,117 @@
+{
+  "metadata": {},
+  "blocks": [
+    {
+      "kind": {
+        "type": "SkillBlock",
+        "skill_type": "Skill",
+        "attrs": {
+          "id": null,
+          "pairs": {
+            "- matcher": "\"Write\"",
+            "- type": "command",
+            "Full safety mode": "destructive command warnings + directory-scoped edits.",
+            "PreToolUse": "",
+            "allowed-tools": "",
+            "command": "\"bash ${CLAUDE_SKILL_DIR}/../freeze/bin/check-freeze.sh\"",
+            "description": "|",
+            "hooks": "",
+            "name": "guard",
+            "statusMessage": "\"Checking freeze boundary...\"",
+            "version": "0.1.0"
+          }
+        },
+        "title": [
+          {
+            "type": "Text",
+            "text": "/guard — Full Safety Mode"
+          }
+        ],
+        "content": [
+          {
+            "type": "Text",
+            "text": "<!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->\n<!-- Regenerate: bun run gen:skill-docs -->\n\n\nActivates both destructive command warnings and directory-scoped edit restrictions.\nThis is the combination of `/careful` + `/freeze` in a single command.\n\n**Dependency note:** This skill references hook scripts from the sibling `/careful`\nand `/freeze` skill directories. Both must be installed (they are installed together\nby the gstack setup script).\n\n```bash\nmkdir -p ~/.gstack/analytics\necho '{\"skill\":\"guard\",\"ts\":\"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'\",\"repo\":\"'$(basename \"$(git rev-parse --show-toplevel 2>/dev/null)\" 2>/dev/null || echo \"unknown\")'\"}'  >> ~/.gstack/analytics/skill-usage.jsonl 2>/dev/null || true\n```"
+          }
+        ],
+        "children": [
+          {
+            "kind": {
+              "type": "Section",
+              "attrs": {
+                "id": null,
+                "pairs": {}
+              },
+              "title": [
+                {
+                  "type": "Text",
+                  "text": "Setup"
+                }
+              ],
+              "children": [
+                {
+                  "kind": {
+                    "type": "Paragraph",
+                    "content": [
+                      {
+                        "type": "Text",
+                        "text": "Ask the user which directory to restrict edits to. Use AskUserQuestion:\n\n- Question: \"Guard mode: which directory should edits be restricted to? Destructive command warnings are always on. Files outside the chosen path will be blocked from editing.\"\n- Text input (not multiple choice) — the user types a path.\n\nOnce the user provides a directory path:\n\n1. Resolve it to an absolute path:\n```bash\nFREEZE_DIR=$(cd \"<user-provided-path>\" 2>/dev/null && pwd)\necho \"$FREEZE_DIR\"\n```\n\n2. Ensure trailing slash and save to the freeze state file:\n```bash\nFREEZE_DIR=\"${FREEZE_DIR%/}/\"\nSTATE_DIR=\"${CLAUDE_PLUGIN_DATA:-$HOME/.gstack}\"\nmkdir -p \"$STATE_DIR\"\necho \"$FREEZE_DIR\" > \"$STATE_DIR/freeze-dir.txt\"\necho \"Freeze boundary set: $FREEZE_DIR\"\n```\n\nTell the user:\n- \"**Guard mode active.** Two protections are now running:\"\n- \"1. **Destructive command warnings** — rm -rf, DROP TABLE, force-push, etc. will warn before executing (you can override)\"\n- \"2. **Edit boundary** — file edits restricted to `<path>/`. Edits outside this directory are blocked.\"\n- \"To remove the edit boundary, run `/unfreeze`. To deactivate everything, end the session.\""
+                      }
+                    ]
+                  },
+                  "span": {
+                    "start": 0,
+                    "end": 0
+                  }
+                }
+              ]
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "Section",
+              "attrs": {
+                "id": null,
+                "pairs": {}
+              },
+              "title": [
+                {
+                  "type": "Text",
+                  "text": "What's protected"
+                }
+              ],
+              "children": [
+                {
+                  "kind": {
+                    "type": "Paragraph",
+                    "content": [
+                      {
+                        "type": "Text",
+                        "text": "See `/careful` for the full list of destructive command patterns and safe exceptions.\nSee `/freeze` for how edit boundary enforcement works."
+                      }
+                    ]
+                  },
+                  "span": {
+                    "start": 0,
+                    "end": 0
+                  }
+                }
+              ]
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          }
+        ]
+      },
+      "span": {
+        "start": 0,
+        "end": 0
+      }
+    }
+  ]
+}

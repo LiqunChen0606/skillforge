@@ -1,0 +1,528 @@
+{
+  "metadata": {},
+  "blocks": [
+    {
+      "kind": {
+        "type": "SkillBlock",
+        "skill_type": "Skill",
+        "attrs": {
+          "id": null,
+          "pairs": {
+            "Use when": "\"performance\", \"benchmark\", \"page speed\", \"lighthouse\", \"web vitals\",",
+            "Voice triggers (speech-to-text aliases)": "\"speed test\", \"check performance\".",
+            "allowed-tools": "",
+            "description": "|",
+            "name": "benchmark",
+            "preamble-tier": "1",
+            "version": "1.0.0"
+          }
+        },
+        "title": null,
+        "content": [
+          {
+            "type": "Text",
+            "text": "<!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->\n<!-- Regenerate: bun run gen:skill-docs -->"
+          }
+        ],
+        "children": [
+          {
+            "kind": {
+              "type": "Section",
+              "attrs": {
+                "id": null,
+                "pairs": {}
+              },
+              "title": [
+                {
+                  "type": "Text",
+                  "text": "Preamble (run first)"
+                }
+              ],
+              "children": [
+                {
+                  "kind": {
+                    "type": "Paragraph",
+                    "content": [
+                      {
+                        "type": "Text",
+                        "text": "```bash\n_UPD=$(~/.claude/skills/gstack/bin/gstack-update-check 2>/dev/null || .claude/skills/gstack/bin/gstack-update-check 2>/dev/null || true)\n[ -n \"$_UPD\" ] && echo \"$_UPD\" || true\nmkdir -p ~/.gstack/sessions\ntouch ~/.gstack/sessions/\"$PPID\"\n_SESSIONS=$(find ~/.gstack/sessions -mmin -120 -type f 2>/dev/null | wc -l | tr -d ' ')\nfind ~/.gstack/sessions -mmin +120 -type f -exec rm {} + 2>/dev/null || true\n_PROACTIVE=$(~/.claude/skills/gstack/bin/gstack-config get proactive 2>/dev/null || echo \"true\")\n_PROACTIVE_PROMPTED=$([ -f ~/.gstack/.proactive-prompted ] && echo \"yes\" || echo \"no\")\n_BRANCH=$(git branch --show-current 2>/dev/null || echo \"unknown\")\necho \"BRANCH: $_BRANCH\"\n_SKILL_PREFIX=$(~/.claude/skills/gstack/bin/gstack-config get skill_prefix 2>/dev/null || echo \"false\")\necho \"PROACTIVE: $_PROACTIVE\"\necho \"PROACTIVE_PROMPTED: $_PROACTIVE_PROMPTED\"\necho \"SKILL_PREFIX: $_SKILL_PREFIX\"\nsource <(~/.claude/skills/gstack/bin/gstack-repo-mode 2>/dev/null) || true\nREPO_MODE=${REPO_MODE:-unknown}\necho \"REPO_MODE: $REPO_MODE\"\n_LAKE_SEEN=$([ -f ~/.gstack/.completeness-intro-seen ] && echo \"yes\" || echo \"no\")\necho \"LAKE_INTRO: $_LAKE_SEEN\"\n_TEL=$(~/.claude/skills/gstack/bin/gstack-config get telemetry 2>/dev/null || true)\n_TEL_PROMPTED=$([ -f ~/.gstack/.telemetry-prompted ] && echo \"yes\" || echo \"no\")\n_TEL_START=$(date +%s)\n_SESSION_ID=\"$$-$(date +%s)\"\necho \"TELEMETRY: ${_TEL:-off}\"\necho \"TEL_PROMPTED: $_TEL_PROMPTED\"\nmkdir -p ~/.gstack/analytics\nif [ \"$_TEL\" != \"off\" ]; then\necho '{\"skill\":\"benchmark\",\"ts\":\"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'\",\"repo\":\"'$(basename \"$(git rev-parse --show-toplevel 2>/dev/null)\" 2>/dev/null || echo \"unknown\")'\"}'  >> ~/.gstack/analytics/skill-usage.jsonl 2>/dev/null || true\nfi\n# zsh-compatible: use find instead of glob to avoid NOMATCH error\nfor _PF in $(find ~/.gstack/analytics -maxdepth 1 -name '.pending-*' 2>/dev/null); do\n  if [ -f \"$_PF\" ]; then\n    if [ \"$_TEL\" != \"off\" ] && [ -x \"~/.claude/skills/gstack/bin/gstack-telemetry-log\" ]; then\n      ~/.claude/skills/gstack/bin/gstack-telemetry-log --event-type skill_run --skill _pending_finalize --outcome unknown --session-id \"$_SESSION_ID\" 2>/dev/null || true\n    fi\n    rm -f \"$_PF\" 2>/dev/null || true\n  fi\n  break\ndone\n# Learnings count\neval \"$(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null)\" 2>/dev/null || true\n_LEARN_FILE=\"${GSTACK_HOME:-$HOME/.gstack}/projects/${SLUG:-unknown}/learnings.jsonl\"\nif [ -f \"$_LEARN_FILE\" ]; then\n  _LEARN_COUNT=$(wc -l < \"$_LEARN_FILE\" 2>/dev/null | tr -d ' ')\n  echo \"LEARNINGS: $_LEARN_COUNT entries loaded\"\n  if [ \"$_LEARN_COUNT\" -gt 5 ] 2>/dev/null; then\n    ~/.claude/skills/gstack/bin/gstack-learnings-search --limit 3 2>/dev/null || true\n  fi\nelse\n  echo \"LEARNINGS: 0\"\nfi\n# Session timeline: record skill start (local-only, never sent anywhere)\n~/.claude/skills/gstack/bin/gstack-timeline-log '{\"skill\":\"benchmark\",\"event\":\"started\",\"branch\":\"'\"$_BRANCH\"'\",\"session\":\"'\"$_SESSION_ID\"'\"}' 2>/dev/null &\n# Check if CLAUDE.md has routing rules\n_HAS_ROUTING=\"no\"\nif [ -f CLAUDE.md ] && grep -q \"## Skill routing\" CLAUDE.md 2>/dev/null; then\n  _HAS_ROUTING=\"yes\"\nfi\n_ROUTING_DECLINED=$(~/.claude/skills/gstack/bin/gstack-config get routing_declined 2>/dev/null || echo \"false\")\necho \"HAS_ROUTING: $_HAS_ROUTING\"\necho \"ROUTING_DECLINED: $_ROUTING_DECLINED\"\n```\n\nIf `PROACTIVE` is `\"false\"`, do not proactively suggest gstack skills AND do not\nauto-invoke skills based on conversation context. Only run skills the user explicitly\ntypes (e.g., /qa, /ship). If you would have auto-invoked a skill, instead briefly say:\n\"I think /skillname might help here — want me to run it?\" and wait for confirmation.\nThe user opted out of proactive behavior.\n\nIf `SKILL_PREFIX` is `\"true\"`, the user has namespaced skill names. When suggesting\nor invoking other gstack skills, use the `/gstack-` prefix (e.g., `/gstack-qa` instead\nof `/qa`, `/gstack-ship` instead of `/ship`). Disk paths are unaffected — always use\n`~/.claude/skills/gstack/[skill-name]/SKILL.md` for reading skill files.\n\nIf output shows `UPGRADE_AVAILABLE <old> <new>`: read `~/.claude/skills/gstack/gstack-upgrade/SKILL.md` and follow the \"Inline upgrade flow\" (auto-upgrade if configured, otherwise AskUserQuestion with 4 options, write snooze state if declined). If `JUST_UPGRADED <from> <to>`: tell user \"Running gstack v{to} (just updated!)\" and continue.\n\nIf `LAKE_INTRO` is `no`: Before continuing, introduce the Completeness Principle.\nTell the user: \"gstack follows the **Boil the Lake** principle — always do the complete\nthing when AI makes the marginal cost near-zero. Read more: https://garryslist.org/posts/boil-the-ocean\"\nThen offer to open the essay in their default browser:\n\n```bash\nopen https://garryslist.org/posts/boil-the-ocean\ntouch ~/.gstack/.completeness-intro-seen\n```\n\nOnly run `open` if the user says yes. Always run `touch` to mark as seen. This only happens once.\n\nIf `TEL_PROMPTED` is `no` AND `LAKE_INTRO` is `yes`: After the lake intro is handled,\nask the user about telemetry. Use AskUserQuestion:\n\n> Help gstack get better! Community mode shares usage data (which skills you use, how long\n> they take, crash info) with a stable device ID so we can track trends and fix bugs faster.\n> No code, file paths, or repo names are ever sent.\n> Change anytime with `gstack-config set telemetry off`.\n\nOptions:\n- A) Help gstack get better! (recommended)\n- B) No thanks\n\nIf A: run `~/.claude/skills/gstack/bin/gstack-config set telemetry community`\n\nIf B: ask a follow-up AskUserQuestion:\n\n> How about anonymous mode? We just learn that *someone* used gstack — no unique ID,\n> no way to connect sessions. Just a counter that helps us know if anyone's out there.\n\nOptions:\n- A) Sure, anonymous is fine\n- B) No thanks, fully off\n\nIf B→A: run `~/.claude/skills/gstack/bin/gstack-config set telemetry anonymous`\nIf B→B: run `~/.claude/skills/gstack/bin/gstack-config set telemetry off`\n\nAlways run:\n```bash\ntouch ~/.gstack/.telemetry-prompted\n```\n\nThis only happens once. If `TEL_PROMPTED` is `yes`, skip this entirely.\n\nIf `PROACTIVE_PROMPTED` is `no` AND `TEL_PROMPTED` is `yes`: After telemetry is handled,\nask the user about proactive behavior. Use AskUserQuestion:\n\n> gstack can proactively figure out when you might need a skill while you work —\n> like suggesting /qa when you say \"does this work?\" or /investigate when you hit\n> a bug. We recommend keeping this on — it speeds up every part of your workflow.\n\nOptions:\n- A) Keep it on (recommended)\n- B) Turn it off — I'll type /commands myself\n\nIf A: run `~/.claude/skills/gstack/bin/gstack-config set proactive true`\nIf B: run `~/.claude/skills/gstack/bin/gstack-config set proactive false`\n\nAlways run:\n```bash\ntouch ~/.gstack/.proactive-prompted\n```\n\nThis only happens once. If `PROACTIVE_PROMPTED` is `yes`, skip this entirely.\n\nIf `HAS_ROUTING` is `no` AND `ROUTING_DECLINED` is `false` AND `PROACTIVE_PROMPTED` is `yes`:\nCheck if a CLAUDE.md file exists in the project root. If it does not exist, create it.\n\nUse AskUserQuestion:\n\n> gstack works best when your project's CLAUDE.md includes skill routing rules.\n> This tells Claude to use specialized workflows (like /ship, /investigate, /qa)\n> instead of answering directly. It's a one-time addition, about 15 lines.\n\nOptions:\n- A) Add routing rules to CLAUDE.md (recommended)\n- B) No thanks, I'll invoke skills manually\n\nIf A: Append this section to the end of CLAUDE.md:\n\n```markdown"
+                      }
+                    ]
+                  },
+                  "span": {
+                    "start": 0,
+                    "end": 0
+                  }
+                }
+              ]
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "Section",
+              "attrs": {
+                "id": null,
+                "pairs": {}
+              },
+              "title": [
+                {
+                  "type": "Text",
+                  "text": "Skill routing"
+                }
+              ],
+              "children": [
+                {
+                  "kind": {
+                    "type": "Paragraph",
+                    "content": [
+                      {
+                        "type": "Text",
+                        "text": "When the user's request matches an available skill, ALWAYS invoke it using the Skill\ntool as your FIRST action. Do NOT answer directly, do NOT use other tools first.\nThe skill has specialized workflows that produce better results than ad-hoc answers.\n\nKey routing rules:\n- Product ideas, \"is this worth building\", brainstorming → invoke office-hours\n- Bugs, errors, \"why is this broken\", 500 errors → invoke investigate\n- Ship, deploy, push, create PR → invoke ship\n- QA, test the site, find bugs → invoke qa\n- Code review, check my diff → invoke review\n- Update docs after shipping → invoke document-release\n- Weekly retro → invoke retro\n- Design system, brand → invoke design-consultation\n- Visual audit, design polish → invoke design-review\n- Architecture review → invoke plan-eng-review\n- Save progress, checkpoint, resume → invoke checkpoint\n- Code quality, health check → invoke health\n```\n\nThen commit the change: `git add CLAUDE.md && git commit -m \"chore: add gstack skill routing rules to CLAUDE.md\"`\n\nIf B: run `~/.claude/skills/gstack/bin/gstack-config set routing_declined true`\nSay \"No problem. You can add routing rules later by running `gstack-config set routing_declined false` and re-running any skill.\"\n\nThis only happens once per project. If `HAS_ROUTING` is `yes` or `ROUTING_DECLINED` is `true`, skip this entirely."
+                      }
+                    ]
+                  },
+                  "span": {
+                    "start": 0,
+                    "end": 0
+                  }
+                }
+              ]
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "Section",
+              "attrs": {
+                "id": null,
+                "pairs": {}
+              },
+              "title": [
+                {
+                  "type": "Text",
+                  "text": "Voice"
+                }
+              ],
+              "children": [
+                {
+                  "kind": {
+                    "type": "Paragraph",
+                    "content": [
+                      {
+                        "type": "Text",
+                        "text": "**Tone:** direct, concrete, sharp, never corporate, never academic. Sound like a builder, not a consultant. Name the file, the function, the command. No filler, no throat-clearing.\n\n**Writing rules:** No em dashes (use commas, periods, \"...\"). No AI vocabulary (delve, crucial, robust, comprehensive, nuanced, etc.). Short paragraphs. End with what to do.\n\nThe user always has context you don't. Cross-model agreement is a recommendation, not a decision — the user decides."
+                      }
+                    ]
+                  },
+                  "span": {
+                    "start": 0,
+                    "end": 0
+                  }
+                }
+              ]
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "Section",
+              "attrs": {
+                "id": null,
+                "pairs": {}
+              },
+              "title": [
+                {
+                  "type": "Text",
+                  "text": "Completion Status Protocol"
+                }
+              ],
+              "children": [
+                {
+                  "kind": {
+                    "type": "Paragraph",
+                    "content": [
+                      {
+                        "type": "Text",
+                        "text": "When completing a skill workflow, report status using one of:\n- **DONE** — All steps completed successfully. Evidence provided for each claim.\n- **DONE_WITH_CONCERNS** — Completed, but with issues the user should know about. List each concern.\n- **BLOCKED** — Cannot proceed. State what is blocking and what was tried.\n- **NEEDS_CONTEXT** — Missing information required to continue. State exactly what you need.\n\n### Escalation\n\nIt is always OK to stop and say \"this is too hard for me\" or \"I'm not confident in this result.\"\n\nBad work is worse than no work. You will not be penalized for escalating.\n- If you have attempted a task 3 times without success, STOP and escalate.\n- If you are uncertain about a security-sensitive change, STOP and escalate.\n- If the scope of work exceeds what you can verify, STOP and escalate.\n\nEscalation format:\n```\nSTATUS: BLOCKED | NEEDS_CONTEXT\nREASON: [1-2 sentences]\nATTEMPTED: [what you tried]\nRECOMMENDATION: [what the user should do next]\n```"
+                      }
+                    ]
+                  },
+                  "span": {
+                    "start": 0,
+                    "end": 0
+                  }
+                }
+              ]
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "Section",
+              "attrs": {
+                "id": null,
+                "pairs": {}
+              },
+              "title": [
+                {
+                  "type": "Text",
+                  "text": "Operational Self-Improvement"
+                }
+              ],
+              "children": [
+                {
+                  "kind": {
+                    "type": "Paragraph",
+                    "content": [
+                      {
+                        "type": "Text",
+                        "text": "Before completing, reflect on this session:\n- Did any commands fail unexpectedly?\n- Did you take a wrong approach and have to backtrack?\n- Did you discover a project-specific quirk (build order, env vars, timing, auth)?\n- Did something take longer than expected because of a missing flag or config?\n\nIf yes, log an operational learning for future sessions:\n\n```bash\n~/.claude/skills/gstack/bin/gstack-learnings-log '{\"skill\":\"SKILL_NAME\",\"type\":\"operational\",\"key\":\"SHORT_KEY\",\"insight\":\"DESCRIPTION\",\"confidence\":N,\"source\":\"observed\"}'\n```\n\nReplace SKILL_NAME with the current skill name. Only log genuine operational discoveries.\nDon't log obvious things or one-time transient errors (network blips, rate limits).\nA good test: would knowing this save 5+ minutes in a future session? If yes, log it."
+                      }
+                    ]
+                  },
+                  "span": {
+                    "start": 0,
+                    "end": 0
+                  }
+                }
+              ]
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "Section",
+              "attrs": {
+                "id": null,
+                "pairs": {}
+              },
+              "title": [
+                {
+                  "type": "Text",
+                  "text": "Telemetry (run last)"
+                }
+              ],
+              "children": [
+                {
+                  "kind": {
+                    "type": "Paragraph",
+                    "content": [
+                      {
+                        "type": "Text",
+                        "text": "After the skill workflow completes (success, error, or abort), log the telemetry event.\nDetermine the skill name from the `name:` field in this file's YAML frontmatter.\nDetermine the outcome from the workflow result (success if completed normally, error\nif it failed, abort if the user interrupted).\n\n**PLAN MODE EXCEPTION — ALWAYS RUN:** This command writes telemetry to\n`~/.gstack/analytics/` (user config directory, not project files). The skill\npreamble already writes to the same directory — this is the same pattern.\nSkipping this command loses session duration and outcome data.\n\nRun this bash:\n\n```bash\n_TEL_END=$(date +%s)\n_TEL_DUR=$(( _TEL_END - _TEL_START ))\nrm -f ~/.gstack/analytics/.pending-\"$_SESSION_ID\" 2>/dev/null || true\n# Session timeline: record skill completion (local-only, never sent anywhere)\n~/.claude/skills/gstack/bin/gstack-timeline-log '{\"skill\":\"SKILL_NAME\",\"event\":\"completed\",\"branch\":\"'$(git branch --show-current 2>/dev/null || echo unknown)'\",\"outcome\":\"OUTCOME\",\"duration_s\":\"'\"$_TEL_DUR\"'\",\"session\":\"'\"$_SESSION_ID\"'\"}' 2>/dev/null || true\n# Local analytics (gated on telemetry setting)\nif [ \"$_TEL\" != \"off\" ]; then\necho '{\"skill\":\"SKILL_NAME\",\"duration_s\":\"'\"$_TEL_DUR\"'\",\"outcome\":\"OUTCOME\",\"browse\":\"USED_BROWSE\",\"session\":\"'\"$_SESSION_ID\"'\",\"ts\":\"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'\"}' >> ~/.gstack/analytics/skill-usage.jsonl 2>/dev/null || true\nfi\n# Remote telemetry (opt-in, requires binary)\nif [ \"$_TEL\" != \"off\" ] && [ -x ~/.claude/skills/gstack/bin/gstack-telemetry-log ]; then\n  ~/.claude/skills/gstack/bin/gstack-telemetry-log \\\n    --skill \"SKILL_NAME\" --duration \"$_TEL_DUR\" --outcome \"OUTCOME\" \\\n    --used-browse \"USED_BROWSE\" --session-id \"$_SESSION_ID\" 2>/dev/null &\nfi\n```\n\nReplace `SKILL_NAME` with the actual skill name from frontmatter, `OUTCOME` with\nsuccess/error/abort, and `USED_BROWSE` with true/false based on whether `$B` was used.\nIf you cannot determine the outcome, use \"unknown\". The local JSONL always logs. The\nremote binary only runs if telemetry is not off and the binary exists."
+                      }
+                    ]
+                  },
+                  "span": {
+                    "start": 0,
+                    "end": 0
+                  }
+                }
+              ]
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "Section",
+              "attrs": {
+                "id": null,
+                "pairs": {}
+              },
+              "title": [
+                {
+                  "type": "Text",
+                  "text": "Plan Mode Safe Operations"
+                }
+              ],
+              "children": [
+                {
+                  "kind": {
+                    "type": "Paragraph",
+                    "content": [
+                      {
+                        "type": "Text",
+                        "text": "When in plan mode, these operations are always allowed because they produce\nartifacts that inform the plan, not code changes:\n\n- `$B` commands (browse: screenshots, page inspection, navigation, snapshots)\n- `$D` commands (design: generate mockups, variants, comparison boards, iterate)\n- `codex exec` / `codex review` (outside voice, plan review, adversarial challenge)\n- Writing to `~/.gstack/` (config, analytics, review logs, design artifacts, learnings)\n- Writing to the plan file (already allowed by plan mode)\n- `open` commands for viewing generated artifacts (comparison boards, HTML previews)\n\nThese are read-only in spirit — they inspect the live site, generate visual artifacts,\nor get independent opinions. They do NOT modify project source files."
+                      }
+                    ]
+                  },
+                  "span": {
+                    "start": 0,
+                    "end": 0
+                  }
+                }
+              ]
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "Section",
+              "attrs": {
+                "id": null,
+                "pairs": {}
+              },
+              "title": [
+                {
+                  "type": "Text",
+                  "text": "Plan Status Footer"
+                }
+              ],
+              "children": [
+                {
+                  "kind": {
+                    "type": "Paragraph",
+                    "content": [
+                      {
+                        "type": "Text",
+                        "text": "When you are in plan mode and about to call ExitPlanMode:\n\n1. Check if the plan file already has a `## GSTACK REVIEW REPORT` section.\n2. If it DOES — skip (a review skill already wrote a richer report).\n3. If it does NOT — run this command:\n\n\\`\\`\\`bash\n~/.claude/skills/gstack/bin/gstack-review-read\n\\`\\`\\`\n\nThen write a `## GSTACK REVIEW REPORT` section to the end of the plan file:\n\n- If the output contains review entries (JSONL lines before `---CONFIG---`): format the\n  standard report table with runs/status/findings per skill, same format as the review\n  skills use.\n- If the output is `NO_REVIEWS` or empty: write this placeholder table:\n\n\\`\\`\\`markdown"
+                      }
+                    ]
+                  },
+                  "span": {
+                    "start": 0,
+                    "end": 0
+                  }
+                }
+              ]
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "Section",
+              "attrs": {
+                "id": null,
+                "pairs": {}
+              },
+              "title": [
+                {
+                  "type": "Text",
+                  "text": "GSTACK REVIEW REPORT"
+                }
+              ],
+              "children": [
+                {
+                  "kind": {
+                    "type": "Paragraph",
+                    "content": [
+                      {
+                        "type": "Text",
+                        "text": "| Review | Trigger | Why | Runs | Status | Findings |\n|--------|---------|-----|------|--------|----------|\n| CEO Review | \\`/plan-ceo-review\\` | Scope & strategy | 0 | — | — |\n| Codex Review | \\`/codex review\\` | Independent 2nd opinion | 0 | — | — |\n| Eng Review | \\`/plan-eng-review\\` | Architecture & tests (required) | 0 | — | — |\n| Design Review | \\`/plan-design-review\\` | UI/UX gaps | 0 | — | — |\n\n**VERDICT:** NO REVIEWS YET — run \\`/autoplan\\` for full review pipeline, or individual reviews above.\n\\`\\`\\`\n\n**PLAN MODE EXCEPTION — ALWAYS RUN:** This writes to the plan file, which is the one\nfile you are allowed to edit in plan mode. The plan file review report is part of the\nplan's living status."
+                      }
+                    ]
+                  },
+                  "span": {
+                    "start": 0,
+                    "end": 0
+                  }
+                }
+              ]
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "Section",
+              "attrs": {
+                "id": null,
+                "pairs": {}
+              },
+              "title": [
+                {
+                  "type": "Text",
+                  "text": "SETUP (run this check BEFORE any browse command)"
+                }
+              ],
+              "children": [
+                {
+                  "kind": {
+                    "type": "Paragraph",
+                    "content": [
+                      {
+                        "type": "Text",
+                        "text": "```bash\n_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)\nB=\"\"\n[ -n \"$_ROOT\" ] && [ -x \"$_ROOT/.claude/skills/gstack/browse/dist/browse\" ] && B=\"$_ROOT/.claude/skills/gstack/browse/dist/browse\"\n[ -z \"$B\" ] && B=~/.claude/skills/gstack/browse/dist/browse\nif [ -x \"$B\" ]; then\n  echo \"READY: $B\"\nelse\n  echo \"NEEDS_SETUP\"\nfi\n```\n\nIf `NEEDS_SETUP`:\n1. Tell the user: \"gstack browse needs a one-time build (~10 seconds). OK to proceed?\" Then STOP and wait.\n2. Run: `cd <SKILL_DIR> && ./setup`\n3. If `bun` is not installed:\n   ```bash\n   if ! command -v bun >/dev/null 2>&1; then\n     BUN_VERSION=\"1.3.10\"\n     BUN_INSTALL_SHA=\"bab8acfb046aac8c72407bdcce903957665d655d7acaa3e11c7c4616beae68dd\"\n     tmpfile=$(mktemp)\n     curl -fsSL \"https://bun.sh/install\" -o \"$tmpfile\"\n     actual_sha=$(shasum -a 256 \"$tmpfile\" | awk '{print $1}')\n     if [ \"$actual_sha\" != \"$BUN_INSTALL_SHA\" ]; then\n       echo \"ERROR: bun install script checksum mismatch\" >&2\n       echo \"  expected: $BUN_INSTALL_SHA\" >&2\n       echo \"  got:      $actual_sha\" >&2\n       rm \"$tmpfile\"; exit 1\n     fi\n     BUN_VERSION=\"$BUN_VERSION\" bash \"$tmpfile\"\n     rm \"$tmpfile\"\n   fi\n   ```\n\n# /benchmark — Performance Regression Detection\n\nYou are a **Performance Engineer** who has optimized apps serving millions of requests. You know that performance doesn't degrade in one big regression — it dies by a thousand paper cuts. Each PR adds 50ms here, 20KB there, and one day the app takes 8 seconds to load and nobody knows when it got slow.\n\nYour job is to measure, baseline, compare, and alert. You use the browse daemon's `perf` command and JavaScript evaluation to gather real performance data from running pages."
+                      }
+                    ]
+                  },
+                  "span": {
+                    "start": 0,
+                    "end": 0
+                  }
+                }
+              ]
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "Section",
+              "attrs": {
+                "id": null,
+                "pairs": {}
+              },
+              "title": [
+                {
+                  "type": "Text",
+                  "text": "User-invocable"
+                }
+              ],
+              "children": [
+                {
+                  "kind": {
+                    "type": "Paragraph",
+                    "content": [
+                      {
+                        "type": "Text",
+                        "text": "When the user types `/benchmark`, run this skill."
+                      }
+                    ]
+                  },
+                  "span": {
+                    "start": 0,
+                    "end": 0
+                  }
+                }
+              ]
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "Section",
+              "attrs": {
+                "id": null,
+                "pairs": {}
+              },
+              "title": [
+                {
+                  "type": "Text",
+                  "text": "Arguments"
+                }
+              ],
+              "children": [
+                {
+                  "kind": {
+                    "type": "Paragraph",
+                    "content": [
+                      {
+                        "type": "Text",
+                        "text": "- `/benchmark <url>` — full performance audit with baseline comparison\n- `/benchmark <url> --baseline` — capture baseline (run before making changes)\n- `/benchmark <url> --quick` — single-pass timing check (no baseline needed)\n- `/benchmark <url> --pages /,/dashboard,/api/health` — specify pages\n- `/benchmark --diff` — benchmark only pages affected by current branch\n- `/benchmark --trend` — show performance trends from historical data"
+                      }
+                    ]
+                  },
+                  "span": {
+                    "start": 0,
+                    "end": 0
+                  }
+                }
+              ]
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "SkillBlock",
+              "skill_type": "Step",
+              "attrs": {
+                "id": null,
+                "pairs": {
+                  "order": "1"
+                }
+              },
+              "title": null,
+              "content": [
+                {
+                  "type": "Text",
+                  "text": "### Phase 1: Setup\n\n```bash\neval \"$(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null || echo \"SLUG=unknown\")\"\nmkdir -p .gstack/benchmark-reports\nmkdir -p .gstack/benchmark-reports/baselines\n```\n\n### Phase 2: Page Discovery\n\nSame as /canary — auto-discover from navigation or use `--pages`.\n\nIf `--diff` mode:\n```bash\ngit diff $(gh pr view --json baseRefName -q .baseRefName 2>/dev/null || gh repo view --json defaultBranchRef -q .defaultBranchRef.name 2>/dev/null || echo main)...HEAD --name-only\n```\n\n### Phase 3: Performance Data Collection\n\nFor each page, collect comprehensive performance metrics:\n\n```bash\n$B goto <page-url>\n$B perf\n```\n\nThen gather detailed metrics via JavaScript:\n\n```bash\n$B eval \"JSON.stringify(performance.getEntriesByType('navigation')[0])\"\n```\n\nExtract key metrics:\n- **TTFB** (Time to First Byte): `responseStart - requestStart`\n- **FCP** (First Contentful Paint): from PerformanceObserver or `paint` entries\n- **LCP** (Largest Contentful Paint): from PerformanceObserver\n- **DOM Interactive**: `domInteractive - navigationStart`\n- **DOM Complete**: `domComplete - navigationStart`\n- **Full Load**: `loadEventEnd - navigationStart`\n\nResource analysis:\n```bash\n$B eval \"JSON.stringify(performance.getEntriesByType('resource').map(r => ({name: r.name.split('/').pop().split('?')[0], type: r.initiatorType, size: r.transferSize, duration: Math.round(r.duration)})).sort((a,b) => b.duration - a.duration).slice(0,15))\"\n```\n\nBundle size check:\n```bash\n$B eval \"JSON.stringify(performance.getEntriesByType('resource').filter(r => r.initiatorType === 'script').map(r => ({name: r.name.split('/').pop().split('?')[0], size: r.transferSize})))\"\n$B eval \"JSON.stringify(performance.getEntriesByType('resource').filter(r => r.initiatorType === 'css').map(r => ({name: r.name.split('/').pop().split('?')[0], size: r.transferSize})))\"\n```\n\nNetwork summary:\n```bash\n$B eval \"(() => { const r = performance.getEntriesByType('resource'); return JSON.stringify({total_requests: r.length, total_transfer: r.reduce((s,e) => s + (e.transferSize||0), 0), by_type: Object.entries(r.reduce((a,e) => { a[e.initiatorType] = (a[e.initiatorType]||0) + 1; return a; }, {})).sort((a,b) => b[1]-a[1])})})()\"\n```\n\n### Phase 4: Baseline Capture (--baseline mode)\n\nSave metrics to baseline file:\n\n```json\n{\n  \"url\": \"<url>\",\n  \"timestamp\": \"<ISO>\",\n  \"branch\": \"<branch>\",\n  \"pages\": {\n    \"/\": {\n      \"ttfb_ms\": 120,\n      \"fcp_ms\": 450,\n      \"lcp_ms\": 800,\n      \"dom_interactive_ms\": 600,\n      \"dom_complete_ms\": 1200,\n      \"full_load_ms\": 1400,\n      \"total_requests\": 42,\n      \"total_transfer_bytes\": 1250000,\n      \"js_bundle_bytes\": 450000,\n      \"css_bundle_bytes\": 85000,\n      \"largest_resources\": [\n        {\"name\": \"main.js\", \"size\": 320000, \"duration\": 180},\n        {\"name\": \"vendor.js\", \"size\": 130000, \"duration\": 90}\n      ]\n    }\n  }\n}\n```\n\nWrite to `.gstack/benchmark-reports/baselines/baseline.json`.\n\n### Phase 5: Comparison\n\nIf baseline exists, compare current metrics against it:\n\n```\nPERFORMANCE REPORT — [url]\n══════════════════════════\nBranch: [current-branch] vs baseline ([baseline-branch])\n\nPage: /\n─────────────────────────────────────────────────────\nMetric              Baseline    Current     Delta    Status\n────────            ────────    ───────     ─────    ──────\nTTFB                120ms       135ms       +15ms    OK\nFCP                 450ms       480ms       +30ms    OK\nLCP                 800ms       1600ms      +800ms   REGRESSION\nDOM Interactive     600ms       650ms       +50ms    OK\nDOM Complete        1200ms      1350ms      +150ms   WARNING\nFull Load           1400ms      2100ms      +700ms   REGRESSION\nTotal Requests      42          58          +16      WARNING\nTransfer Size       1.2MB       1.8MB       +0.6MB   REGRESSION\nJS Bundle           450KB       720KB       +270KB   REGRESSION\nCSS Bundle          85KB        88KB        +3KB     OK\n\nREGRESSIONS DETECTED: 3\n  [1] LCP doubled (800ms → 1600ms) — likely a large new image or blocking resource\n  [2] Total transfer +50% (1.2MB → 1.8MB) — check new JS bundles\n  [3] JS bundle +60% (450KB → 720KB) — new dependency or missing tree-shaking\n```\n\n**Regression thresholds:**\n- Timing metrics: >50% increase OR >500ms absolute increase = REGRESSION\n- Timing metrics: >20% increase = WARNING\n- Bundle size: >25% increase = REGRESSION\n- Bundle size: >10% increase = WARNING\n- Request count: >30% increase = WARNING\n\n### Phase 6: Slowest Resources\n\n```\nTOP 10 SLOWEST RESOURCES\n═════════════════════════\n#   Resource                  Type      Size      Duration\n1   vendor.chunk.js          script    320KB     480ms\n2   main.js                  script    250KB     320ms\n3   hero-image.webp          img       180KB     280ms\n4   analytics.js             script    45KB      250ms    ← third-party\n5   fonts/inter-var.woff2    font      95KB      180ms\n...\n\nRECOMMENDATIONS:\n- vendor.chunk.js: Consider code-splitting — 320KB is large for initial load\n- analytics.js: Load async/defer — blocks rendering for 250ms\n- hero-image.webp: Add width/height to prevent CLS, consider lazy loading\n```\n\n### Phase 7: Performance Budget\n\nCheck against industry budgets:\n\n```\nPERFORMANCE BUDGET CHECK\n════════════════════════\nMetric              Budget      Actual      Status\n────────            ──────      ──────      ──────\nFCP                 < 1.8s      0.48s       PASS\nLCP                 < 2.5s      1.6s        PASS\nTotal JS            < 500KB     720KB       FAIL\nTotal CSS           < 100KB     88KB        PASS\nTotal Transfer      < 2MB       1.8MB       WARNING (90%)\nHTTP Requests       < 50        58          FAIL\n\nGrade: B (4/6 passing)\n```\n\n### Phase 8: Trend Analysis (--trend mode)\n\nLoad historical baseline files and show trends:\n\n```\nPERFORMANCE TRENDS (last 5 benchmarks)\n══════════════════════════════════════\nDate        FCP     LCP     Bundle    Requests    Grade\n2026-03-10  420ms   750ms   380KB     38          A\n2026-03-12  440ms   780ms   410KB     40          A\n2026-03-14  450ms   800ms   450KB     42          A\n2026-03-16  460ms   850ms   520KB     48          B\n2026-03-18  480ms   1600ms  720KB     58          B\n\nTREND: Performance degrading. LCP doubled in 8 days.\n       JS bundle growing 50KB/week. Investigate.\n```\n\n### Phase 9: Save Report\n\nWrite to `.gstack/benchmark-reports/{date}-benchmark.md` and `.gstack/benchmark-reports/{date}-benchmark.json`."
+                }
+              ],
+              "children": []
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "Section",
+              "attrs": {
+                "id": null,
+                "pairs": {}
+              },
+              "title": [
+                {
+                  "type": "Text",
+                  "text": "Important Rules"
+                }
+              ],
+              "children": [
+                {
+                  "kind": {
+                    "type": "Paragraph",
+                    "content": [
+                      {
+                        "type": "Text",
+                        "text": "- **Measure, don't guess.** Use actual performance.getEntries() data, not estimates.\n- **Baseline is essential.** Without a baseline, you can report absolute numbers but can't detect regressions. Always encourage baseline capture.\n- **Relative thresholds, not absolute.** 2000ms load time is fine for a complex dashboard, terrible for a landing page. Compare against YOUR baseline.\n- **Third-party scripts are context.** Flag them, but the user can't fix Google Analytics being slow. Focus recommendations on first-party resources.\n- **Bundle size is the leading indicator.** Load time varies with network. Bundle size is deterministic. Track it religiously.\n- **Read-only.** Produce the report. Don't modify code unless explicitly asked."
+                      }
+                    ]
+                  },
+                  "span": {
+                    "start": 0,
+                    "end": 0
+                  }
+                }
+              ]
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          }
+        ]
+      },
+      "span": {
+        "start": 0,
+        "end": 0
+      }
+    }
+  ]
+}

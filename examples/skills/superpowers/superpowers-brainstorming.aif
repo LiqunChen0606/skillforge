@@ -1,0 +1,468 @@
+{
+  "metadata": {},
+  "blocks": [
+    {
+      "kind": {
+        "type": "SkillBlock",
+        "skill_type": "Skill",
+        "attrs": {
+          "id": null,
+          "pairs": {
+            "description": "\"You MUST use this before any creative work - creating features, building components, adding functionality, or modifying behavior. Explores user intent, requirements and design before implementation.\"",
+            "name": "brainstorming"
+          }
+        },
+        "title": [
+          {
+            "type": "Text",
+            "text": "Brainstorming Ideas Into Designs"
+          }
+        ],
+        "content": [
+          {
+            "type": "Text",
+            "text": "Help turn ideas into fully formed designs and specs through natural collaborative dialogue.\n\nStart by understanding the current project context, then ask questions one at a time to refine the idea. Once you understand what you're building, present the design and get user approval.\n\n<HARD-GATE>\nDo NOT invoke any implementation skill, write any code, scaffold any project, or take any implementation action until you have presented a design and the user has approved it. This applies to EVERY project regardless of perceived simplicity.\n</HARD-GATE>"
+          }
+        ],
+        "children": [
+          {
+            "kind": {
+              "type": "Section",
+              "attrs": {
+                "id": null,
+                "pairs": {}
+              },
+              "title": [
+                {
+                  "type": "Text",
+                  "text": "Anti-Pattern: \"This Is Too Simple To Need A Design\""
+                }
+              ],
+              "children": [
+                {
+                  "kind": {
+                    "type": "Paragraph",
+                    "content": [
+                      {
+                        "type": "Text",
+                        "text": "Every project goes through this process. A todo list, a single-function utility, a config change — all of them. \"Simple\" projects are where unexamined assumptions cause the most wasted work. The design can be short (a few sentences for truly simple projects), but you MUST present it and get approval."
+                      }
+                    ]
+                  },
+                  "span": {
+                    "start": 0,
+                    "end": 0
+                  }
+                }
+              ]
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "SkillBlock",
+              "skill_type": "Step",
+              "attrs": {
+                "id": null,
+                "pairs": {
+                  "order": "1"
+                }
+              },
+              "title": null,
+              "content": [
+                {
+                  "type": "Text",
+                  "text": "**Explore project context** — check files, docs, recent commits"
+                }
+              ],
+              "children": []
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "SkillBlock",
+              "skill_type": "Step",
+              "attrs": {
+                "id": null,
+                "pairs": {
+                  "order": "2"
+                }
+              },
+              "title": null,
+              "content": [
+                {
+                  "type": "Text",
+                  "text": "**Offer visual companion** (if topic will involve visual questions) — this is its own message, not combined with a clarifying question. See the Visual Companion section below."
+                }
+              ],
+              "children": []
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "SkillBlock",
+              "skill_type": "Step",
+              "attrs": {
+                "id": null,
+                "pairs": {
+                  "order": "3"
+                }
+              },
+              "title": null,
+              "content": [
+                {
+                  "type": "Text",
+                  "text": "**Ask clarifying questions** — one at a time, understand purpose/constraints/success criteria"
+                }
+              ],
+              "children": []
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "SkillBlock",
+              "skill_type": "Step",
+              "attrs": {
+                "id": null,
+                "pairs": {
+                  "order": "4"
+                }
+              },
+              "title": null,
+              "content": [
+                {
+                  "type": "Text",
+                  "text": "**Propose 2-3 approaches** — with trade-offs and your recommendation"
+                }
+              ],
+              "children": []
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "SkillBlock",
+              "skill_type": "Step",
+              "attrs": {
+                "id": null,
+                "pairs": {
+                  "order": "5"
+                }
+              },
+              "title": null,
+              "content": [
+                {
+                  "type": "Text",
+                  "text": "**Present design** — in sections scaled to their complexity, get user approval after each section"
+                }
+              ],
+              "children": []
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "SkillBlock",
+              "skill_type": "Step",
+              "attrs": {
+                "id": null,
+                "pairs": {
+                  "order": "6"
+                }
+              },
+              "title": null,
+              "content": [
+                {
+                  "type": "Text",
+                  "text": "**Write design doc** — save to `docs/superpowers/specs/YYYY-MM-DD-<topic>-design.md` and commit"
+                }
+              ],
+              "children": []
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "SkillBlock",
+              "skill_type": "Step",
+              "attrs": {
+                "id": null,
+                "pairs": {
+                  "order": "7"
+                }
+              },
+              "title": null,
+              "content": [
+                {
+                  "type": "Text",
+                  "text": "**Spec self-review** — quick inline check for placeholders, contradictions, ambiguity, scope (see below)"
+                }
+              ],
+              "children": []
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "SkillBlock",
+              "skill_type": "Step",
+              "attrs": {
+                "id": null,
+                "pairs": {
+                  "order": "8"
+                }
+              },
+              "title": null,
+              "content": [
+                {
+                  "type": "Text",
+                  "text": "**User reviews written spec** — ask user to review the spec file before proceeding"
+                }
+              ],
+              "children": []
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "SkillBlock",
+              "skill_type": "Step",
+              "attrs": {
+                "id": null,
+                "pairs": {
+                  "order": "9"
+                }
+              },
+              "title": null,
+              "content": [
+                {
+                  "type": "Text",
+                  "text": "**Transition to implementation** — invoke writing-plans skill to create implementation plan"
+                }
+              ],
+              "children": []
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "Section",
+              "attrs": {
+                "id": null,
+                "pairs": {}
+              },
+              "title": [
+                {
+                  "type": "Text",
+                  "text": "Process Flow"
+                }
+              ],
+              "children": [
+                {
+                  "kind": {
+                    "type": "Paragraph",
+                    "content": [
+                      {
+                        "type": "Text",
+                        "text": "```dot\ndigraph brainstorming {\n    \"Explore project context\" [shape=box];\n    \"Visual questions ahead?\" [shape=diamond];\n    \"Offer Visual Companion\\n(own message, no other content)\" [shape=box];\n    \"Ask clarifying questions\" [shape=box];\n    \"Propose 2-3 approaches\" [shape=box];\n    \"Present design sections\" [shape=box];\n    \"User approves design?\" [shape=diamond];\n    \"Write design doc\" [shape=box];\n    \"Spec self-review\\n(fix inline)\" [shape=box];\n    \"User reviews spec?\" [shape=diamond];\n    \"Invoke writing-plans skill\" [shape=doublecircle];\n\n    \"Explore project context\" -> \"Visual questions ahead?\";\n    \"Visual questions ahead?\" -> \"Offer Visual Companion\\n(own message, no other content)\" [label=\"yes\"];\n    \"Visual questions ahead?\" -> \"Ask clarifying questions\" [label=\"no\"];\n    \"Offer Visual Companion\\n(own message, no other content)\" -> \"Ask clarifying questions\";\n    \"Ask clarifying questions\" -> \"Propose 2-3 approaches\";\n    \"Propose 2-3 approaches\" -> \"Present design sections\";\n    \"Present design sections\" -> \"User approves design?\";\n    \"User approves design?\" -> \"Present design sections\" [label=\"no, revise\"];\n    \"User approves design?\" -> \"Write design doc\" [label=\"yes\"];\n    \"Write design doc\" -> \"Spec self-review\\n(fix inline)\";\n    \"Spec self-review\\n(fix inline)\" -> \"User reviews spec?\";\n    \"User reviews spec?\" -> \"Write design doc\" [label=\"changes requested\"];\n    \"User reviews spec?\" -> \"Invoke writing-plans skill\" [label=\"approved\"];\n}\n```\n\n**The terminal state is invoking writing-plans.** Do NOT invoke frontend-design, mcp-builder, or any other implementation skill. The ONLY skill you invoke after brainstorming is writing-plans."
+                      }
+                    ]
+                  },
+                  "span": {
+                    "start": 0,
+                    "end": 0
+                  }
+                }
+              ]
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "Section",
+              "attrs": {
+                "id": null,
+                "pairs": {}
+              },
+              "title": [
+                {
+                  "type": "Text",
+                  "text": "The Process"
+                }
+              ],
+              "children": [
+                {
+                  "kind": {
+                    "type": "Paragraph",
+                    "content": [
+                      {
+                        "type": "Text",
+                        "text": "**Understanding the idea:**\n\n- Check out the current project state first (files, docs, recent commits)\n- Before asking detailed questions, assess scope: if the request describes multiple independent subsystems (e.g., \"build a platform with chat, file storage, billing, and analytics\"), flag this immediately. Don't spend questions refining details of a project that needs to be decomposed first.\n- If the project is too large for a single spec, help the user decompose into sub-projects: what are the independent pieces, how do they relate, what order should they be built? Then brainstorm the first sub-project through the normal design flow. Each sub-project gets its own spec → plan → implementation cycle.\n- For appropriately-scoped projects, ask questions one at a time to refine the idea\n- Prefer multiple choice questions when possible, but open-ended is fine too\n- Only one question per message - if a topic needs more exploration, break it into multiple questions\n- Focus on understanding: purpose, constraints, success criteria\n\n**Exploring approaches:**\n\n- Propose 2-3 different approaches with trade-offs\n- Present options conversationally with your recommendation and reasoning\n- Lead with your recommended option and explain why\n\n**Presenting the design:**\n\n- Once you believe you understand what you're building, present the design\n- Scale each section to its complexity: a few sentences if straightforward, up to 200-300 words if nuanced\n- Ask after each section whether it looks right so far\n- Cover: architecture, components, data flow, error handling, testing\n- Be ready to go back and clarify if something doesn't make sense\n\n**Design for isolation and clarity:**\n\n- Break the system into smaller units that each have one clear purpose, communicate through well-defined interfaces, and can be understood and tested independently\n- For each unit, you should be able to answer: what does it do, how do you use it, and what does it depend on?\n- Can someone understand what a unit does without reading its internals? Can you change the internals without breaking consumers? If not, the boundaries need work.\n- Smaller, well-bounded units are also easier for you to work with - you reason better about code you can hold in context at once, and your edits are more reliable when files are focused. When a file grows large, that's often a signal that it's doing too much.\n\n**Working in existing codebases:**\n\n- Explore the current structure before proposing changes. Follow existing patterns.\n- Where existing code has problems that affect the work (e.g., a file that's grown too large, unclear boundaries, tangled responsibilities), include targeted improvements as part of the design - the way a good developer improves code they're working in.\n- Don't propose unrelated refactoring. Stay focused on what serves the current goal."
+                      }
+                    ]
+                  },
+                  "span": {
+                    "start": 0,
+                    "end": 0
+                  }
+                }
+              ]
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "Section",
+              "attrs": {
+                "id": null,
+                "pairs": {}
+              },
+              "title": [
+                {
+                  "type": "Text",
+                  "text": "After the Design"
+                }
+              ],
+              "children": [
+                {
+                  "kind": {
+                    "type": "Paragraph",
+                    "content": [
+                      {
+                        "type": "Text",
+                        "text": "**Documentation:**\n\n- Write the validated design (spec) to `docs/superpowers/specs/YYYY-MM-DD-<topic>-design.md`\n  - (User preferences for spec location override this default)\n- Use elements-of-style:writing-clearly-and-concisely skill if available\n- Commit the design document to git\n\n**Spec Self-Review:**\nAfter writing the spec document, look at it with fresh eyes:\n\n1. **Placeholder scan:** Any \"TBD\", \"TODO\", incomplete sections, or vague requirements? Fix them.\n2. **Internal consistency:** Do any sections contradict each other? Does the architecture match the feature descriptions?\n3. **Scope check:** Is this focused enough for a single implementation plan, or does it need decomposition?\n4. **Ambiguity check:** Could any requirement be interpreted two different ways? If so, pick one and make it explicit.\n\nFix any issues inline. No need to re-review — just fix and move on.\n\n**User Review Gate:**\nAfter the spec review loop passes, ask the user to review the written spec before proceeding:\n\n> \"Spec written and committed to `<path>`. Please review it and let me know if you want to make any changes before we start writing out the implementation plan.\"\n\nWait for the user's response. If they request changes, make them and re-run the spec review loop. Only proceed once the user approves.\n\n**Implementation:**\n\n- Invoke the writing-plans skill to create a detailed implementation plan\n- Do NOT invoke any other skill. writing-plans is the next step."
+                      }
+                    ]
+                  },
+                  "span": {
+                    "start": 0,
+                    "end": 0
+                  }
+                }
+              ]
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "Section",
+              "attrs": {
+                "id": null,
+                "pairs": {}
+              },
+              "title": [
+                {
+                  "type": "Text",
+                  "text": "Key Principles"
+                }
+              ],
+              "children": [
+                {
+                  "kind": {
+                    "type": "Paragraph",
+                    "content": [
+                      {
+                        "type": "Text",
+                        "text": "- **One question at a time** - Don't overwhelm with multiple questions\n- **Multiple choice preferred** - Easier to answer than open-ended when possible\n- **YAGNI ruthlessly** - Remove unnecessary features from all designs\n- **Explore alternatives** - Always propose 2-3 approaches before settling\n- **Incremental validation** - Present design, get approval before moving on\n- **Be flexible** - Go back and clarify when something doesn't make sense"
+                      }
+                    ]
+                  },
+                  "span": {
+                    "start": 0,
+                    "end": 0
+                  }
+                }
+              ]
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "Section",
+              "attrs": {
+                "id": null,
+                "pairs": {}
+              },
+              "title": [
+                {
+                  "type": "Text",
+                  "text": "Visual Companion"
+                }
+              ],
+              "children": [
+                {
+                  "kind": {
+                    "type": "Paragraph",
+                    "content": [
+                      {
+                        "type": "Text",
+                        "text": "A browser-based companion for showing mockups, diagrams, and visual options during brainstorming. Available as a tool — not a mode. Accepting the companion means it's available for questions that benefit from visual treatment; it does NOT mean every question goes through the browser.\n\n**Offering the companion:** When you anticipate that upcoming questions will involve visual content (mockups, layouts, diagrams), offer it once for consent:\n> \"Some of what we're working on might be easier to explain if I can show it to you in a web browser. I can put together mockups, diagrams, comparisons, and other visuals as we go. This feature is still new and can be token-intensive. Want to try it? (Requires opening a local URL)\"\n\n**This offer MUST be its own message.** Do not combine it with clarifying questions, context summaries, or any other content. The message should contain ONLY the offer above and nothing else. Wait for the user's response before continuing. If they decline, proceed with text-only brainstorming.\n\n**Per-question decision:** Even after the user accepts, decide FOR EACH QUESTION whether to use the browser or the terminal. The test: **would the user understand this better by seeing it than reading it?**\n\n- **Use the browser** for content that IS visual — mockups, wireframes, layout comparisons, architecture diagrams, side-by-side visual designs\n- **Use the terminal** for content that is text — requirements questions, conceptual choices, tradeoff lists, A/B/C/D text options, scope decisions\n\nA question about a UI topic is not automatically a visual question. \"What does personality mean in this context?\" is a conceptual question — use the terminal. \"Which wizard layout works better?\" is a visual question — use the browser.\n\nIf they agree to the companion, read the detailed guide before proceeding:\n`skills/brainstorming/visual-companion.md`"
+                      }
+                    ]
+                  },
+                  "span": {
+                    "start": 0,
+                    "end": 0
+                  }
+                }
+              ]
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          }
+        ]
+      },
+      "span": {
+        "start": 0,
+        "end": 0
+      }
+    }
+  ]
+}

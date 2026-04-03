@@ -1,0 +1,337 @@
+{
+  "metadata": {},
+  "blocks": [
+    {
+      "kind": {
+        "type": "SkillBlock",
+        "skill_type": "Skill",
+        "attrs": {
+          "id": null,
+          "pairs": {
+            "description": "Use when starting feature work that needs isolation from current workspace or before executing implementation plans - creates isolated git worktrees with smart directory selection and safety verification",
+            "name": "using-git-worktrees"
+          }
+        },
+        "title": [
+          {
+            "type": "Text",
+            "text": "Using Git Worktrees"
+          }
+        ],
+        "content": [],
+        "children": [
+          {
+            "kind": {
+              "type": "Section",
+              "attrs": {
+                "id": null,
+                "pairs": {}
+              },
+              "title": [
+                {
+                  "type": "Text",
+                  "text": "Overview"
+                }
+              ],
+              "children": [
+                {
+                  "kind": {
+                    "type": "Paragraph",
+                    "content": [
+                      {
+                        "type": "Text",
+                        "text": "Git worktrees create isolated workspaces sharing the same repository, allowing work on multiple branches simultaneously without switching.\n\n**Core principle:** Systematic directory selection + safety verification = reliable isolation.\n\n**Announce at start:** \"I'm using the using-git-worktrees skill to set up an isolated workspace.\""
+                      }
+                    ]
+                  },
+                  "span": {
+                    "start": 0,
+                    "end": 0
+                  }
+                }
+              ]
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "Section",
+              "attrs": {
+                "id": null,
+                "pairs": {}
+              },
+              "title": [
+                {
+                  "type": "Text",
+                  "text": "Directory Selection Process"
+                }
+              ],
+              "children": [
+                {
+                  "kind": {
+                    "type": "Paragraph",
+                    "content": [
+                      {
+                        "type": "Text",
+                        "text": "Follow this priority order:\n\n### 1. Check Existing Directories\n\n```bash\n# Check in priority order\nls -d .worktrees 2>/dev/null     # Preferred (hidden)\nls -d worktrees 2>/dev/null      # Alternative\n```\n\n**If found:** Use that directory. If both exist, `.worktrees` wins.\n\n### 2. Check CLAUDE.md\n\n```bash\ngrep -i \"worktree.*director\" CLAUDE.md 2>/dev/null\n```\n\n**If preference specified:** Use it without asking.\n\n### 3. Ask User\n\nIf no directory exists and no CLAUDE.md preference:\n\n```\nNo worktree directory found. Where should I create worktrees?\n\n1. .worktrees/ (project-local, hidden)\n2. ~/.config/superpowers/worktrees/<project-name>/ (global location)\n\nWhich would you prefer?\n```"
+                      }
+                    ]
+                  },
+                  "span": {
+                    "start": 0,
+                    "end": 0
+                  }
+                }
+              ]
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "Section",
+              "attrs": {
+                "id": null,
+                "pairs": {}
+              },
+              "title": [
+                {
+                  "type": "Text",
+                  "text": "Safety Verification"
+                }
+              ],
+              "children": [
+                {
+                  "kind": {
+                    "type": "Paragraph",
+                    "content": [
+                      {
+                        "type": "Text",
+                        "text": "### For Project-Local Directories (.worktrees or worktrees)\n\n**MUST verify directory is ignored before creating worktree:**\n\n```bash\n# Check if directory is ignored (respects local, global, and system gitignore)\ngit check-ignore -q .worktrees 2>/dev/null || git check-ignore -q worktrees 2>/dev/null\n```\n\n**If NOT ignored:**\n\nPer Jesse's rule \"Fix broken things immediately\":\n1. Add appropriate line to .gitignore\n2. Commit the change\n3. Proceed with worktree creation\n\n**Why critical:** Prevents accidentally committing worktree contents to repository.\n\n### For Global Directory (~/.config/superpowers/worktrees)\n\nNo .gitignore verification needed - outside project entirely."
+                      }
+                    ]
+                  },
+                  "span": {
+                    "start": 0,
+                    "end": 0
+                  }
+                }
+              ]
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "Section",
+              "attrs": {
+                "id": null,
+                "pairs": {}
+              },
+              "title": [
+                {
+                  "type": "Text",
+                  "text": "Creation Steps"
+                }
+              ],
+              "children": [
+                {
+                  "kind": {
+                    "type": "Paragraph",
+                    "content": [
+                      {
+                        "type": "Text",
+                        "text": "### 1. Detect Project Name\n\n```bash\nproject=$(basename \"$(git rev-parse --show-toplevel)\")\n```\n\n### 2. Create Worktree\n\n```bash\n# Determine full path\ncase $LOCATION in\n  .worktrees|worktrees)\n    path=\"$LOCATION/$BRANCH_NAME\"\n    ;;\n  ~/.config/superpowers/worktrees/*)\n    path=\"~/.config/superpowers/worktrees/$project/$BRANCH_NAME\"\n    ;;\nesac\n\n# Create worktree with new branch\ngit worktree add \"$path\" -b \"$BRANCH_NAME\"\ncd \"$path\"\n```\n\n### 3. Run Project Setup\n\nAuto-detect and run appropriate setup:\n\n```bash\n# Node.js\nif [ -f package.json ]; then npm install; fi\n\n# Rust\nif [ -f Cargo.toml ]; then cargo build; fi\n\n# Python\nif [ -f requirements.txt ]; then pip install -r requirements.txt; fi\nif [ -f pyproject.toml ]; then poetry install; fi\n\n# Go\nif [ -f go.mod ]; then go mod download; fi\n```\n\n### 4. Verify Clean Baseline\n\nRun tests to ensure worktree starts clean:\n\n```bash\n# Examples - use project-appropriate command\nnpm test\ncargo test\npytest\ngo test ./...\n```\n\n**If tests fail:** Report failures, ask whether to proceed or investigate.\n\n**If tests pass:** Report ready.\n\n### 5. Report Location\n\n```\nWorktree ready at <full-path>\nTests passing (<N> tests, 0 failures)\nReady to implement <feature-name>\n```"
+                      }
+                    ]
+                  },
+                  "span": {
+                    "start": 0,
+                    "end": 0
+                  }
+                }
+              ]
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "Section",
+              "attrs": {
+                "id": null,
+                "pairs": {}
+              },
+              "title": [
+                {
+                  "type": "Text",
+                  "text": "Quick Reference"
+                }
+              ],
+              "children": [
+                {
+                  "kind": {
+                    "type": "Paragraph",
+                    "content": [
+                      {
+                        "type": "Text",
+                        "text": "| Situation | Action |\n|-----------|--------|\n| `.worktrees/` exists | Use it (verify ignored) |\n| `worktrees/` exists | Use it (verify ignored) |\n| Both exist | Use `.worktrees/` |\n| Neither exists | Check CLAUDE.md → Ask user |\n| Directory not ignored | Add to .gitignore + commit |\n| Tests fail during baseline | Report failures + ask |\n| No package.json/Cargo.toml | Skip dependency install |"
+                      }
+                    ]
+                  },
+                  "span": {
+                    "start": 0,
+                    "end": 0
+                  }
+                }
+              ]
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "SkillBlock",
+              "skill_type": "RedFlag",
+              "attrs": {
+                "id": null,
+                "pairs": {}
+              },
+              "title": [
+                {
+                  "type": "Text",
+                  "text": "Common Mistakes"
+                }
+              ],
+              "content": [
+                {
+                  "type": "Text",
+                  "text": "**Problem:** Worktree contents get tracked, pollute git status\n**Fix:** Always use `git check-ignore` before creating project-local worktree\n**Problem:** Creates inconsistency, violates project conventions\n**Fix:** Follow priority: existing > CLAUDE.md > ask\n**Problem:** Can't distinguish new bugs from pre-existing issues\n**Fix:** Report failures, get explicit permission to proceed\n**Problem:** Breaks on projects using different tools\n**Fix:** Auto-detect from project files (package.json, etc.)"
+                }
+              ],
+              "children": []
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "Section",
+              "attrs": {
+                "id": null,
+                "pairs": {}
+              },
+              "title": [
+                {
+                  "type": "Text",
+                  "text": "Example Workflow"
+                }
+              ],
+              "children": [
+                {
+                  "kind": {
+                    "type": "Paragraph",
+                    "content": [
+                      {
+                        "type": "Text",
+                        "text": "```\nYou: I'm using the using-git-worktrees skill to set up an isolated workspace.\n\n[Check .worktrees/ - exists]\n[Verify ignored - git check-ignore confirms .worktrees/ is ignored]\n[Create worktree: git worktree add .worktrees/auth -b feature/auth]\n[Run npm install]\n[Run npm test - 47 passing]\n\nWorktree ready at /Users/jesse/myproject/.worktrees/auth\nTests passing (47 tests, 0 failures)\nReady to implement auth feature\n```"
+                      }
+                    ]
+                  },
+                  "span": {
+                    "start": 0,
+                    "end": 0
+                  }
+                }
+              ]
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "SkillBlock",
+              "skill_type": "RedFlag",
+              "attrs": {
+                "id": null,
+                "pairs": {}
+              },
+              "title": [
+                {
+                  "type": "Text",
+                  "text": "Red Flags"
+                }
+              ],
+              "content": [
+                {
+                  "type": "Text",
+                  "text": "Create worktree without verifying it's ignored (project-local)\nSkip baseline test verification\nProceed with failing tests without asking\nAssume directory location when ambiguous\nSkip CLAUDE.md check\nFollow directory priority: existing > CLAUDE.md > ask\nVerify directory is ignored for project-local\nAuto-detect and run project setup\nVerify clean test baseline"
+                }
+              ],
+              "children": []
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          },
+          {
+            "kind": {
+              "type": "Section",
+              "attrs": {
+                "id": null,
+                "pairs": {}
+              },
+              "title": [
+                {
+                  "type": "Text",
+                  "text": "Integration"
+                }
+              ],
+              "children": [
+                {
+                  "kind": {
+                    "type": "Paragraph",
+                    "content": [
+                      {
+                        "type": "Text",
+                        "text": "**Called by:**\n- **brainstorming** (Phase 4) - REQUIRED when design is approved and implementation follows\n- **subagent-driven-development** - REQUIRED before executing any tasks\n- **executing-plans** - REQUIRED before executing any tasks\n- Any skill needing isolated workspace\n\n**Pairs with:**\n- **finishing-a-development-branch** - REQUIRED for cleanup after work complete"
+                      }
+                    ]
+                  },
+                  "span": {
+                    "start": 0,
+                    "end": 0
+                  }
+                }
+              ]
+            },
+            "span": {
+              "start": 0,
+              "end": 0
+            }
+          }
+        ]
+      },
+      "span": {
+        "start": 0,
+        "end": 0
+      }
+    }
+  ]
+}
