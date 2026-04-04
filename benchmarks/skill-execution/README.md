@@ -170,15 +170,31 @@ Edit `scenarios.py` to add new test cases:
 }
 ```
 
+## Multi-Run Variance Analysis
+
+Single runs don't tell you if format differences are real or noise. Run multiple times to compute confidence intervals:
+
+```bash
+# Run 5 times per scenario×format (expensive: 5 × scenarios × formats LLM calls)
+ANTHROPIC_API_KEY=sk-... python benchmarks/skill-execution/multi_run.py --runs 5
+
+# Analyze saved results (no API calls)
+python benchmarks/skill-execution/multi_run.py --analyze
+```
+
+Reports per-format mean, stddev, 95% confidence interval, and pairwise significance tests (non-overlapping CIs). Also flags high-variance scenario×format combinations (stddev > 0.10) that may need more runs.
+
 ## File Structure
 
 ```
 benchmarks/skill-execution/
-├── README.md          # This file
-├── benchmark.py       # Main runner: compile → execute → judge → save
-├── scenarios.py       # Test scenario definitions (skills × prompts × expectations)
-├── analysis.py        # Post-hoc analysis: summaries, breakdowns, efficiency metrics
-└── results.json       # Latest benchmark results (committed for reference)
+├── README.md              # This file
+├── benchmark.py           # Main runner: compile → execute → judge → save
+├── scenarios.py           # Test scenario definitions (skills × prompts × expectations)
+├── analysis.py            # Post-hoc analysis: summaries, breakdowns, efficiency metrics
+├── multi_run.py           # Multi-run variance analysis with confidence intervals
+├── results.json           # Latest single-run benchmark results
+└── multi_run_results.json # Multi-run results (generated, not committed)
 ```
 
 ## Methodology Notes
@@ -192,5 +208,5 @@ benchmarks/skill-execution/
 **Limitations:**
 - 19 scenarios completed (2 remaining due to API credit exhaustion) — larger sample than initial 3-scenario pilot
 - Same judge model for all formats — could introduce systematic bias
-- Single executor run per format×scenario — no variance estimate
+- Single executor run per format×scenario in `benchmark.py` — use `multi_run.py` for variance estimates
 - Scores are relative to the judge's interpretation of "expected" behavior
