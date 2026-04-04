@@ -1,10 +1,11 @@
 #!/bin/bash
-# SkillForge — 60-second end-to-end demo
-# Shows the full pipeline: author → compile → import → infer → lint → sign
+# SkillForge — Quality layer for Agent Skills (agentskills.io)
+# Demo: check → lint → sign → compile → import
 set -e
 
 echo "╔══════════════════════════════════════════════════════╗"
-echo "║       SkillForge — End-to-End Demo (60 seconds)     ║"
+echo "║  SkillForge — Quality Layer for Agent Skills        ║"
+echo "║  Lint, hash, sign, version, eval your SKILL.md      ║"
 echo "╚══════════════════════════════════════════════════════╝"
 echo ""
 

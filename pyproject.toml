@@ -5,10 +5,10 @@ build-backend = "maturin"
 [project]
 name = "skillforge"
 version = "0.1.0"
-description = "Semantic document compiler & AI skill toolkit for LLMs"
+description = "SkillForge — quality layer for Agent Skills. Lint, hash, sign, version, eval your SKILL.md files"
 requires-python = ">=3.9"
 license = "Apache-2.0 OR MIT"
-keywords = ["llm", "semantic", "document", "skill", "token-efficient"]
+keywords = ["agent-skills", "skillmd", "lint", "signing", "eval"]
 classifiers = [
     "Programming Language :: Rust",
     "Programming Language :: Python :: Implementation :: CPython",

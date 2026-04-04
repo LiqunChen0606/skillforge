@@ -1,12 +1,12 @@
 [package]
 name = "aif-cli"
-description = "AIF SkillForge — semantic document compiler, skill toolkit, and format cleaner for LLMs"
+description = "SkillForge — quality layer for Agent Skills. Lint, hash, sign, version, eval your SKILL.md files"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
 homepage.workspace = true
-keywords = ["llm", "document", "semantic", "skill", "token-efficient"]
+keywords = ["agent-skills", "skillmd", "lint", "signing", "eval"]
 categories = ["command-line-utilities", "text-processing"]
 
 [[bin]]
