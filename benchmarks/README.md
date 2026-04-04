@@ -20,7 +20,7 @@ Comprehensive benchmarks measuring AIF's token efficiency, format fidelity, chun
 | Cleaned HTML text vs raw HTML | 544K vs 5.5M tokens (90.1% saved, but zero structure) |
 | AIF LML Aggressive vs raw Markdown | 981K vs 1,263K tokens (22% cheaper, full semantic types) |
 | AIF LML Aggressive vs flat text | 981K vs 544K (80% more, but typed blocks + roundtrip) |
-| Skill execution: LML vs Markdown | 0.84 vs 0.80 overall (+4pp); +18pp on constraint resistance, +11pp on hard scenarios |
+| Skill execution (126 runs, 6 formats) | LML Aggressive 0.88 vs Markdown 0.84 (+4pp); +9pp on multi-step workflows |
 | Adversarial resistance | All formats 0.93-1.00 (15 scenarios, 60 runs) |
 | JSON roundtrip fidelity | 1.00 (lossless) |
 | Markdown roundtrip fidelity | 0.84 |

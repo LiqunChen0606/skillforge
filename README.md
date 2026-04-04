@@ -22,16 +22,18 @@ LLMs treat all text as flat content. When you send raw Markdown or HTML, the mod
 
 ## The Evidence
 
-We benchmarked 5 skills × 21 scenarios × 4 formats (73 runs, claude-sonnet-4-6):
+We benchmarked 5 skills × 21 scenarios × 6 formats (126 runs, claude-sonnet-4-6):
 
-| Format | Tokens | LLM Compliance | Hard Scenarios |
-|--------|--------|----------------|----------------|
-| **AIF LML Aggressive** | **869** | **0.84** | **0.76** |
-| JSON IR | 3,838 | 0.81 | 0.70 |
-| HTML | 1,217 | 0.81 | 0.71 |
-| Raw Markdown | 908 | 0.80 | **0.65** |
+| Format | Tokens | Overall | Constraints | Multi-Step |
+|--------|--------|---------|-------------|------------|
+| **LML Aggressive** | **861** | **0.88** | **0.89** | **0.81** |
+| JSON IR | 3,838 | 0.87 | 0.87 | 0.74 |
+| LML Standard | 928 | 0.86 | 0.88 | 0.74 |
+| Raw Markdown | 901 | 0.84 | 0.86 | 0.72 |
+| HTML | 1,217 | 0.84 | 0.87 | 0.73 |
+| AIF Source | 1,024 | 0.82 | 0.85 | 0.72 |
 
-The overall gap is **+4pp** — but the advantage concentrates where it matters most. On **constraint resistance** scenarios (user pressures model to skip steps), LML scores **0.86 vs 0.68** for Markdown (+18pp). On **hard scenarios** overall, +11pp. On easy/standard scenarios, all formats perform equally (~0.95). Explicit typed tags (`@step:`, `@verify:`, `@red_flag:`) help LLMs hold their ground when pressured. See [full benchmark](benchmarks/skill-execution/).
+**LML Aggressive wins overall (+4pp vs Markdown)** at 4% fewer tokens. The advantage is strongest on **multi-step workflows** (+9pp) and **constraint respect** (+3pp). On standard scenarios, all formats score ~0.95 — the gap only appears when the task requires judgment. See [full benchmark](benchmarks/skill-execution/).
 
 ---
 
