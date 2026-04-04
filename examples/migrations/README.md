@@ -127,21 +127,17 @@ Includes `@example` blocks with concrete before/after config transformations.
 
   @precondition
     Describe when this migration applies.
-  @end
 
   @step[order=1]
     First transformation step with clear instructions.
-  @end
 
   @step[order=2]
     Second step. Include code patterns to find and replace.
-  @end
 
   @verify
     - Pattern X no longer appears in source files
     - All files compile/pass linting
     - Tests pass
-  @end
 
   @example
     Before:
@@ -152,13 +148,11 @@ Includes `@example` blocks with concrete before/after config transformations.
     ```typescript
     // new pattern
     ```
-  @end
 
   @output_contract
     The codebase has been fully migrated. All verification checks pass.
-  @end
 
-@end
+@/skill
 ```
 
 Validate with: `aif migrate validate my-migration.aif`

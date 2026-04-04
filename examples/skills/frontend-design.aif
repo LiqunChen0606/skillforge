@@ -5,31 +5,24 @@
 
   @precondition
     User is working on frontend code (React, Vue, Svelte, HTML/CSS) and the task involves visual design decisions — layout, typography, color, spacing, motion, or component styling.
-  @end
 
   @step[order=1]
     **Establish visual identity.** Before writing CSS, define the design language: what personality should the UI convey? (e.g., professional/minimal, playful/bold, editorial/elegant). This drives every subsequent decision.
-  @end
 
   @step[order=2]
     **Typography first.** Choose a type scale with clear hierarchy. Use a modular scale (1.25x or 1.333x). Limit to 2 font families max. Set line-height per context: 1.5 for body, 1.2 for headings, 1.0 for labels. Avoid the "AI default" of identical font-size everywhere.
-  @end
 
   @step[order=3]
     **Color with purpose.** Build a palette from a single dominant hue + neutral scale. Use color to convey meaning (success, error, info) not decoration. Ensure WCAG AA contrast (4.5:1 for text, 3:1 for large text). Avoid the "AI gradient" cliche — flat is better than gratuitous gradients.
-  @end
 
   @step[order=4]
     **Spatial composition.** Use a consistent spacing scale (4px base: 4, 8, 12, 16, 24, 32, 48, 64). White space is a design element — more is usually better. Align elements to an implicit grid. Group related items with proximity, separate unrelated ones with space.
-  @end
 
   @step[order=5]
     **Motion and interaction.** Add transitions to state changes (hover, focus, open/close) with 150-300ms duration and ease-out timing. Avoid motion on page load. Use `prefers-reduced-motion` to respect user preferences. Motion should feel responsive, not decorative.
-  @end
 
   @step[order=6]
     **Details that distinguish.** Add micro-details that elevate the design: subtle box-shadows (not `0 0 10px rgba(0,0,0,0.5)` — use layered shadows), border-radius consistency, icon sizing proportional to text, focus rings that match the design system.
-  @end
 
   @verify
     - UI passes WCAG AA contrast requirements
@@ -38,7 +31,6 @@
     - Color palette has semantic meaning (not just decoration)
     - Motion respects `prefers-reduced-motion`
     - Design does NOT look like generic AI output (no gratuitous gradients, no card-everything, no identical rounded rectangles)
-  @end
 
   @example
     **Anti-pattern: Generic AI card layout**
@@ -72,7 +64,6 @@
       transition: border-color 200ms ease-out, box-shadow 200ms ease-out;
     }
     ```
-  @end
 
   @red_flag
     - Using gradients without a specific purpose (not "because it looks cool")
@@ -80,10 +71,8 @@
     - Missing hover/focus states on interactive elements
     - Using `!important` to override framework styles instead of understanding specificity
     - Hard-coding colors instead of using CSS custom properties
-  @end
 
   @output_contract
     The UI is visually distinctive, accessible (WCAG AA), uses a consistent design system (type scale, color palette, spacing scale), and does not exhibit common "AI-generated" visual patterns. All interactive elements have hover, focus, and active states.
-  @end
 
-@end
+@/skill

@@ -5,47 +5,36 @@
 
   @precondition
     You are about to implement a new feature, fix a bug, refactor code, or change behavior. Exceptions (ask your human partner first): throwaway prototypes, generated code, configuration files. If you're thinking "skip TDD just this once" -- stop. That's rationalization.
-  @end
 
   @red_flag
     Writing production code before the test exists. If you wrote code before the test, delete it and start over. No exceptions: don't keep it as "reference," don't "adapt" it while writing tests, don't look at it. Delete means delete.
-  @end
 
   @red_flag
     Writing tests after implementation. Tests written after code pass immediately. Passing immediately proves nothing -- might test the wrong thing, might test implementation not behavior, might miss edge cases you forgot.
-  @end
 
   @red_flag
     Test passes immediately when first written. You're testing existing behavior, not new behavior. Fix the test.
-  @end
 
   @red_flag
     Can't explain why the test failed. You don't understand what you're testing. Stop and clarify.
-  @end
 
   @red_flag
     "I'll write tests later." Later means never, or means tests that prove nothing.
-  @end
 
   @red_flag
     "Keep as reference" or "adapt existing code." That's testing after. Delete means delete.
-  @end
 
   @red_flag
     "Already spent X hours, deleting is wasteful." Sunk cost fallacy. Keeping unverified code is technical debt.
-  @end
 
   @red_flag
     "TDD is dogmatic, I'm being pragmatic." TDD IS pragmatic: finds bugs before commit, prevents regressions, documents behavior, enables refactoring. "Pragmatic" shortcuts = debugging in production = slower.
-  @end
 
   @red_flag
     "Tests after achieve the same goals -- it's spirit not ritual." No. Tests-after answer "What does this do?" Tests-first answer "What should this do?" Tests-after are biased by your implementation.
-  @end
 
   @step[order=1]
     **RED -- Write Failing Test.** Write one minimal test showing what should happen. Requirements: tests one behavior, has a clear descriptive name, uses real code (no mocks unless unavoidable). If the test name contains "and", split it into two tests.
-  @end
 
   @example
     **Good failing test:**
@@ -76,15 +65,12 @@
     });
     ```
     Vague name, tests mock not code.
-  @end
 
   @step[order=2]
     **Verify RED -- Watch It Fail.** MANDATORY. Never skip. Run the test and confirm: (1) test fails (not errors), (2) failure message is expected, (3) fails because feature is missing (not typos). If the test passes, you're testing existing behavior -- fix the test. If it errors, fix the error and re-run until it fails correctly.
-  @end
 
   @step[order=3]
     **GREEN -- Write Minimal Code.** Write the simplest code to pass the test. Don't add features, refactor other code, or "improve" beyond what the test requires. No YAGNI violations.
-  @end
 
   @example
     **Good minimal implementation:**
@@ -110,19 +96,15 @@
       }
     ): Promise<T> { /* YAGNI */ }
     ```
-  @end
 
   @step[order=4]
     **Verify GREEN -- Watch It Pass.** MANDATORY. Run the test and confirm: (1) test passes, (2) other tests still pass, (3) output is pristine (no errors, warnings). If the test fails, fix code, not the test. If other tests fail, fix them now.
-  @end
 
   @step[order=5]
     **REFACTOR -- Clean Up.** After green only: remove duplication, improve names, extract helpers. Keep tests green throughout. Don't add behavior during refactoring.
-  @end
 
   @step[order=6]
     **Repeat.** Write the next failing test for the next behavior. Continue the Red-Green-Refactor cycle.
-  @end
 
   @example
     **Bug fix workflow -- "Empty email accepted":**
@@ -150,15 +132,12 @@
     Verify GREEN: `PASS`
 
     REFACTOR: Extract validation for multiple fields if needed.
-  @end
 
   @decision
     **When stuck:** If you don't know how to test, write the wished-for API and assertion first, then ask your human partner. If the test is too complicated, the design is too complicated -- simplify the interface. If you must mock everything, the code is too coupled -- use dependency injection. If test setup is huge, extract helpers; if still complex, simplify the design.
-  @end
 
   @verify
     Every new function/method has a test. Each test was watched to fail before implementing. Each test failed for the expected reason (feature missing, not typo). Minimal code was written to pass each test. All tests pass with pristine output (no errors, warnings). Tests use real code (mocks only if unavoidable). Edge cases and errors are covered.
-  @end
 
   @output_contract
     1. A suite of failing tests written before implementation.
@@ -166,9 +145,8 @@
     3. Clean, refactored code with all tests green.
     4. Evidence that each test was observed to fail before implementation.
     5. No production code exists without a corresponding test.
-  @end
 
-@end
+@/skill
 
 @section[id=rationalizations]: Common Rationalizations
 
@@ -184,4 +162,3 @@
   | "Manual test faster" | Manual doesn't prove edge cases. You'll re-test every change. |
   | "Existing code has no tests" | You're improving it. Add tests for the code you touch. |
 
-@end

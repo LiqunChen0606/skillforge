@@ -5,23 +5,18 @@
 
   @precondition
     You have a spec or requirements for a multi-step task and have not started coding. The spec should cover a single subsystem. If it covers multiple independent subsystems, suggest breaking it into separate plans -- one per subsystem, each producing working, testable software on its own. This should be run in a dedicated worktree (created by the brainstorming skill).
-  @end
 
   @red_flag
     Starting to code before the plan is written and reviewed.
-  @end
 
   @red_flag
     Placeholders in steps: "TBD", "TODO", "implement later", "fill in details", "add appropriate error handling", "add validation", "handle edge cases", "write tests for the above" (without actual test code), "similar to Task N" (repeat the code -- the engineer may read tasks out of order).
-  @end
 
   @red_flag
     Steps that describe what to do without showing how. Code steps require code blocks.
-  @end
 
   @red_flag
     References to types, functions, or methods not defined in any task.
-  @end
 
   @step[order=1]
     **Map file structure.** Before defining tasks, map out which files will be created or modified and what each one is responsible for. This is where decomposition decisions get locked in.
@@ -29,17 +24,14 @@
     Design units with clear boundaries and well-defined interfaces. Each file should have one clear responsibility. Prefer smaller, focused files over large ones. Files that change together should live together -- split by responsibility, not by technical layer.
 
     In existing codebases, follow established patterns. If a file you're modifying has grown unwieldy, including a split in the plan is reasonable.
-  @end
 
   @step[order=2]
     **Write plan header.** Every plan MUST start with: Feature name, a one-sentence goal, 2-3 sentence architecture overview, key technologies/libraries. Include a note for agentic workers to use `subagent-driven-development` or `executing-plans` to implement the plan task by task.
-  @end
 
   @step[order=3]
     **Decompose into bite-sized tasks.** Each step is one action (2-5 minutes): "Write the failing test" is a step. "Run it to make sure it fails" is a step. "Implement the minimal code to make the test pass" is a step. "Run the tests and make sure they pass" is a step. "Commit" is a step.
 
     Each task must include: exact file paths (create/modify/test), actual test code, exact run commands with expected output, actual implementation code, commit command with message.
-  @end
 
   @example
     **Properly structured task:**
@@ -77,7 +69,6 @@
     git add tests/path/test.py src/path/file.py
     git commit -m "feat: add specific feature"
     ```
-  @end
 
   @step[order=4]
     **Self-review the plan.** After writing the complete plan, check against the spec with fresh eyes:
@@ -87,18 +78,15 @@
     3. **Type consistency:** Do types, method signatures, and property names in later tasks match what you defined in earlier tasks? A function called `clearLayers()` in Task 3 but `clearFullLayers()` in Task 7 is a bug.
 
     If you find issues, fix them inline. If you find a spec requirement with no task, add the task.
-  @end
 
   @step[order=5]
     **Execution handoff.** Save the plan to `docs/superpowers/plans/YYYY-MM-DD-<feature-name>.md` (user preferences override this default). Then offer execution choice:
 
     1. **Subagent-Driven (recommended):** Dispatch a fresh subagent per task, review between tasks, fast iteration. Uses `subagent-driven-development` skill.
     2. **Inline Execution:** Execute tasks in this session with batch execution and checkpoints for review. Uses `executing-plans` skill.
-  @end
 
   @verify
     The plan covers every requirement in the spec. Every step contains actual code (no placeholders). File paths are exact and consistent. Types and method signatures match across all tasks. Each task produces self-contained, testable changes. TDD cycle (red-green-refactor) is followed in every task.
-  @end
 
   @output_contract
     1. A complete implementation plan saved to the designated location.
@@ -107,6 +95,5 @@
     4. Exact file paths, run commands, and expected output for every step.
     5. A self-review confirming spec coverage, no placeholders, and type consistency.
     6. An execution handoff offering subagent-driven or inline execution.
-  @end
 
-@end
+@/skill

@@ -5,34 +5,26 @@
 
   @precondition
     A bug, test failure, or unexpected behavior has been reported or observed.
-  @end
 
   @step[order=1]
     **Read error messages carefully.** Read stack traces completely, note line numbers, file paths, error codes. Do not skip or skim.
-  @end
 
   @step[order=2]
     **Reproduce consistently.** Can you trigger the bug reliably? Document the exact steps to reproduce.
-  @end
 
   @step[order=3]
     **Check recent changes.** What changed since it last worked? Use `git diff` and `git log` to identify candidates.
-  @end
 
   @step[order=4]
     **Form a hypothesis.** "I think X is the root cause because Y." Test the smallest possible change.
-  @end
 
   @verify
     The root cause has been identified and a minimal fix resolves the issue without introducing regressions. All tests pass.
-  @end
 
   @red_flag
     Applying fixes without understanding the root cause. If you've tried 3+ fixes without success, stop and reassess the architecture.
-  @end
 
   @output_contract
     A clear explanation of: (1) what the root cause was, (2) why the fix works, (3) how to verify the fix.
-  @end
 
-@end
+@/skill

@@ -44,26 +44,21 @@ Every AIF skill follows this structure:
 
   @precondition
     When should this skill activate? What context is required?
-  @end
 
   @step[order=1]
     First thing the agent should do.
-  @end
 
   @step[order=2]
     Second step. Be specific — include commands, patterns, file paths.
-  @end
 
   @verify
     - How to confirm the skill was applied correctly
     - Concrete, checkable criteria
-  @end
 
   @output_contract
     What the world looks like when this skill completes successfully.
-  @end
 
-@end
+@/skill
 ```
 
 **Optional blocks** (add as needed):
@@ -208,14 +203,11 @@ cat > my-skill.aif << 'EOF'
 @skill[name="my-skill", version="1.0", description="Use when user asks to ..."]
   @precondition
     ...
-  @end
   @step[order=1]
     ...
-  @end
   @verify
     ...
-  @end
-@end
+@/skill
 EOF
 
 # 2. Validate structure

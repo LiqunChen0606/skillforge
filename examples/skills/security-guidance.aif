@@ -5,42 +5,33 @@
 
   @precondition
     Code is being written or edited via Edit/Write/MultiEdit operations. The code may handle user input, execute commands, render HTML, or deserialize data.
-  @end
 
   @tool
     PreToolUse hook on Edit, Write, MultiEdit operations. Pattern matching on file content.
-  @end
 
   @step[order=1]
     **Scan for GitHub Actions workflow injection.** Check for `${{ github.event.*.body }}` or similar expressions used in `run:` blocks. These allow arbitrary command injection via PR titles/bodies.
-  @end
 
   @step[order=2]
     **Scan for child process execution.** Check for `child_process.exec()`, `subprocess.run(shell=True)`, `os.system()`, or similar with unsanitized input interpolation.
-  @end
 
   @step[order=3]
     **Scan for eval and dynamic code execution.** Check for `eval()`, `new Function()`, `exec()` in Python, or `vm.runInNewContext()` with user-controlled strings.
-  @end
 
   @step[order=4]
     **Scan for XSS vectors.** Check for `innerHTML`, `document.write()`, `dangerouslySetInnerHTML` without proper sanitization of user-provided content.
-  @end
 
   @step[order=5]
     **Scan for unsafe deserialization.** Check for `pickle.loads()`, `yaml.load()` (without `SafeLoader`), `JSON.parse()` on untrusted input without schema validation.
-  @end
 
   @step[order=6]
     **Scan for shell injection.** Check for string interpolation in shell commands: `` `command ${userInput}` ``, `os.system(f"cmd {user_input}")`. Recommend `shlex.quote()` or parameterized execution.
-  @end
 
   @verify
     - All 6 vulnerability categories are checked on every edit operation
     - Warnings include the specific line, the vulnerability type, and a concrete safe alternative
     - Session-based deduplication prevents repeated warnings for the same pattern in the same file
     - No false positives on safe patterns (e.g., `innerHTML` assigned from a compile-time constant)
-  @end
 
   @example
     **Detecting shell injection:**
@@ -63,7 +54,6 @@
     def search_files(query):
         subprocess.run(["grep", "-r", query, "/var/data"], check=True)
     ```
-  @end
 
   @example
     **Detecting GitHub Actions injection:**
@@ -86,17 +76,14 @@
       env:
         PR_TITLE: ${{ github.event.pull_request.title }}
     ```
-  @end
 
   @red_flag
     - Silencing security warnings without addressing the root cause
     - Using `shell=True` in subprocess calls with any user-influenced input
     - Storing secrets in code or config files committed to git
     - Disabling CSRF protection "temporarily" for development
-  @end
 
   @output_contract
     Each security finding includes: vulnerability category, file and line, severity (critical/high/medium), the unsafe pattern, and a concrete safe replacement. Findings are deduplicated per session.
-  @end
 
-@end
+@/skill

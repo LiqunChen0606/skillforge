@@ -7,7 +7,6 @@
     Configuration is in .eslintrc, .eslintrc.js, .eslintrc.json, or .eslintrc.yml.
     Project may use extends, plugins, and overrides in legacy format.
     No existing eslint.config.js or eslint.config.mjs present.
-  @end
 
   @step[order=1]
     Upgrade ESLint to version 9.x in package.json:
@@ -16,7 +15,6 @@
     - @eslint/eslintrc (for FlatCompat helper)
     - @eslint/js (for recommended config)
     - globals (for environment globals definitions)
-  @end
 
   @step[order=2]
     Create eslint.config.js (or eslint.config.mjs for ESM projects).
@@ -60,7 +58,6 @@
           },
         },
       ];
-  @end
 
   @step[order=3]
     Migrate plugin references to flat config format:
@@ -76,7 +73,6 @@
         ...compat.extends('plugin:legacy-plugin/recommended'),
         // ... other config
       ];
-  @end
 
   @step[order=4]
     Migrate environment definitions:
@@ -87,7 +83,6 @@
     - env: { mocha: true } → languageOptions: { globals: globals.mocha }
 
     The `globals` package provides all standard environment globals.
-  @end
 
   @step[order=5]
     Migrate overrides to file-specific config objects:
@@ -106,7 +101,6 @@
         { files: ['**/*.ts'], languageOptions: { parser: tsParser } },
         { files: ['**/*.test.*'], rules: { 'no-console': 'off' } }
       ]
-  @end
 
   @step[order=6]
     Migrate .eslintignore to the ignores property:
@@ -123,7 +117,6 @@
         { ignores: ['node_modules/', 'dist/', 'coverage/'] },
         // ... rest of config
       ];
-  @end
 
   @step[order=7]
     Clean up legacy files:
@@ -132,7 +125,6 @@
     - Update package.json scripts that reference eslintrc flags
     - Remove --ext flag from ESLint CLI commands (flat config uses files patterns)
     - Update CI/CD configuration files that reference legacy config
-  @end
 
   @verify
     No remaining `.eslintrc` file in any format (js, json, yml, yaml).
@@ -141,7 +133,6 @@
     No remaining `--ext` flags in package.json lint scripts.
     All rules from the original config are present in the new flat config.
     The `extends` keyword does not appear in eslint.config.js (use array composition).
-  @end
 
   @fallback
     If a plugin does not export a flat config, wrap it with FlatCompat
@@ -154,7 +145,6 @@
     If custom ESLint rules are defined locally, they need manual
     adaptation to the flat config plugin format (export as an object
     with rules property).
-  @end
 
   @example
     Before (.eslintrc.json with TypeScript):
@@ -178,7 +168,6 @@
           },
         },
       ];
-  @end
 
   @decision
     If a plugin has both flat config and legacy exports, prefer the native
@@ -191,7 +180,6 @@
     If the project has more than 5 overrides blocks, consider grouping related
     overrides into separate config files and importing them, rather than having
     a single monolithic eslint.config.js.
-  @end
 
   @red_flag
     Do not delete legacy config files until the new flat config has been
@@ -201,7 +189,6 @@
     Do not automatically migrate custom ESLint rules that use
     deprecated rule APIs (context.getScope, context.getAncestors).
     These require manual rewrite to the new API surface.
-  @end
 
   @output_contract
     ESLint runs successfully with the new flat config.
@@ -209,5 +196,4 @@
     No new lint errors introduced by the migration itself.
     Legacy configuration files removed.
     CI/CD pipeline lint step passes.
-  @end
-@end
+@/skill

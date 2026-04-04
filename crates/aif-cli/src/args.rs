@@ -110,6 +110,17 @@ pub enum Commands {
         #[arg(long, default_value = "text")]
         format: String,
     },
+    /// Migrate AIF v1 syntax (@end) to v2 (@/name)
+    MigrateSyntax {
+        /// Input .aif file or directory to migrate
+        path: PathBuf,
+        /// Rewrite files in place (default: print to stdout)
+        #[arg(long)]
+        in_place: bool,
+        /// Show what would change without writing
+        #[arg(long)]
+        dry_run: bool,
+    },
     /// Security scan for SKILL.md and .aif files (OWASP AST10 aligned)
     Scan {
         /// Input .aif or SKILL.md file

@@ -8,7 +8,6 @@
     Package manager is npm or yarn.
     TypeScript configuration present (tsconfig.json).
     No custom server.js overriding the Next.js server.
-  @end
 
   @step[order=1]
     Upgrade core dependencies in package.json:
@@ -19,7 +18,6 @@
     - @types/react-dom: ^18.x.x → ^19.0.0
     Remove deprecated peer dependencies:
     - @next/font (now built into next/font)
-  @end
 
   @step[order=2]
     Migrate async request APIs. In Next.js 15, params, searchParams,
@@ -38,7 +36,6 @@
     Apply to all page.tsx, layout.tsx, route.tsx, and
     generateMetadata functions. Both server and client components
     that access these APIs must be updated.
-  @end
 
   @step[order=3]
     Update next.config.js to next.config.ts (optional but recommended).
@@ -48,7 +45,6 @@
     - Update images.domains to images.remotePatterns format
     - Replace experimental.instrumentationHook with instrumentation (top-level)
     - Remove swcMinify (now default behavior)
-  @end
 
   @step[order=4]
     Update caching semantics. Next.js 15 changed default caching behavior:
@@ -60,14 +56,12 @@
     - fetch(url, { cache: 'force-cache' }) for previously cached fetches
     - export const dynamic = 'force-static' for static route handlers
     - Use <Link prefetch={true}> for routes that benefit from prefetching
-  @end
 
   @step[order=5]
     Update middleware and edge runtime patterns:
     - NextRequest geo and ip properties are removed; use provider-specific headers
     - Replace runtime = 'experimental-edge' with runtime = 'edge'
     - Update Middleware matcher patterns if using deprecated syntax
-  @end
 
   @step[order=6]
     Update React 19 patterns in client components:
@@ -75,7 +69,6 @@
     - Replace forwardRef with direct ref prop on function components
     - Update Context.Provider to direct Context usage: <Context value={...}>
     - Remove deprecated string refs if any remain
-  @end
 
   @step[order=7]
     Update testing infrastructure:
@@ -83,7 +76,6 @@
     - Update jest or vitest configuration for Next 15 transforms
     - Replace deprecated renderHook import location
     - Update MSW or similar mocking tools if they depend on fetch behavior
-  @end
 
   @verify
     No remaining `@next/font` imports in source files.
@@ -95,7 +87,6 @@
     No remaining `forwardRef` usage without migration comment.
     Package.json shows `next` version >= 15.0.0.
     Package.json shows `react` version >= 19.0.0.
-  @end
 
   @fallback
     If a component uses complex params destructuring in server components,
@@ -107,7 +98,6 @@
     If third-party packages depend on Next.js 13 internals (e.g., custom
     server adapters or internal routing APIs), skip those files and list
     them as requiring package upgrades before migration can proceed.
-  @end
 
   @example
     Before (Next.js 13 page component):
@@ -127,7 +117,6 @@
 
     After (Next.js 15 explicit cache):
       const data = await fetch('https://api.example.com/data', { cache: 'force-cache' });
-  @end
 
   @decision
     If a file uses both Pages Router (`getServerSideProps`) and App Router
@@ -140,7 +129,6 @@
     If `next.config.js` has complex plugin chains (e.g., `withBundleAnalyzer`,
     `withPWA`), convert to `next.config.ts` only if all plugins support TS config.
     Otherwise, keep `.js` and only update the deprecated options.
-  @end
 
   @red_flag
     Do not migrate files that import from Next.js internal modules
@@ -150,7 +138,6 @@
     Do not automatically convert `getServerSideProps` or `getStaticProps`
     in pages/ directory files — these are Pages Router patterns and
     require a separate Pages→App Router migration, not a version upgrade.
-  @end
 
   @output_contract
     All source files migrated to Next.js 15 API surface.
@@ -159,5 +146,4 @@
     All previously passing tests continue to pass.
     Deprecated configuration options removed.
     Caching behavior explicitly specified where previously implicit.
-  @end
-@end
+@/skill

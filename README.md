@@ -97,7 +97,32 @@ ir = skillforge.import_markdown(open("SKILL.md").read())
 html = skillforge.compile(open("skill.aif").read(), "html")
 ```
 
-See [`tutorial/skillforge_tutorial.ipynb`](tutorial/skillforge_tutorial.ipynb) for a full walkthrough of all 14 functions.
+See [`tutorial/skillforge_tutorial.ipynb`](tutorial/skillforge_tutorial.ipynb) for a full walkthrough of all 16 functions.
+
+### AIF v2 syntax (v0.3.0)
+
+v0.3.0 introduces **v2 syntax**: containers `@skill` / `@artifact_skill` close with `@/skill` / `@/artifact_skill`. All other blocks auto-close at the next `@` directive — no `@end` tokens needed.
+
+```aif
+# v1 (legacy, still supported)         # v2 (new default)
+@skill[name="demo"]                    @skill[name="demo"]
+  @step[order=1]                       @step[order=1]
+    Do it.                             Do it.
+  @end                                 @verify
+  @verify                              Passed.
+    Passed.                            @/skill
+  @end
+@end
+```
+
+The parser auto-detects version per file. Convert v1 → v2:
+
+```bash
+aif migrate-syntax examples/ --in-place   # Rewrite all .aif files in place
+aif migrate-syntax skill.aif              # Print v2 to stdout
+```
+
+Or from Python: `skillforge.detect_syntax(src)` / `skillforge.migrate_syntax(src)`.
 
 ## What SkillForge Checks
 

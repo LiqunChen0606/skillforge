@@ -7,7 +7,7 @@ Language support for `.aif` (AI-native Interchange Format) documents in VS Code.
 - **Syntax highlighting** — block types, metadata, inline formatting, code blocks, tables
 - **Diagnostics** — real-time lint errors and warnings from the SkillForge LSP
 - **Document symbols** — outline view of sections, skills, claims, evidence blocks
-- **Folding** — fold `@block...@end` ranges
+- **Folding** — fold `@skill...@/skill` ranges (v2 syntax) and `@block...@end` (v1 legacy)
 - **Semantic tokens** — context-aware highlighting for block types and attributes
 
 ## Prerequisites

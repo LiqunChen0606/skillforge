@@ -64,5 +64,12 @@ fn main() {
         Commands::Scan { input, format } => {
             commands::scan::handle_scan(input, format);
         }
+        Commands::MigrateSyntax {
+            path,
+            in_place,
+            dry_run,
+        } => {
+            commands::migrate_syntax::handle_migrate_syntax(path, in_place, dry_run);
+        }
     }
 }

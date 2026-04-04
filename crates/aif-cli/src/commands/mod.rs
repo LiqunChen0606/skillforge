@@ -4,6 +4,7 @@ pub mod config;
 pub mod conflict;
 pub mod lint;
 pub mod migrate;
+pub mod migrate_syntax;
 pub mod observe;
 pub mod scan;
 pub mod skill;

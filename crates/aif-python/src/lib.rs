@@ -12,6 +12,22 @@ fn parse(source: &str) -> PyResult<String> {
         .map_err(|e| PyValueError::new_err(e.to_string()))
 }
 
+/// Detect AIF syntax version of a source string. Returns "v1" or "v2".
+#[pyfunction]
+fn detect_syntax(source: &str) -> PyResult<String> {
+    match aif_parser::detect_syntax_version(source) {
+        Ok(aif_parser::SyntaxVersion::V1) => Ok("v1".to_string()),
+        Ok(aif_parser::SyntaxVersion::V2) => Ok("v2".to_string()),
+        Err(e) => Err(PyValueError::new_err(e)),
+    }
+}
+
+/// Migrate AIF v1 syntax (@end) to v2 (@/name). Idempotent on v2 input.
+#[pyfunction]
+fn migrate_syntax(source: &str) -> PyResult<String> {
+    Ok(aif_parser::migrate::migrate_v1_to_v2(source))
+}
+
 /// Import a Markdown string into AIF JSON IR.
 #[pyfunction]
 fn import_markdown(source: &str) -> PyResult<String> {
@@ -215,6 +231,8 @@ fn verify_skill(source: &str, signature_b64: &str, public_key_b64: &str) -> PyRe
 #[pymodule]
 fn skillforge(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(parse, m)?)?;
+    m.add_function(wrap_pyfunction!(detect_syntax, m)?)?;
+    m.add_function(wrap_pyfunction!(migrate_syntax, m)?)?;
     m.add_function(wrap_pyfunction!(import_markdown, m)?)?;
     m.add_function(wrap_pyfunction!(import_html, m)?)?;
     m.add_function(wrap_pyfunction!(import_skill_md, m)?)?;

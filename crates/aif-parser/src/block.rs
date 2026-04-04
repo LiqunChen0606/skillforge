@@ -4,6 +4,23 @@ use aif_core::span::Span;
 
 use crate::attrs::parse_attrs;
 use crate::inline::parse_inline;
+use crate::SyntaxVersion;
+
+/// In v2, only `@skill` and `@artifact_skill` are true containers that need an
+/// explicit `@/name` closer. All other skill block types are leaves that
+/// auto-close at the next `@` directive.
+fn is_v2_container(ty: &SkillBlockType) -> bool {
+    matches!(ty, SkillBlockType::Skill | SkillBlockType::ArtifactSkill)
+}
+
+/// Map a container SkillBlockType to its v2 closer directive name.
+fn container_closer_name(ty: &SkillBlockType) -> Option<&'static str> {
+    match ty {
+        SkillBlockType::Skill => Some("skill"),
+        SkillBlockType::ArtifactSkill => Some("artifact_skill"),
+        _ => None,
+    }
+}
 
 /// Extract known media metadata keys from attrs into a MediaMeta struct,
 /// removing them from attrs.pairs so they don't remain as generic pairs.
@@ -63,10 +80,11 @@ struct Line<'a> {
 pub(crate) struct BlockParser<'a> {
     lines: Vec<Line<'a>>,
     pos: usize,
+    version: SyntaxVersion,
 }
 
 impl<'a> BlockParser<'a> {
-    pub(crate) fn new(input: &'a str) -> Self {
+    pub(crate) fn new(input: &'a str, version: SyntaxVersion) -> Self {
         let mut lines = Vec::new();
         let mut offset = 0;
         for line in input.split('\n') {
@@ -78,7 +96,7 @@ impl<'a> BlockParser<'a> {
         if input.ends_with('\n') && lines.last().map(|l| l.text.is_empty()).unwrap_or(false) {
             lines.pop();
         }
-        Self { lines, pos: 0 }
+        Self { lines, pos: 0, version }
     }
 
     pub(crate) fn parse(&mut self) -> Result<Document, Vec<ParseError>> {
@@ -285,7 +303,7 @@ impl<'a> BlockParser<'a> {
                 let children = if body_text.is_empty() {
                     Vec::new()
                 } else {
-                    let mut child_parser = BlockParser::new(&body_text);
+                    let mut child_parser = BlockParser::new(&body_text, self.version);
                     // Skip metadata parsing for child parser - just parse blocks
                     match child_parser.parse() {
                         Ok(child_doc) => child_doc.blocks,
@@ -499,7 +517,15 @@ impl<'a> BlockParser<'a> {
         title_str: &str,
         start: usize,
     ) -> Option<Block> {
-        let is_container = matches!(skill_type, SkillBlockType::Skill | SkillBlockType::Verify | SkillBlockType::Scenario);
+        // V1 containers include Verify/Scenario (legacy). V2 containers are
+        // only Skill/ArtifactSkill — all other block types are leaves.
+        let is_container = match self.version {
+            SyntaxVersion::V1 => matches!(
+                skill_type,
+                SkillBlockType::Skill | SkillBlockType::Verify | SkillBlockType::Scenario
+            ),
+            SyntaxVersion::V2 => is_v2_container(&skill_type),
+        };
         let title = if title_str.is_empty() {
             None
         } else {
@@ -509,15 +535,45 @@ impl<'a> BlockParser<'a> {
         let mut content_lines: Vec<&str> = Vec::new();
         let mut children: Vec<Block> = Vec::new();
         let mut end = start;
+        let expected_closer = container_closer_name(&skill_type);
 
         while self.pos < self.lines.len() {
             let line = self.lines[self.pos].text;
+            let trimmed_line = line.trim();
 
-            // @end terminates this block
-            if line.trim() == "@end" {
+            // V1: `@end` terminates this block
+            if self.version == SyntaxVersion::V1 && trimmed_line == "@end" {
                 end = self.lines[self.pos].offset + line.len();
                 self.pos += 1;
                 break;
+            }
+
+            // V2: `@/name` container closer or leaf auto-close on next `@`
+            if self.version == SyntaxVersion::V2 {
+                if let Some(rest) = trimmed_line.strip_prefix("@/") {
+                    let closer_name: String = rest
+                        .chars()
+                        .take_while(|c| c.is_alphabetic() || *c == '_')
+                        .collect();
+                    if is_container {
+                        if let Some(expected) = expected_closer {
+                            if closer_name == expected {
+                                end = self.lines[self.pos].offset + line.len();
+                                self.pos += 1;
+                                break;
+                            }
+                        }
+                        // Wrong closer — stop here, outer parser handles.
+                        break;
+                    } else {
+                        // Leaf: don't consume the closer, let outer break.
+                        break;
+                    }
+                }
+                // V2 leaf auto-closes on any line starting with `@`.
+                if !is_container && line.trim_start().starts_with('@') {
+                    break;
+                }
             }
 
             // Nested skill block directive inside a container
@@ -645,7 +701,7 @@ impl<'a> BlockParser<'a> {
         }
 
         let inner_text = quote_lines.join("\n");
-        let mut inner_parser = BlockParser::new(&inner_text);
+        let mut inner_parser = BlockParser::new(&inner_text, self.version);
         let content = match inner_parser.parse() {
             Ok(doc) => doc.blocks,
             Err(_) => Vec::new(),
@@ -690,7 +746,7 @@ impl<'a> BlockParser<'a> {
                 } else {
                     // Parse nested content as sub-list or blocks
                     let nested_text = nested_lines.join("\n");
-                    let mut nested_parser = BlockParser::new(&nested_text);
+                    let mut nested_parser = BlockParser::new(&nested_text, self.version);
                     match nested_parser.parse() {
                         Ok(doc) => doc.blocks,
                         Err(_) => Vec::new(),
@@ -823,7 +879,7 @@ mod tests {
 
     #[test]
     fn parse_empty() {
-        let mut parser = BlockParser::new("");
+        let mut parser = BlockParser::new("", crate::SyntaxVersion::V1);
         let doc = parser.parse().unwrap();
         assert!(doc.metadata.is_empty());
         assert!(doc.blocks.is_empty());
@@ -831,7 +887,7 @@ mod tests {
 
     #[test]
     fn parse_metadata_only() {
-        let mut parser = BlockParser::new("#title: Hello\n#author: Test\n");
+        let mut parser = BlockParser::new("#title: Hello\n#author: Test\n", crate::SyntaxVersion::V1);
         let doc = parser.parse().unwrap();
         assert_eq!(doc.metadata.get("title").unwrap(), "Hello");
         assert_eq!(doc.metadata.get("author").unwrap(), "Test");
@@ -840,7 +896,7 @@ mod tests {
 
     #[test]
     fn parse_simple_paragraph() {
-        let mut parser = BlockParser::new("Hello world.\n");
+        let mut parser = BlockParser::new("Hello world.\n", crate::SyntaxVersion::V1);
         let doc = parser.parse().unwrap();
         assert_eq!(doc.blocks.len(), 1);
         assert!(matches!(&doc.blocks[0].kind, BlockKind::Paragraph { .. }));
@@ -848,7 +904,7 @@ mod tests {
 
     #[test]
     fn parse_multi_line_paragraph() {
-        let mut parser = BlockParser::new("Line one\nLine two\n");
+        let mut parser = BlockParser::new("Line one\nLine two\n", crate::SyntaxVersion::V1);
         let doc = parser.parse().unwrap();
         assert_eq!(doc.blocks.len(), 1);
         if let BlockKind::Paragraph { content } = &doc.blocks[0].kind {
@@ -865,7 +921,7 @@ mod tests {
 
     #[test]
     fn parse_thematic_break() {
-        let mut parser = BlockParser::new("---\n");
+        let mut parser = BlockParser::new("---\n", crate::SyntaxVersion::V1);
         let doc = parser.parse().unwrap();
         assert_eq!(doc.blocks.len(), 1);
         assert!(matches!(&doc.blocks[0].kind, BlockKind::ThematicBreak));
@@ -874,7 +930,7 @@ mod tests {
     #[test]
     fn parse_code_fence() {
         let input = "```rust\nfn main() {}\n```\n";
-        let mut parser = BlockParser::new(input);
+        let mut parser = BlockParser::new(input, crate::SyntaxVersion::V1);
         let doc = parser.parse().unwrap();
         assert_eq!(doc.blocks.len(), 1);
         if let BlockKind::CodeBlock { lang, code, .. } = &doc.blocks[0].kind {
@@ -888,7 +944,7 @@ mod tests {
     #[test]
     fn parse_section_directive() {
         let input = "@section[id=intro]: Introduction\nSome content here.\n";
-        let mut parser = BlockParser::new(input);
+        let mut parser = BlockParser::new(input, crate::SyntaxVersion::V1);
         let doc = parser.parse().unwrap();
         assert_eq!(doc.blocks.len(), 1);
         if let BlockKind::Section { attrs, title, children } = &doc.blocks[0].kind {
@@ -903,7 +959,7 @@ mod tests {
     #[test]
     fn parse_block_quote() {
         let input = "> This is a quote\n> Second line\n";
-        let mut parser = BlockParser::new(input);
+        let mut parser = BlockParser::new(input, crate::SyntaxVersion::V1);
         let doc = parser.parse().unwrap();
         assert_eq!(doc.blocks.len(), 1);
         assert!(matches!(&doc.blocks[0].kind, BlockKind::BlockQuote { .. }));
@@ -912,7 +968,7 @@ mod tests {
     #[test]
     fn parse_unordered_list() {
         let input = "- Item one\n- Item two\n";
-        let mut parser = BlockParser::new(input);
+        let mut parser = BlockParser::new(input, crate::SyntaxVersion::V1);
         let doc = parser.parse().unwrap();
         assert_eq!(doc.blocks.len(), 1);
         if let BlockKind::List { ordered, items } = &doc.blocks[0].kind {
@@ -926,7 +982,7 @@ mod tests {
     #[test]
     fn parse_ordered_list() {
         let input = "1. First\n2. Second\n";
-        let mut parser = BlockParser::new(input);
+        let mut parser = BlockParser::new(input, crate::SyntaxVersion::V1);
         let doc = parser.parse().unwrap();
         assert_eq!(doc.blocks.len(), 1);
         if let BlockKind::List { ordered, items } = &doc.blocks[0].kind {
@@ -940,7 +996,7 @@ mod tests {
     #[test]
     fn parse_semantic_block() {
         let input = "@claim[id=c1]: Main Claim\nThe evidence supports this.\n";
-        let mut parser = BlockParser::new(input);
+        let mut parser = BlockParser::new(input, crate::SyntaxVersion::V1);
         let doc = parser.parse().unwrap();
         assert_eq!(doc.blocks.len(), 1);
         if let BlockKind::SemanticBlock { block_type, attrs, title, .. } = &doc.blocks[0].kind {
@@ -955,7 +1011,7 @@ mod tests {
     #[test]
     fn parse_skill_container_with_end() {
         let input = "@skill[name=debugging]\n  Some intro text.\n@end\n";
-        let mut parser = BlockParser::new(input);
+        let mut parser = BlockParser::new(input, crate::SyntaxVersion::V1);
         let doc = parser.parse().unwrap();
         assert_eq!(doc.blocks.len(), 1);
         if let BlockKind::SkillBlock { skill_type, attrs, content, children, .. } = &doc.blocks[0].kind {
@@ -983,7 +1039,7 @@ mod tests {
 @end
 @end
 ";
-        let mut parser = BlockParser::new(input);
+        let mut parser = BlockParser::new(input, crate::SyntaxVersion::V1);
         let doc = parser.parse().unwrap();
         assert_eq!(doc.blocks.len(), 1);
         if let BlockKind::SkillBlock { children, .. } = &doc.blocks[0].kind {
@@ -1020,7 +1076,7 @@ Some free text intro.
 @end
 @end
 ";
-        let mut parser = BlockParser::new(input);
+        let mut parser = BlockParser::new(input, crate::SyntaxVersion::V1);
         let doc = parser.parse().unwrap();
         assert_eq!(doc.blocks.len(), 1);
         if let BlockKind::SkillBlock { content, children, .. } = &doc.blocks[0].kind {
@@ -1034,7 +1090,7 @@ Some free text intro.
     #[test]
     fn parse_audio_directive() {
         let input = "@audio[src=file.mp3]: My Audio Caption\n";
-        let mut parser = BlockParser::new(input);
+        let mut parser = BlockParser::new(input, crate::SyntaxVersion::V1);
         let doc = parser.parse().unwrap();
         assert_eq!(doc.blocks.len(), 1);
         if let BlockKind::Audio { attrs: _, caption, src, .. } = &doc.blocks[0].kind {
@@ -1048,7 +1104,7 @@ Some free text intro.
     #[test]
     fn parse_video_directive() {
         let input = "@video[src=clip.mp4]: Video Title\n";
-        let mut parser = BlockParser::new(input);
+        let mut parser = BlockParser::new(input, crate::SyntaxVersion::V1);
         let doc = parser.parse().unwrap();
         assert_eq!(doc.blocks.len(), 1);
         if let BlockKind::Video { attrs: _, caption, src, .. } = &doc.blocks[0].kind {
@@ -1062,7 +1118,7 @@ Some free text intro.
     #[test]
     fn parse_figure_with_media_meta() {
         let input = "@figure[src=photo.jpg, alt=A nice photo, width=800, height=600]: Caption\n";
-        let mut parser = BlockParser::new(input);
+        let mut parser = BlockParser::new(input, crate::SyntaxVersion::V1);
         let doc = parser.parse().unwrap();
         assert_eq!(doc.blocks.len(), 1);
         if let BlockKind::Figure { src, meta, attrs, .. } = &doc.blocks[0].kind {
@@ -1081,7 +1137,7 @@ Some free text intro.
     #[test]
     fn parse_video_with_poster_and_duration() {
         let input = "@video[src=clip.mp4, poster=thumb.jpg, duration=120.5]: Video\n";
-        let mut parser = BlockParser::new(input);
+        let mut parser = BlockParser::new(input, crate::SyntaxVersion::V1);
         let doc = parser.parse().unwrap();
         assert_eq!(doc.blocks.len(), 1);
         if let BlockKind::Video { meta, .. } = &doc.blocks[0].kind {
@@ -1095,7 +1151,7 @@ Some free text intro.
     #[test]
     fn parse_audio_with_mime() {
         let input = "@audio[src=song.ogg, mime=audio/ogg]: Song\n";
-        let mut parser = BlockParser::new(input);
+        let mut parser = BlockParser::new(input, crate::SyntaxVersion::V1);
         let doc = parser.parse().unwrap();
         assert_eq!(doc.blocks.len(), 1);
         if let BlockKind::Audio { meta, .. } = &doc.blocks[0].kind {
@@ -1103,5 +1159,107 @@ Some free text intro.
         } else {
             panic!("expected Audio");
         }
+    }
+
+    // ======================================================================
+    // V2 syntax tests (container closers, leaf auto-close)
+    // ======================================================================
+
+    #[test]
+    fn v2_skill_with_leaf_children() {
+        let input = "\
+@skill[name=\"t\"]
+@precondition
+Ready.
+@step[order=1]
+Do it.
+@verify
+Passed.
+@/skill
+";
+        let mut parser = BlockParser::new(input, crate::SyntaxVersion::V2);
+        let doc = parser.parse().unwrap();
+        assert_eq!(doc.blocks.len(), 1);
+        if let BlockKind::SkillBlock { children, skill_type, .. } = &doc.blocks[0].kind {
+            assert!(matches!(skill_type, SkillBlockType::Skill));
+            assert_eq!(children.len(), 3);
+        } else {
+            panic!("expected SkillBlock");
+        }
+    }
+
+    #[test]
+    fn v2_leaf_auto_closes_at_next_directive() {
+        let input = "\
+@skill[name=\"t\"]
+@step[order=1]
+Line one.
+Line two.
+@step[order=2]
+Other body.
+@/skill
+";
+        let mut parser = BlockParser::new(input, crate::SyntaxVersion::V2);
+        let doc = parser.parse().unwrap();
+        if let BlockKind::SkillBlock { children, .. } = &doc.blocks[0].kind {
+            assert_eq!(children.len(), 2);
+            // First step should have "Line one." and "Line two." joined.
+            if let BlockKind::SkillBlock { content, .. } = &children[0].kind {
+                let text: String = content.iter().filter_map(|i| match i {
+                    Inline::Text { text } => Some(text.clone()),
+                    _ => None,
+                }).collect();
+                assert!(text.contains("Line one"));
+                assert!(text.contains("Line two"));
+            }
+        }
+    }
+
+    #[test]
+    fn v2_artifact_skill_container() {
+        let input = "\
+@artifact_skill[name=\"gen\"]
+@template
+A template.
+@/artifact_skill
+";
+        let mut parser = BlockParser::new(input, crate::SyntaxVersion::V2);
+        let doc = parser.parse().unwrap();
+        if let BlockKind::SkillBlock { skill_type, children, .. } = &doc.blocks[0].kind {
+            assert!(matches!(skill_type, SkillBlockType::ArtifactSkill));
+            assert_eq!(children.len(), 1);
+        } else {
+            panic!("expected ArtifactSkill");
+        }
+    }
+
+    #[test]
+    fn v2_detection_v1() {
+        assert_eq!(
+            crate::detect_syntax_version("@skill[name=a]\n@end\n").unwrap(),
+            crate::SyntaxVersion::V1
+        );
+    }
+
+    #[test]
+    fn v2_detection_v2() {
+        assert_eq!(
+            crate::detect_syntax_version("@skill[name=a]\n@/skill\n").unwrap(),
+            crate::SyntaxVersion::V2
+        );
+    }
+
+    #[test]
+    fn v2_detection_neither_defaults_v2() {
+        assert_eq!(
+            crate::detect_syntax_version("#title: Doc\n\n@claim\nfoo\n").unwrap(),
+            crate::SyntaxVersion::V2
+        );
+    }
+
+    #[test]
+    fn v2_detection_mixed_errors() {
+        let err = crate::detect_syntax_version("@skill\n@end\n@/skill\n").unwrap_err();
+        assert!(err.contains("mixes v1") && err.contains("v2"));
     }
 }
