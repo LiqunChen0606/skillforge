@@ -4,18 +4,18 @@ Does the format you present a skill in actually affect how well the LLM follows 
 
 ## TL;DR
 
-**LML Aggressive scores +4pp overall** (0.84 vs 0.80) — but the advantage concentrates on hard scenarios (+11pp) and constraint resistance (+18pp). On easy/standard scenarios, all formats perform equally. 73 runs across 5 skills × 19 scenarios × 4 formats (claude-sonnet-4-6).
+**LML Aggressive scores +4pp overall** (0.88 vs 0.84) with the advantage concentrating on multi-step workflows (+9pp). On easy/standard scenarios, all formats perform equally (~0.95). 126 runs across 21 scenarios × 6 formats (claude-sonnet-4-6).
 
-| Format | Tokens | Steps | Constraints | Contract | **Overall** | **Hard** |
-|--------|--------|-------|-------------|----------|-------------|----------|
-| **LML Aggressive** | **869** | **0.86** | **0.85** | **0.84** | **0.84** | **0.76** |
-| AIF Source | ~900 | TBD | TBD | TBD | TBD | TBD |
-| LML Standard | ~950 | TBD | TBD | TBD | TBD | TBD |
-| JSON IR | 3,838 | 0.85 | 0.79 | 0.80 | 0.81 | 0.70 |
-| HTML | 1,217 | 0.83 | 0.80 | 0.80 | 0.81 | 0.71 |
-| Raw Markdown | 908 | 0.82 | 0.82 | 0.80 | 0.80 | **0.65** |
+| Format | Tokens | Overall | Steps | Constraints | Contract | Multi-Step |
+|--------|--------|---------|-------|-------------|----------|------------|
+| **LML Aggressive** | **861** | **0.88** | 0.89 | **0.89** | 0.89 | **0.81** |
+| JSON IR | 3,838 | 0.87 | 0.85 | 0.87 | 0.87 | 0.74 |
+| LML Standard | 928 | 0.86 | 0.86 | 0.88 | 0.86 | 0.74 |
+| Raw Markdown | 901 | 0.84 | 0.87 | 0.86 | 0.85 | 0.72 |
+| HTML | 1,217 | 0.84 | 0.84 | 0.87 | 0.84 | 0.73 |
+| AIF Source | 1,024 | 0.82 | 0.82 | 0.85 | 0.82 | 0.72 |
 
-**Constraint resistance** (user pressures model to skip steps): LML 0.86 vs Markdown 0.68 (+18pp).
+**Note:** An earlier 73-run pilot reported +18pp on constraint resistance (0.86 vs 0.68). This was **not reproduced** in the full 126-run benchmark or the dedicated adversarial benchmark (all formats scored 0.93-1.00). The +18pp claim should not be cited.
 
 ## How It Works
 
@@ -113,10 +113,10 @@ LML Aggressive doesn't just score higher — it uses fewer tokens:
 
 | Format | Tokens | Overall | Compliance per 1K tokens |
 |--------|--------|---------|--------------------------|
-| **LML Aggressive** | **869** | **0.84** | **0.972** |
-| Raw Markdown | 908 | 0.80 | 0.883 |
-| HTML | 1,217 | 0.81 | 0.662 |
-| JSON IR | 3,838 | 0.81 | 0.211 |
+| **LML Aggressive** | **861** | **0.88** | **1.022** |
+| Raw Markdown | 901 | 0.84 | 0.933 |
+| HTML | 1,217 | 0.84 | 0.690 |
+| JSON IR | 3,838 | 0.87 | 0.227 |
 
 JSON IR achieves comparable compliance but at 4.4x the token cost — terrible efficiency. LML Aggressive delivers the best compliance-per-token ratio.
 
@@ -206,7 +206,7 @@ benchmarks/skill-execution/
 **Scenario design:** Easy scenarios establish a baseline (all formats should score ~1.0). Hard scenarios reveal format-dependent behavior. If a format scores poorly on easy scenarios, there's a compilation or prompt assembly bug — not a format quality issue.
 
 **Limitations:**
-- 19 scenarios completed (2 remaining due to API credit exhaustion) — larger sample than initial 3-scenario pilot
+- 21 scenarios × 6 formats = 126 runs — moderate sample size, no confidence intervals yet
 - Same judge model for all formats — could introduce systematic bias
 - Single executor run per format×scenario in `benchmark.py` — use `multi_run.py` for variance estimates
 - Scores are relative to the judge's interpretation of "expected" behavior

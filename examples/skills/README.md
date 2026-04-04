@@ -15,7 +15,7 @@ Example skills compatible with the [Agent Skills standard](https://agentskills.i
 | Quality checks | No | 7 structural lint checks + 3-stage eval pipeline |
 | Multi-format output | Markdown only | HTML, LML (5 modes), JSON, binary, PDF |
 | Bidirectional | One-way | AIF ↔ Markdown roundtrip |
-| LLM compliance | Baseline | +4pp overall, +18pp constraint resistance (benchmark verified) |
+| LLM compliance | Baseline | +4pp overall, +9pp on multi-step workflows ([126-run benchmark](../../benchmarks/RESULTS.md)) |
 
 ## Skills Included
 
