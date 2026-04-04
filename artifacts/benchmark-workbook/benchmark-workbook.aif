@@ -1,0 +1,34 @@
+#title: Benchmark Workbook Generator
+#summary: Generate Excel workbook from SkillForge benchmark results
+
+@skill[name="benchmark-workbook", version="1.0", profile="artifact"]
+
+  @precondition
+    Benchmark results exist in benchmarks/*/results.json files.
+    Python 3.9+ with openpyxl installed.
+  @end
+
+  @step[order=1]
+    Read benchmark results from JSON files: document-tokens, skill-execution, roundtrip.
+  @end
+
+  @step[order=2]
+    Generate multi-sheet Excel workbook: Summary, Document Tokens, Skill Execution, Roundtrip Fidelity.
+  @end
+
+  @step[order=3]
+    Apply formatting: header styles, conditional coloring (green for good, red for bad), auto-width columns, bar charts.
+  @end
+
+  @verify
+    - Workbook has 4 sheets
+    - All data rows match source JSON counts
+    - Charts reference valid data ranges
+    - No empty placeholder cells
+  @end
+
+  @output_contract
+    Excel workbook at artifacts/benchmark-workbook/skillforge_benchmarks.xlsx with Summary + per-benchmark sheets.
+  @end
+
+@end
