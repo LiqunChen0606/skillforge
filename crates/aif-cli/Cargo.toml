@@ -25,6 +25,7 @@ aif-pdf = { workspace = true }
 aif-eval = { workspace = true }
 aif-migrate = { workspace = true }
 aif-conflict = { workspace = true }
+aif-observe = { workspace = true }
 clap = { version = "4", features = ["derive"] }
 serde_json = { workspace = true }
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }

@@ -1,0 +1,19 @@
+[package]
+name = "aif-observe"
+description = "Skill observability — extract observable blocks from skills and match against LLM output"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords = ["llm", "skill", "observability", "compliance"]
+categories = ["text-processing"]
+
+[dependencies]
+aif-core = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+regex = "1"
+
+[dev-dependencies]
+aif-parser = { workspace = true }
