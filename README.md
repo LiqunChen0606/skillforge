@@ -227,6 +227,7 @@ examples/
 - [ ] VS Code marketplace publish
 - [ ] Key revocation + timestamping for skill signatures
 - [ ] Multi-sig threshold signing for production skill registries
+- [ ] **Artifact Skills** — typed skills that generate spreadsheets, decks, diagrams from structured inputs. See [VISION.md](VISION.md)
 
 ## Citation
 

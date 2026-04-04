@@ -28,7 +28,7 @@ def run_cli(args: list[str]) -> str:
     """Run aif-cli and return stdout."""
     result = subprocess.run(
         ["cargo", "run", "-p", "aif-cli", "--"] + args,
-        capture_output=True, text=True, cwd=Path(__file__).parent.parent,
+        capture_output=True, text=True, cwd=Path(__file__).parent.parent.parent,
     )
     if result.returncode != 0:
         print(f"  CLI error: {result.stderr.strip()}", file=sys.stderr)
@@ -143,7 +143,7 @@ def evaluate_chunking(aif_file: str, strategy: str, max_tokens: int = 2048) -> d
 
 
 def main():
-    examples_dir = Path(__file__).parent.parent / "examples"
+    examples_dir = Path(__file__).parent.parent.parent / "examples"
     aif_files = sorted(examples_dir.glob("**/*.aif"))
 
     if not aif_files:

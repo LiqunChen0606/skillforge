@@ -24,7 +24,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 EXAMPLES_DIR = PROJECT_ROOT / "examples"
 FORMATS = ["html", "markdown", "json"]
 
@@ -33,8 +33,9 @@ FORMATS = ["html", "markdown", "json"]
 
 def run_cli(args: list[str], stdin_data: str | None = None) -> str:
     """Run aif-cli and return stdout."""
+    cli_bin = PROJECT_ROOT / "target" / "release" / "aif-cli"
     result = subprocess.run(
-        ["cargo", "run", "-p", "aif-cli", "--"] + args,
+        [str(cli_bin)] + args,
         capture_output=True, text=True, cwd=PROJECT_ROOT,
         input=stdin_data,
     )
@@ -351,7 +352,7 @@ def main():
     print_table(results)
 
     # Save JSON results
-    output_path = PROJECT_ROOT / "benchmarks" / "roundtrip_results.json"
+    output_path = PROJECT_ROOT / "benchmarks" / "roundtrip" / "results.json"
     with open(output_path, "w") as f:
         json.dump(results, f, indent=2)
     print(f"\nResults saved to {output_path}")
