@@ -239,4 +239,71 @@ Overall verdict: Request changes (due to the pagination bug).
         assert!(text.contains("2"));
         assert!(text.contains("60%"));
     }
+
+    #[test]
+    fn observability_report_json_roundtrip() {
+        // Build a full report from the code_review skill
+        let source = std::fs::read_to_string(
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("../../examples/skills/code_review.aif"),
+        )
+        .expect("failed to read code_review.aif");
+
+        let doc = aif_parser::parse(&source).expect("parse failed");
+
+        let llm_output = "I reviewed the code, checked correctness and error handling, \
+            assessed design quality and naming, provided actionable feedback with blocking \
+            issues and suggestions. Every blocking issue includes a suggested fix. \
+            The review covers correctness, security, performance, and maintainability. \
+            The output is a structured list of findings categorized as blocking, suggestion, \
+            or praise. Overall verdict: request changes.";
+
+        let report = observe(&doc, llm_output).expect("observe failed");
+
+        // Serialize to JSON
+        let json = serde_json::to_string_pretty(&report).expect("serialize failed");
+
+        // Deserialize back
+        let deserialized: ObservabilityReport =
+            serde_json::from_str(&json).expect("deserialize failed");
+
+        // Verify structural equality
+        assert_eq!(report.observations.len(), deserialized.observations.len());
+        assert!(
+            (report.step_coverage - deserialized.step_coverage).abs() < f64::EPSILON,
+            "step_coverage mismatch"
+        );
+        assert_eq!(
+            report.constraint_violations,
+            deserialized.constraint_violations,
+            "constraint_violations mismatch"
+        );
+        assert!(
+            (report.overall_compliance - deserialized.overall_compliance).abs() < f64::EPSILON,
+            "overall_compliance mismatch"
+        );
+
+        // Verify each observation roundtrips
+        for (orig, deser) in report.observations.iter().zip(deserialized.observations.iter()) {
+            assert_eq!(orig.status, deser.status);
+            assert_eq!(orig.block.block_type, deser.block.block_type);
+            assert_eq!(orig.block.block_id, deser.block.block_id);
+            assert_eq!(orig.block.order, deser.block.order);
+            assert_eq!(orig.matched_keywords, deser.matched_keywords);
+            assert_eq!(orig.missing_keywords, deser.missing_keywords);
+            assert!(
+                (orig.match_score - deser.match_score).abs() < f64::EPSILON,
+                "match_score mismatch for {:?}",
+                orig.block.block_type
+            );
+        }
+
+        // Verify the JSON contains expected keys
+        assert!(json.contains("\"observations\""));
+        assert!(json.contains("\"step_coverage\""));
+        assert!(json.contains("\"constraint_violations\""));
+        assert!(json.contains("\"overall_compliance\""));
+        assert!(json.contains("\"block_type\""));
+        assert!(json.contains("\"match_score\""));
+    }
 }
