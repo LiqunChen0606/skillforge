@@ -110,6 +110,14 @@ pub enum Commands {
         #[arg(long, default_value = "text")]
         format: String,
     },
+    /// Security scan for SKILL.md and .aif files (OWASP AST10 aligned)
+    Scan {
+        /// Input .aif or SKILL.md file
+        input: PathBuf,
+        /// Output format: text (default) or json
+        #[arg(long, default_value = "text")]
+        format: String,
+    },
 }
 
 #[derive(Subcommand)]

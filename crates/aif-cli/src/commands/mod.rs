@@ -5,4 +5,5 @@ pub mod conflict;
 pub mod lint;
 pub mod migrate;
 pub mod observe;
+pub mod scan;
 pub mod skill;

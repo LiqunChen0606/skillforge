@@ -4,6 +4,7 @@ pub mod span;
 pub mod error;
 pub mod infer;
 pub mod lint;
+pub mod scan;
 pub mod schema;
 pub mod text;
 pub mod config;

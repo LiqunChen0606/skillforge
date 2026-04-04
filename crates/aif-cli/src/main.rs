@@ -61,5 +61,8 @@ fn main() {
         Commands::Conflict { files, format } => {
             commands::conflict::handle_conflict(files, format);
         }
+        Commands::Scan { input, format } => {
+            commands::scan::handle_scan(input, format);
+        }
     }
 }
