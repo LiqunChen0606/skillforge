@@ -187,6 +187,25 @@ enum SkillAction {
         #[arg(short, long)]
         output: Option<PathBuf>,
     },
+    /// Generate a new Ed25519 signing keypair
+    Keygen {},
+    /// Sign a skill with an Ed25519 private key
+    Sign {
+        input: PathBuf,
+        /// Base64-encoded private key (or path to key file)
+        #[arg(long)]
+        key: String,
+    },
+    /// Verify a skill's Ed25519 signature
+    VerifySignature {
+        input: PathBuf,
+        /// Base64-encoded signature
+        #[arg(long)]
+        signature: String,
+        /// Base64-encoded public key (or path to key file)
+        #[arg(long)]
+        pubkey: String,
+    },
 }
 
 #[derive(Subcommand)]
@@ -958,6 +977,66 @@ fn handle_skill(action: SkillAction) {
                 }
                 Err(e) => {
                     eprintln!("Inheritance resolution failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        SkillAction::Keygen {} => {
+            let (private_key, public_key) = aif_skill::sign::generate_keypair();
+            println!("Private key: {}", private_key);
+            println!("Public key:  {}", public_key);
+            eprintln!("Store the private key securely. Share only the public key.");
+        }
+        SkillAction::Sign { input, key } => {
+            let source = read_source(&input);
+            let doc = parse_aif(&source);
+            let skill_block = find_skill_block(&doc.blocks).unwrap_or_else(|| {
+                eprintln!("No @skill block found");
+                std::process::exit(1);
+            });
+            // Read key from file if it's a path, otherwise use as base64
+            let key_str = if std::path::Path::new(&key).exists() {
+                std::fs::read_to_string(&key).unwrap().trim().to_string()
+            } else {
+                key
+            };
+            match aif_skill::sign::sign_skill(skill_block, &key_str) {
+                Ok(signature) => {
+                    println!("{}", signature);
+                    eprintln!("Signature generated. Verify with: aif skill verify-signature --signature <sig> --pubkey <key>");
+                }
+                Err(e) => {
+                    eprintln!("Signing failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        SkillAction::VerifySignature {
+            input,
+            signature,
+            pubkey,
+        } => {
+            let source = read_source(&input);
+            let doc = parse_aif(&source);
+            let skill_block = find_skill_block(&doc.blocks).unwrap_or_else(|| {
+                eprintln!("No @skill block found");
+                std::process::exit(1);
+            });
+            let pubkey_str = if std::path::Path::new(&pubkey).exists() {
+                std::fs::read_to_string(&pubkey).unwrap().trim().to_string()
+            } else {
+                pubkey
+            };
+            match aif_skill::sign::verify_skill(skill_block, &signature, &pubkey_str) {
+                Ok(true) => {
+                    println!("VALID — signature matches skill content");
+                }
+                Ok(false) => {
+                    println!("INVALID — signature does not match (skill may be tampered)");
+                    std::process::exit(1);
+                }
+                Err(e) => {
+                    eprintln!("Verification error: {}", e);
                     std::process::exit(1);
                 }
             }
