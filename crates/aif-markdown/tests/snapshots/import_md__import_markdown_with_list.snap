@@ -9,18 +9,6 @@ metadata:
   title: Lists
 blocks:
   - kind:
-      type: Section
-      attrs:
-        id: ~
-        pairs: {}
-      title:
-        - type: Text
-          text: Lists
-      children: []
-    span:
-      start: 0
-      end: 0
-  - kind:
       type: List
       ordered: false
       items:

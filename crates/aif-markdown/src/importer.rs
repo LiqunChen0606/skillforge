@@ -112,6 +112,10 @@ pub fn import(input: &str) -> Document {
 
             Event::End(tag_end) => {
                 let mut builder = stack.pop().expect("stack underflow");
+                let is_root_position = stack.len() == 1;
+                // Borrow parent back out after we know we need it. Each match
+                // arm below re-borrows to avoid long-lived mutable aliasing.
+                let _ = &mut builder; // silence unused_mut on paths that don't mutate
                 let parent = stack.last_mut().expect("stack underflow on parent");
 
                 match tag_end {
@@ -120,13 +124,25 @@ pub fn import(input: &str) -> Document {
                             BuilderKind::Heading(l) => l,
                             _ => 1,
                         };
-                        // Extract title text for metadata if this is H1
+                        // Extract title text for metadata if this is H1.
+                        // When the H1 is the first top-level element, promote
+                        // its children up and skip emitting a Section — otherwise
+                        // the title round-trips as both `#title: X` metadata and
+                        // a `## X` heading.
                         if level == 1 {
                             let title_text = inlines_to_plain_text(&builder.inlines);
-                            if !title_text.is_empty() {
-                                doc.metadata
-                                    .entry("title".to_string())
-                                    .or_insert(title_text);
+                            let has_metadata_title = doc.metadata.contains_key("title");
+                            let parent_empty = parent.children.is_empty();
+                            if !title_text.is_empty()
+                                && !has_metadata_title
+                                && is_root_position
+                                && parent_empty
+                            {
+                                doc.metadata.insert("title".to_string(), title_text);
+                                for child in builder.children {
+                                    parent.children.push(child);
+                                }
+                                continue;
                             }
                         }
                         let block = Block {
