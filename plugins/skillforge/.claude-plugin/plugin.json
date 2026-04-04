@@ -1,0 +1,6 @@
+{
+  "name": "skillforge",
+  "description": "Auto-lint, version, and sign AI skills using SkillForge. Import SKILL.md → AIF, export AIF → SKILL.md, verify integrity.",
+  "version": "1.0.0",
+  "author": { "name": "Liqun Chen" }
+}
