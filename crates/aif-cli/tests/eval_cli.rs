@@ -24,13 +24,11 @@ fn eval_lint_only_on_fixture() {
     std::fs::write(
         &skill_file,
         r#"@skill[name=test-skill, description="Use when testing"]
-  @step[order=1]
-    Do the thing.
-  @end
-  @verify
-    Check it worked.
-  @end
-@end
+@step[order=1]
+Do the thing.
+@verify
+Check it worked.
+@/skill
 "#,
     )
     .unwrap();

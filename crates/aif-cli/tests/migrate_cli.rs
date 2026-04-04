@@ -10,20 +10,16 @@ fn migrate_validate_valid_skill() {
 @skill[name=\"test-migration\", version=\"1.0\", profile=migration]
   @precondition
     Source files exist.
-  @end
 
   @step[order=1]
     Replace foo with bar.
-  @end
 
   @verify
     Pattern `bar` should be present.
-  @end
 
   @output_contract
     All foo replaced with bar.
-  @end
-@end
+@/skill
 ";
     let tmp = std::env::temp_dir().join("test_migrate_validate.aif");
     std::fs::write(&tmp, skill).unwrap();
@@ -47,20 +43,16 @@ fn migrate_run_no_llm_key_placeholder() {
 @skill[name=\"test-migration\", version=\"1.0\", profile=migration]
   @precondition
     Source files exist.
-  @end
 
   @step[order=1]
     Replace foo with bar.
-  @end
 
   @verify
     Pattern `bar` should be present.
-  @end
 
   @output_contract
     All foo replaced with bar.
-  @end
-@end
+@/skill
 ";
     let skill_path = std::env::temp_dir().join("test_migrate_run_skill.aif");
     std::fs::write(&skill_path, skill).unwrap();
@@ -110,20 +102,16 @@ fn migrate_run_text_report_format() {
 @skill[name=\"text-report-test\", version=\"1.0\", profile=migration]
   @precondition
     Source files exist.
-  @end
 
   @step[order=1]
     Transform the code.
-  @end
 
   @verify
     Code is transformed.
-  @end
 
   @output_contract
     Transformation complete.
-  @end
-@end
+@/skill
 ";
     let skill_path = std::env::temp_dir().join("test_migrate_report_skill.aif");
     std::fs::write(&skill_path, skill).unwrap();
@@ -163,20 +151,16 @@ fn migrate_run_json_report_format() {
 @skill[name=\"json-report-test\", version=\"1.0\", profile=migration]
   @precondition
     Source files exist.
-  @end
 
   @step[order=1]
     Transform the code.
-  @end
 
   @verify
     Code is transformed.
-  @end
 
   @output_contract
     Transformation complete.
-  @end
-@end
+@/skill
 ";
     let skill_path = std::env::temp_dir().join("test_migrate_json_report_skill.aif");
     std::fs::write(&skill_path, skill).unwrap();

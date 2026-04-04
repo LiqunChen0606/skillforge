@@ -83,33 +83,26 @@ mod tests {
 
   @precondition
     A codebase is available for review.
-  @end
 
   @step[order=1]
     Read the code carefully and understand the intent.
-  @end
 
   @step[order=2]
     Check for correctness, security, and performance issues.
-  @end
 
   @verify
     All blocking issues have suggested fixes.
-  @end
 
   @red_flag
     Approving without running tests.
-  @end
 
   @output_contract
     A structured list of findings categorized as blocking or suggestion.
-  @end
 
   @example
     This is an example block and should NOT be extracted.
-  @end
 
-@end
+@/skill
 "#;
         let doc = aif_parser::parse(source).expect("parse failed");
         let skill = find_skill_block(&doc).expect("no skill block found");
@@ -149,8 +142,7 @@ mod tests {
 @skill[name="verbose", version="1.0"]
   @step[order=1]
     This is a very long step description that exceeds one hundred characters and should be truncated in the content snippet field but preserved in full content.
-  @end
-@end
+@/skill
 "#;
         let doc = aif_parser::parse(source).expect("parse failed");
         let skill = find_skill_block(&doc).expect("no skill block");

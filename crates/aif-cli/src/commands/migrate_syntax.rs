@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use aif_parser::{detect_syntax_version, migrate::migrate_v1_to_v2, SyntaxVersion};
+use aif_parser::migrate::migrate_v1_to_v2;
 
 /// Handle the `aif migrate-syntax` CLI command.
 pub fn handle_migrate_syntax(path: PathBuf, in_place: bool, dry_run: bool) {
@@ -41,7 +41,6 @@ pub fn handle_migrate_syntax(path: PathBuf, in_place: bool, dry_run: bool) {
     if errored > 0 {
         std::process::exit(1);
     }
-    // Exit 2 when nothing needed changes (useful for scripts).
     if changed == 0 && errored == 0 {
         std::process::exit(2);
     }
@@ -60,21 +59,19 @@ fn process_file(
 ) -> Result<Outcome, String> {
     let input = fs::read_to_string(file).map_err(|e| format!("read error: {}", e))?;
 
-    match detect_syntax_version(&input) {
-        Ok(SyntaxVersion::V2) => {
-            if dry_run || multi_file {
-                eprintln!("{}: already v2, skipping", file.display());
-            }
-            return Ok(Outcome::Skipped);
+    // If no @end present, already v2 — skip.
+    let has_end = input.lines().any(|l| l.trim() == "@end");
+    if !has_end {
+        if dry_run || multi_file {
+            eprintln!("{}: already v2, skipping", file.display());
         }
-        Ok(SyntaxVersion::V1) => {}
-        Err(e) => return Err(e),
+        return Ok(Outcome::Skipped);
     }
 
     let migrated = migrate_v1_to_v2(&input);
 
-    // Sanity: re-parse migrated output as v2 to confirm fidelity.
-    if let Err(errs) = aif_parser::parse_with_version(&migrated, SyntaxVersion::V2) {
+    // Sanity: re-parse migrated output to confirm fidelity.
+    if let Err(errs) = aif_parser::parse(&migrated) {
         return Err(format!(
             "post-migration parse failed: {}",
             errs.first().map(|e| e.message.clone()).unwrap_or_default()

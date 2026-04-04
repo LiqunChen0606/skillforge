@@ -171,7 +171,7 @@ fn import_table_with_inline_formatting() {
 #[test]
 fn roundtrip_aif_markdown_table() {
     // Parse an AIF document with a table
-    let aif_src = "@table\n| Name | Score |\n| Alice | 95 |\n| Bob | 87 |\n@end\n";
+    let aif_src = "@table\n| Name | Score |\n| Alice | 95 |\n| Bob | 87 |\n";
     let doc = aif_parser::parse(aif_src).unwrap();
 
     // Render to Markdown

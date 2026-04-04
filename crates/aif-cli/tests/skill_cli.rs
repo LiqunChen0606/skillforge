@@ -25,7 +25,7 @@ fn skill_import_produces_json() {
 
 #[test]
 fn skill_verify_no_hash() {
-    let input = "@skill[name=test]\nSome content.\n@end\n";
+    let input = "@skill[name=test]\nSome content.\n@/skill\n";
     let tmp = std::env::temp_dir().join("test_verify_nohash.aif");
     std::fs::write(&tmp, input).unwrap();
 
@@ -45,7 +45,7 @@ fn skill_verify_no_hash() {
 
 #[test]
 fn skill_inspect_shows_metadata() {
-    let input = "@skill[name=debugging version=1.0 tags=process,debug]\n@step[order=1]\n  Do it.\n@end\n@end\n";
+    let input = "@skill[name=debugging version=1.0 tags=process,debug]\n@step[order=1]\n  Do it.\n@/skill\n";
     let tmp = std::env::temp_dir().join("test_inspect_meta.aif");
     std::fs::write(&tmp, input).unwrap();
 

@@ -1,4 +1,8 @@
-//! Text-based migration from AIF v1 syntax (`@end`) to v2 (`@/name`).
+//! One-shot text migration from legacy AIF v1 syntax (`@end`) to the current
+//! v2 syntax (`@/name` container closers, implicit leaf auto-close).
+//!
+//! v1 is no longer supported by the parser. This module exists so users can
+//! convert older `.aif` files with a single command.
 //!
 //! The transformation is purely line-based: it walks the source tracking
 //! every opened `@`-directive and rewrites each `@end` line based on the
@@ -33,7 +37,11 @@ pub fn migrate_v1_to_v2(input: &str) -> String {
         if trimmed == "@end" {
             // Pop the topmost opened block.
             match stack.pop() {
-                Some(container) if container == "skill" || container == "artifact_skill" => {
+                Some(container)
+                    if container == "skill"
+                        || container == "artifact_skill"
+                        || container == "scenario" =>
+                {
                     // Preserve original indentation.
                     let indent_len = line.len() - line.trim_start().len();
                     let indent = &line[..indent_len];
@@ -69,6 +77,7 @@ pub fn migrate_v1_to_v2(input: &str) -> String {
                 let tag: &'static str = match directive {
                     "skill" => "skill",
                     "artifact_skill" => "artifact_skill",
+                    "scenario" => "scenario",
                     _ => "leaf",
                 };
                 stack.push(tag);

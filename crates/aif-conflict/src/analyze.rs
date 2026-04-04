@@ -53,23 +53,19 @@ mod tests {
 @skill[name="tdd-strict", version="1.0"]
   @step[order=1]
     Always write tests before writing implementation code.
-  @end
 
   @red_flag
     Never skip writing tests for any code changes.
-  @end
-@end
+@/skill
 "#;
         let rapid_source = r#"
 @skill[name="rapid-prototype", version="1.0"]
   @step[order=1]
     Don't write tests during initial code prototyping phase.
-  @end
 
   @step[order=2]
     Write implementation code first, optimize for speed.
-  @end
-@end
+@/skill
 "#;
         let tdd_doc = aif_parser::parse(tdd_source).unwrap();
         let rapid_doc = aif_parser::parse(rapid_source).unwrap();
@@ -90,23 +86,19 @@ mod tests {
 @skill[name="code-review", version="1.0"]
   @step[order=1]
     Review all pull requests for correctness and clarity.
-  @end
 
   @verify
     Every pull request should have at least one approval.
-  @end
-@end
+@/skill
 "#;
         let security_source = r#"
 @skill[name="security-review", version="1.0"]
   @step[order=1]
     Scan dependencies for known vulnerabilities.
-  @end
 
   @verify
     No critical vulnerabilities should remain unaddressed.
-  @end
-@end
+@/skill
 "#;
         let cr_doc = aif_parser::parse(code_review_source).unwrap();
         let sec_doc = aif_parser::parse(security_source).unwrap();
@@ -127,22 +119,19 @@ mod tests {
 @skill[name="tdd-strict", version="1.0"]
   @step[order=1]
     Always write tests before writing implementation code.
-  @end
-@end
+@/skill
 "#;
         let rapid_source = r#"
 @skill[name="rapid-prototype", version="1.0"]
   @step[order=1]
     Don't write tests during initial code prototyping phase.
-  @end
-@end
+@/skill
 "#;
         let security_source = r#"
 @skill[name="security-audit", version="1.0"]
   @step[order=1]
     Scan all dependencies for known vulnerabilities regularly.
-  @end
-@end
+@/skill
 "#;
         let tdd_doc = aif_parser::parse(tdd_source).unwrap();
         let rapid_doc = aif_parser::parse(rapid_source).unwrap();

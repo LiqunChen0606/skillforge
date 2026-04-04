@@ -13,20 +13,16 @@ fn valid_migration_skill_passes() {
 @skill[name="test-migrate", version="1.0", profile=migration]
   @precondition
     Source uses framework X.
-  @end
 
   @step[order=1]
     Replace X with Y.
-  @end
 
   @verify
     No remaining X references.
-  @end
 
   @output_contract
     All files use Y.
-  @end
-@end
+@/skill
 "#;
     let doc = parse_skill(source);
     let skill_block = doc.blocks.iter().find(|b| {
@@ -46,16 +42,13 @@ fn missing_precondition_fails() {
 @skill[name="bad-migrate", version="1.0", profile=migration]
   @step[order=1]
     Do something.
-  @end
 
   @verify
     Check something.
-  @end
 
   @output_contract
     Done.
-  @end
-@end
+@/skill
 "#;
     let doc = parse_skill(source);
     let skill_block = doc.blocks.iter().find(|b| {
@@ -76,16 +69,13 @@ fn missing_steps_fails() {
 @skill[name="no-steps", version="1.0", profile=migration]
   @precondition
     Has framework.
-  @end
 
   @verify
     Check it.
-  @end
 
   @output_contract
     Done.
-  @end
-@end
+@/skill
 "#;
     let doc = parse_skill(source);
     let skill_block = doc.blocks.iter().find(|b| {
@@ -106,16 +96,13 @@ fn missing_verify_fails() {
 @skill[name="no-verify", version="1.0", profile=migration]
   @precondition
     Has framework.
-  @end
 
   @step[order=1]
     Migrate it.
-  @end
 
   @output_contract
     Done.
-  @end
-@end
+@/skill
 "#;
     let doc = parse_skill(source);
     let skill_block = doc.blocks.iter().find(|b| {
@@ -136,16 +123,13 @@ fn missing_output_contract_fails() {
 @skill[name="no-output", version="1.0", profile=migration]
   @precondition
     Has framework.
-  @end
 
   @step[order=1]
     Migrate it.
-  @end
 
   @verify
     Check it.
-  @end
-@end
+@/skill
 "#;
     let doc = parse_skill(source);
     let skill_block = doc.blocks.iter().find(|b| {
@@ -166,16 +150,13 @@ fn not_a_migration_profile_fails() {
 @skill[name="regular", version="1.0"]
   @precondition
     Something.
-  @end
 
   @step[order=1]
     Do something.
-  @end
 
   @verify
     Check it.
-  @end
-@end
+@/skill
 "#;
     let doc = parse_skill(source);
     let skill_block = doc.blocks.iter().find(|b| {

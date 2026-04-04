@@ -25,8 +25,7 @@ fn engine_validates_skill_before_running() {
 @skill[name="regular", version="1.0"]
   @step[order=1]
     Do something.
-  @end
-@end
+@/skill
 "#;
     let doc = aif_parser::parse(source).unwrap();
     let skill_block = doc
@@ -67,20 +66,16 @@ fn engine_validates_valid_migration_skill() {
 @skill[name="test", version="1.0", profile=migration]
   @precondition
     Has framework.
-  @end
 
   @step[order=1]
     Migrate it.
-  @end
 
   @verify
     Check it.
-  @end
 
   @output_contract
     Done.
-  @end
-@end
+@/skill
 "#;
     let doc = aif_parser::parse(source).unwrap();
     let skill_block = doc
@@ -122,24 +117,19 @@ fn engine_extracts_steps_from_skill() {
 @skill[name="test", version="1.0", profile=migration]
   @precondition
     When to use.
-  @end
 
   @step[order=1]
     First step.
-  @end
 
   @step[order=2]
     Second step.
-  @end
 
   @verify
     Check it.
-  @end
 
   @output_contract
     Done.
-  @end
-@end
+@/skill
 "#;
     let doc = aif_parser::parse(source).unwrap();
     let skill_block = doc
@@ -179,21 +169,17 @@ fn engine_extracts_verify_criteria() {
 @skill[name="test", version="1.0", profile=migration]
   @precondition
     When to use.
-  @end
 
   @step[order=1]
     Migrate.
-  @end
 
   @verify
     No remaining `old_api` calls.
     All files import `new_api`.
-  @end
 
   @output_contract
     Done.
-  @end
-@end
+@/skill
 "#;
     let doc = aif_parser::parse(source).unwrap();
     let skill_block = doc

@@ -14,9 +14,25 @@ pub struct ScenarioSpec {
     pub output_contract: String,
 }
 
-/// Extract scenario specs from a @verify block containing named children.
-pub fn extract_scenarios(verify_block: &Block) -> Vec<ScenarioSpec> {
-    let children = match &verify_block.kind {
+/// Extract scenario specs from a `@scenario` block (v2: scenarios are
+/// direct children of `@skill`) or from a legacy `@verify` container
+/// holding named scenario children.
+pub fn extract_scenarios(block: &Block) -> Vec<ScenarioSpec> {
+    // If block is itself a @scenario, extract from its children.
+    if let BlockKind::SkillBlock {
+        skill_type: SkillBlockType::Scenario,
+        attrs,
+        children,
+        ..
+    } = &block.kind
+    {
+        if let Some(spec) = extract_single_scenario(attrs, children) {
+            return vec![spec];
+        }
+        return vec![];
+    }
+    // Else, treat as a container (legacy `@verify`) with @scenario children.
+    let children = match &block.kind {
         BlockKind::SkillBlock { children, .. } => children,
         _ => return vec![],
     };
@@ -72,6 +88,45 @@ pub fn extract_scenarios(verify_block: &Block) -> Vec<ScenarioSpec> {
     }
 
     scenarios
+}
+
+/// Extract a single scenario spec from its attrs and direct children.
+fn extract_single_scenario(
+    attrs: &aif_core::ast::Attrs,
+    sub_children: &[Block],
+) -> Option<ScenarioSpec> {
+    let name = attrs.get("name")?.to_string();
+    let scenario_type = match attrs.get("type") {
+        Some("pressure") => ScenarioType::Pressure,
+        Some("compliance") => ScenarioType::Compliance,
+        _ => ScenarioType::Scenario,
+    };
+    let mut precondition = String::new();
+    let mut task = String::new();
+    let mut output_contract = String::new();
+    for sub in sub_children {
+        if let BlockKind::SkillBlock {
+            skill_type,
+            content,
+            ..
+        } = &sub.kind
+        {
+            let text = inlines_to_text(content, TextMode::Plain);
+            match skill_type {
+                SkillBlockType::Precondition => precondition = text,
+                SkillBlockType::Step => task = text,
+                SkillBlockType::OutputContract => output_contract = text,
+                _ => {}
+            }
+        }
+    }
+    Some(ScenarioSpec {
+        name,
+        scenario_type,
+        precondition,
+        task,
+        output_contract,
+    })
 }
 
 /// Parse the LLM's scenario evaluation response.

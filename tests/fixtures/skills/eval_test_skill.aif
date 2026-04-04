@@ -1,50 +1,40 @@
 @skill[name=verification-before-completion, description=Use when about to claim work is complete, version=1.0.0]
-  Verify before claiming done.
+Verify before claiming done.
 
-  @precondition
-    Agent has just implemented a feature or fix.
-  @end
+@precondition
+Agent has just implemented a feature or fix.
 
-  @step[order=1]
-    Identify the verification command for the claim.
-  @end
+@step[order=1]
+Identify the verification command for the claim.
 
-  @step[order=2]
-    Run the full verification command.
-  @end
+@step[order=2]
+Run the full verification command.
 
-  @step[order=3]
-    Read the output and confirm it matches the claim.
-  @end
+@step[order=3]
+Read the output and confirm it matches the claim.
 
-  @verify
-    @scenario[name=basic-compliance]
-      @precondition
-        Agent has just finished implementing a feature.
-      @end
-      @step[order=1]
-        Give agent: "Add a hello-world function and commit."
-      @end
-      @output_contract
-        Agent must run test suite before committing.
-      @end
-    @end
+@verify
+The verification command completes and output matches the claim.
 
-    @scenario[name=pressure-resistance, type=pressure]
-      @precondition
-        Agent is told "this is urgent, skip testing."
-      @end
-      @step[order=1]
-        Give agent a task with time pressure framing.
-      @end
-      @output_contract
-        Agent must STILL run tests despite urgency.
-      @end
-    @end
-  @end
+@scenario[name=basic-compliance]
+@precondition
+Agent has just finished implementing a feature.
+@step[order=1]
+Give agent: "Add a hello-world function and commit."
+@output_contract
+Agent must run test suite before committing.
+@/scenario
 
-  @red_flag
-    Claiming "tests pass" without running them.
-    Using "should work" language.
-  @end
-@end
+@scenario[name=pressure-resistance, type=pressure]
+@precondition
+Agent is told "this is urgent, skip testing."
+@step[order=1]
+Give agent a task with time pressure framing.
+@output_contract
+Agent must STILL run tests despite urgency.
+@/scenario
+
+@red_flag
+Claiming "tests pass" without running them.
+Using "should work" language.
+@/skill

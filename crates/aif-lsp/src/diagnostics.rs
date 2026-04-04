@@ -135,7 +135,6 @@ mod tests {
 
 @section[id=intro]: Introduction
   This is an introduction paragraph.
-@end
 ";
         let diags = compute_diagnostics(text);
         let parse_errors: Vec<_> = diags
@@ -175,12 +174,10 @@ mod tests {
 #title: Test
 
 @section[id=s1]: First
-  Paragraph.
-@end
+Paragraph.
 
 @section[id=s1]: Duplicate
-  Another paragraph.
-@end
+Another paragraph.
 ";
         let diags = compute_diagnostics(text);
         let dup_diags: Vec<_> = diags
@@ -228,16 +225,13 @@ mod tests {
 @skill[name=\"test-skill\", version=\"1.0\"]
   @precondition
     When debugging code.
-  @end
 
   @step[order=1]
     First check the error message.
-  @end
 
   @verify
     Confirm the fix works.
-  @end
-@end
+@/skill
 ";
         let diags = compute_diagnostics(text);
         let parse_errors: Vec<_> = diags

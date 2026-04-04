@@ -8,20 +8,16 @@ fn conservative_simple_skill() {
 @skill[name="test-skill", version="1.0"]
   @precondition
     When debugging fails.
-  @end
 
   @step[order=1]
     Read the error message carefully.
-  @end
 
   @step[order=2]
     Reproduce the issue.
-  @end
 
   @verify
     Confirm root cause found.
-  @end
-@end
+@/skill
 "#;
     let doc = parse(input).unwrap();
     let out = render_lml_conservative(&doc);
@@ -38,16 +34,13 @@ fn moderate_drops_closing_tags_for_leaves() {
 @skill[name="test-skill", version="1.0"]
   @precondition
     When debugging fails.
-  @end
 
   @step[order=1]
     Read the error message carefully.
-  @end
 
   @verify
     Confirm root cause found.
-  @end
-@end
+@/skill
 "#;
     let doc = parse(input).unwrap();
     let out = render_lml_moderate(&doc);
@@ -64,20 +57,16 @@ fn aggressive_markdown_like() {
 @skill[name="test-skill", version="1.0"]
   @precondition
     When debugging fails.
-  @end
 
   @step[order=1]
     Read the error message carefully.
-  @end
 
   @step[order=2]
     Reproduce the issue.
-  @end
 
   @verify
     Confirm root cause found.
-  @end
-@end
+@/skill
 "#;
     let doc = parse(input).unwrap();
     let out = render_lml_aggressive(&doc);

@@ -49,20 +49,20 @@ fn fixture_scenarios_extracted() {
         _ => panic!("Expected SkillBlock"),
     };
 
-    let verify_block = children
+    // In v2, @scenario blocks are direct children of @skill (siblings of @verify).
+    let scenarios: Vec<_> = children
         .iter()
-        .find(|b| {
+        .filter(|b| {
             matches!(
                 &b.kind,
                 BlockKind::SkillBlock {
-                    skill_type: SkillBlockType::Verify,
+                    skill_type: SkillBlockType::Scenario,
                     ..
                 }
             )
         })
-        .expect("Expected @verify block");
-
-    let scenarios = extract_scenarios(verify_block);
+        .flat_map(extract_scenarios)
+        .collect();
     assert_eq!(scenarios.len(), 2);
     assert_eq!(scenarios[0].name, "basic-compliance");
     assert_eq!(scenarios[1].name, "pressure-resistance");

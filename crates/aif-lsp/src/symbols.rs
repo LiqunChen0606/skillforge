@@ -313,12 +313,10 @@ mod tests {
 #title: Test
 
 @section[id=intro]: Introduction
-  A paragraph.
-@end
+A paragraph.
 
 @section[id=body]: Body
-  Another paragraph.
-@end
+Another paragraph.
 ";
         let doc = aif_parser::parse(text).expect("should parse");
         let symbols = collect_symbols(&doc);

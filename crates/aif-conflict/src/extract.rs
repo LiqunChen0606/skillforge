@@ -289,24 +289,19 @@ mod tests {
 @skill[name="test-driven-dev", version="1.0"]
   @precondition
     Code changes require test coverage.
-  @end
 
   @step[order=1]
     Always write tests before writing implementation code.
-  @end
 
   @step[order=2]
     Run the test suite to verify all tests pass.
-  @end
 
   @red_flag
     Never deploy code without running the full test suite.
-  @end
 
   @verify
     All tests must pass before merge.
-  @end
-@end
+@/skill
 "#;
         let doc = aif_parser::parse(source).unwrap();
         let directives = extract_directives(&doc);

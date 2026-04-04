@@ -303,7 +303,7 @@ fn find_all_scenarios(skill_block: &Block) -> Vec<crate::scenario::ScenarioSpec>
     let mut all_scenarios = Vec::new();
     for child in children {
         if let BlockKind::SkillBlock {
-            skill_type: SkillBlockType::Verify,
+            skill_type: SkillBlockType::Verify | SkillBlockType::Scenario,
             ..
         } = &child.kind
         {
