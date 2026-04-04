@@ -77,7 +77,7 @@ where
     let scenarios = extract_all_scenarios(skill_block);
 
     // Step 3: Run each scenario independently (no early exit)
-    let results: Vec<ScenarioResult> = scenarios.iter().map(|spec| run_scenario(spec)).collect();
+    let results: Vec<ScenarioResult> = scenarios.iter().map(&mut run_scenario).collect();
 
     CiResult::Completed(results)
 }

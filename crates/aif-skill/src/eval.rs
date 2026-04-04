@@ -41,7 +41,7 @@ pub enum StageDetails {
     Lint(Vec<LintResult>),
     Compliance(Vec<ComplianceResult>),
     Effectiveness(Vec<ScenarioResult>),
-    Skipped,
+    Skipped(String),
 }
 
 /// Result of one pipeline stage.

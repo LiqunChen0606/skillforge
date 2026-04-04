@@ -92,6 +92,20 @@ mod tests {
     }
 
     #[test]
+    fn offset_to_position_beyond_end_clamps() {
+        let text = "short";
+        // Offset beyond text length should clamp to end
+        let pos = offset_to_position(text, 100);
+        assert_eq!(pos, Position::new(0, 5));
+    }
+
+    #[test]
+    fn offset_to_position_empty_text() {
+        let pos = offset_to_position("", 0);
+        assert_eq!(pos, Position::new(0, 0));
+    }
+
+    #[test]
     fn valid_document_produces_no_parse_errors() {
         let text = "#title: Test\n\nHello world.\n";
         let diags = compute_diagnostics(text);
@@ -99,6 +113,141 @@ mod tests {
         assert!(
             diags.iter().all(|d| d.source.as_deref() != Some("aif-parser")),
             "Expected no parse errors"
+        );
+    }
+
+    #[test]
+    fn complete_document_with_metadata_no_parse_errors() {
+        let text = "#title: My Document\n#author: Test Author\n\nSome paragraph text.\n";
+        let diags = compute_diagnostics(text);
+        let parse_errors: Vec<_> = diags
+            .iter()
+            .filter(|d| d.source.as_deref() == Some("aif-parser"))
+            .collect();
+        assert!(parse_errors.is_empty(), "Expected no parse errors");
+    }
+
+    #[test]
+    fn document_with_section_and_content() {
+        let text = "\
+#title: Test Doc
+#author: Author
+
+@section[id=intro]: Introduction
+  This is an introduction paragraph.
+@end
+";
+        let diags = compute_diagnostics(text);
+        let parse_errors: Vec<_> = diags
+            .iter()
+            .filter(|d| d.source.as_deref() == Some("aif-parser"))
+            .collect();
+        assert!(
+            parse_errors.is_empty(),
+            "Expected no parse errors, got: {:?}",
+            parse_errors
+        );
+    }
+
+    #[test]
+    fn lint_warnings_have_correct_source() {
+        // A document missing metadata should produce lint warnings
+        let text = "Just a paragraph, no metadata.\n";
+        let diags = compute_diagnostics(text);
+        let lint_diags: Vec<_> = diags
+            .iter()
+            .filter(|d| d.source.as_deref() == Some("aif-lint"))
+            .collect();
+        // Should have at least a MissingMetadata warning
+        assert!(
+            !lint_diags.is_empty(),
+            "Expected lint diagnostics for document without metadata"
+        );
+        // All lint diagnostics should have a severity
+        for d in &lint_diags {
+            assert!(d.severity.is_some());
+        }
+    }
+
+    #[test]
+    fn lint_duplicate_ids_detected() {
+        let text = "\
+#title: Test
+
+@section[id=s1]: First
+  Paragraph.
+@end
+
+@section[id=s1]: Duplicate
+  Another paragraph.
+@end
+";
+        let diags = compute_diagnostics(text);
+        let dup_diags: Vec<_> = diags
+            .iter()
+            .filter(|d| d.message.contains("s1"))
+            .collect();
+        assert!(
+            !dup_diags.is_empty(),
+            "Expected diagnostic mentioning duplicate ID 's1', got: {:?}",
+            diags
+        );
+    }
+
+    #[test]
+    fn diagnostic_severity_mapping() {
+        // Lint warnings should map to WARNING severity
+        let text = "Just text, no metadata.\n";
+        let diags = compute_diagnostics(text);
+        for d in &diags {
+            if d.source.as_deref() == Some("aif-lint") {
+                assert!(
+                    d.severity == Some(DiagnosticSeverity::WARNING)
+                        || d.severity == Some(DiagnosticSeverity::ERROR),
+                    "Lint diagnostic should have WARNING or ERROR severity"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn empty_document_produces_no_parse_errors() {
+        let diags = compute_diagnostics("");
+        let parse_errors: Vec<_> = diags
+            .iter()
+            .filter(|d| d.source.as_deref() == Some("aif-parser"))
+            .collect();
+        assert!(parse_errors.is_empty());
+    }
+
+    #[test]
+    fn skill_document_diagnostics() {
+        let text = "\
+#title: Test Skill
+
+@skill[name=\"test-skill\", version=\"1.0\"]
+  @precondition
+    When debugging code.
+  @end
+
+  @step[order=1]
+    First check the error message.
+  @end
+
+  @verify
+    Confirm the fix works.
+  @end
+@end
+";
+        let diags = compute_diagnostics(text);
+        let parse_errors: Vec<_> = diags
+            .iter()
+            .filter(|d| d.source.as_deref() == Some("aif-parser"))
+            .collect();
+        assert!(
+            parse_errors.is_empty(),
+            "Skill document should parse without errors, got: {:?}",
+            parse_errors
         );
     }
 }

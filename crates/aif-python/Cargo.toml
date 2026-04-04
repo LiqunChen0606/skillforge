@@ -1,3 +1,5 @@
+# NOTE: This crate is a PyO3 extension-module (cdylib) and cannot be linked
+# standalone. Build via `maturin develop` — do NOT include in `cargo build --workspace`.
 [package]
 name = "skillforge"
 version = "0.1.0"

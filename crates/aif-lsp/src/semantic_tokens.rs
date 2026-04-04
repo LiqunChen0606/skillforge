@@ -6,6 +6,7 @@
 use tower_lsp::lsp_types::*;
 
 /// AIF semantic token types, mapped to LSP standard types.
+#[allow(dead_code)]
 pub const TOKEN_TYPES: &[SemanticTokenType] = &[
     SemanticTokenType::KEYWORD,   // 0: block directives (@section, @skill, @claim, etc.)
     SemanticTokenType::PROPERTY,  // 1: metadata keys (#title:, #author:)
@@ -18,9 +19,11 @@ pub const TOKEN_TYPES: &[SemanticTokenType] = &[
 ];
 
 /// Token modifiers (none used currently, but required by the protocol).
+#[allow(dead_code)]
 pub const TOKEN_MODIFIERS: &[SemanticTokenModifier] = &[];
 
 /// Build the semantic token legend for the server capabilities.
+#[allow(dead_code)]
 pub fn legend() -> SemanticTokensLegend {
     SemanticTokensLegend {
         token_types: TOKEN_TYPES.to_vec(),

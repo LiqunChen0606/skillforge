@@ -13,10 +13,12 @@ members = [
     "crates/aif-eval",
     "crates/aif-migrate",
     "crates/aif-lsp",
-    "crates/aif-python",
     "crates/aif-conflict",
     "crates/aif-observe",
 ]
+# aif-python (skillforge) is a PyO3 extension-module that requires Python
+# linkage; build it via `maturin develop`, not `cargo build --workspace`.
+exclude = ["crates/aif-python"]
 
 [workspace.package]
 version = "0.1.0"

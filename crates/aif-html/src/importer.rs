@@ -2,8 +2,70 @@ use aif_core::ast::*;
 use aif_core::span::Span;
 use ego_tree::NodeRef;
 use scraper::{ElementRef, Html, Node, Selector};
+use std::sync::OnceLock;
 
 use crate::readability::{find_content_root, is_chrome_element, ContentRoot};
+
+// ---------------------------------------------------------------------------
+// Cached CSS selectors (parsed once via OnceLock)
+// ---------------------------------------------------------------------------
+
+fn sel_body() -> &'static Selector {
+    static SEL: OnceLock<Selector> = OnceLock::new();
+    SEL.get_or_init(|| Selector::parse("body").unwrap())
+}
+fn sel_title() -> &'static Selector {
+    static SEL: OnceLock<Selector> = OnceLock::new();
+    SEL.get_or_init(|| Selector::parse("title").unwrap())
+}
+fn sel_meta_description() -> &'static Selector {
+    static SEL: OnceLock<Selector> = OnceLock::new();
+    SEL.get_or_init(|| Selector::parse("meta[name=description]").unwrap())
+}
+fn sel_code() -> &'static Selector {
+    static SEL: OnceLock<Selector> = OnceLock::new();
+    SEL.get_or_init(|| Selector::parse("code").unwrap())
+}
+fn sel_caption() -> &'static Selector {
+    static SEL: OnceLock<Selector> = OnceLock::new();
+    SEL.get_or_init(|| Selector::parse("caption").unwrap())
+}
+fn sel_thead() -> &'static Selector {
+    static SEL: OnceLock<Selector> = OnceLock::new();
+    SEL.get_or_init(|| Selector::parse("thead").unwrap())
+}
+fn sel_tr() -> &'static Selector {
+    static SEL: OnceLock<Selector> = OnceLock::new();
+    SEL.get_or_init(|| Selector::parse("tr").unwrap())
+}
+fn sel_th() -> &'static Selector {
+    static SEL: OnceLock<Selector> = OnceLock::new();
+    SEL.get_or_init(|| Selector::parse("th").unwrap())
+}
+fn sel_tbody() -> &'static Selector {
+    static SEL: OnceLock<Selector> = OnceLock::new();
+    SEL.get_or_init(|| Selector::parse("tbody").unwrap())
+}
+fn sel_td() -> &'static Selector {
+    static SEL: OnceLock<Selector> = OnceLock::new();
+    SEL.get_or_init(|| Selector::parse("td").unwrap())
+}
+fn sel_img() -> &'static Selector {
+    static SEL: OnceLock<Selector> = OnceLock::new();
+    SEL.get_or_init(|| Selector::parse("img").unwrap())
+}
+fn sel_figcaption() -> &'static Selector {
+    static SEL: OnceLock<Selector> = OnceLock::new();
+    SEL.get_or_init(|| Selector::parse("figcaption").unwrap())
+}
+fn sel_source() -> &'static Selector {
+    static SEL: OnceLock<Selector> = OnceLock::new();
+    SEL.get_or_init(|| Selector::parse("source").unwrap())
+}
+fn sel_p() -> &'static Selector {
+    static SEL: OnceLock<Selector> = OnceLock::new();
+    SEL.get_or_init(|| Selector::parse("p").unwrap())
+}
 
 // ---------------------------------------------------------------------------
 // AIF class detection helpers
@@ -101,8 +163,7 @@ pub fn import_html(input: &str, strip_chrome: bool) -> HtmlImportResult {
         match find_content_root(&html) {
             ContentRoot::Element(el) => parse_children(el, aif_mode),
             ContentRoot::BodyFiltered => {
-                let body_sel = Selector::parse("body").unwrap();
-                if let Some(body) = html.select(&body_sel).next() {
+                if let Some(body) = html.select(sel_body()).next() {
                     parse_children_filtered(body, aif_mode)
                 } else {
                     vec![]
@@ -115,8 +176,7 @@ pub fn import_html(input: &str, strip_chrome: bool) -> HtmlImportResult {
         }
     } else {
         // Original behavior — find <body> or fall back to document root
-        let body_sel = Selector::parse("body").unwrap();
-        let root = html.select(&body_sel).next();
+        let root = html.select(sel_body()).next();
 
         if let Some(body) = root {
             parse_children(body, aif_mode)
@@ -158,8 +218,7 @@ fn span() -> Span {
 
 fn extract_metadata(html: &Html, doc: &mut Document) {
     // <title>
-    let title_sel = Selector::parse("title").unwrap();
-    if let Some(el) = html.select(&title_sel).next() {
+    if let Some(el) = html.select(sel_title()).next() {
         let text = el.text().collect::<String>();
         let text = text.trim().to_string();
         if !text.is_empty() {
@@ -168,8 +227,7 @@ fn extract_metadata(html: &Html, doc: &mut Document) {
     }
 
     // <meta name="description" content="...">
-    let meta_sel = Selector::parse("meta[name=description]").unwrap();
-    if let Some(el) = html.select(&meta_sel).next() {
+    if let Some(el) = html.select(sel_meta_description()).next() {
         if let Some(content) = el.value().attr("content") {
             let content = content.trim().to_string();
             if !content.is_empty() {
@@ -714,8 +772,7 @@ fn parse_single_element(el: ElementRef, aif_mode: bool) -> Vec<Block> {
 // ---------------------------------------------------------------------------
 
 fn parse_pre(el: ElementRef) -> Block {
-    let code_sel = Selector::parse("code").unwrap();
-    if let Some(code_el) = el.select(&code_sel).next() {
+    if let Some(code_el) = el.select(sel_code()).next() {
         let lang = extract_language(code_el);
         let code = code_el.text().collect::<String>();
         Block {
@@ -822,8 +879,7 @@ fn parse_table(el: ElementRef, aif_mode: bool) -> Block {
     let mut rows: Vec<Vec<Vec<Inline>>> = Vec::new();
 
     // Caption
-    let caption_sel = Selector::parse("caption").unwrap();
-    if let Some(cap_el) = el.select(&caption_sel).next() {
+    if let Some(cap_el) = el.select(sel_caption()).next() {
         let inlines = parse_inlines(cap_el, aif_mode);
         if !inlines.is_empty() {
             caption = Some(inlines);
@@ -831,33 +887,26 @@ fn parse_table(el: ElementRef, aif_mode: bool) -> Block {
     }
 
     // Headers from <thead>
-    let thead_sel = Selector::parse("thead").unwrap();
-    if let Some(thead) = el.select(&thead_sel).next() {
-        let tr_sel = Selector::parse("tr").unwrap();
-        if let Some(tr) = thead.select(&tr_sel).next() {
-            let th_sel = Selector::parse("th").unwrap();
-            for th in tr.select(&th_sel) {
+    if let Some(thead) = el.select(sel_thead()).next() {
+        if let Some(tr) = thead.select(sel_tr()).next() {
+            for th in tr.select(sel_th()) {
                 headers.push(parse_inlines(th, aif_mode));
             }
         }
     }
 
     // Rows from <tbody> or directly
-    let tbody_sel = Selector::parse("tbody").unwrap();
-    let tr_sel = Selector::parse("tr").unwrap();
-    let td_sel = Selector::parse("td").unwrap();
-
-    if let Some(tbody) = el.select(&tbody_sel).next() {
-        for tr in tbody.select(&tr_sel) {
+    if let Some(tbody) = el.select(sel_tbody()).next() {
+        for tr in tbody.select(sel_tr()) {
             let mut row = Vec::new();
-            for td in tr.select(&td_sel) {
+            for td in tr.select(sel_td()) {
                 row.push(parse_inlines(td, aif_mode));
             }
             rows.push(row);
         }
     } else {
         // No <tbody>, look for direct <tr> children
-        for tr in el.select(&tr_sel) {
+        for tr in el.select(sel_tr()) {
             // Skip if this is in thead
             if tr.parent().and_then(|p| {
                 ElementRef::wrap(p).map(|e| e.value().name() == "thead")
@@ -865,7 +914,7 @@ fn parse_table(el: ElementRef, aif_mode: bool) -> Block {
                 continue;
             }
             let mut row = Vec::new();
-            for td in tr.select(&td_sel) {
+            for td in tr.select(sel_td()) {
                 row.push(parse_inlines(td, aif_mode));
             }
             if !row.is_empty() {
@@ -897,16 +946,14 @@ fn parse_figure(el: ElementRef, aif_mode: bool) -> Block {
     let mut meta = MediaMeta::default();
     let mut caption = None;
 
-    let img_sel = Selector::parse("img").unwrap();
-    if let Some(img) = el.select(&img_sel).next() {
+    if let Some(img) = el.select(sel_img()).next() {
         src = img.value().attr("src").unwrap_or("").to_string();
         meta.alt = img.value().attr("alt").map(String::from);
         meta.width = img.value().attr("width").and_then(|w| w.parse().ok());
         meta.height = img.value().attr("height").and_then(|h| h.parse().ok());
     }
 
-    let figcaption_sel = Selector::parse("figcaption").unwrap();
-    if let Some(cap_el) = el.select(&figcaption_sel).next() {
+    if let Some(cap_el) = el.select(sel_figcaption()).next() {
         let inlines = parse_inlines(cap_el, aif_mode);
         if !inlines.is_empty() {
             caption = Some(inlines);
@@ -937,8 +984,7 @@ fn parse_audio(el: ElementRef, aif_mode: bool) -> Block {
     let mut caption = None;
 
     // Check for <source> child
-    let source_sel = Selector::parse("source").unwrap();
-    if let Some(source_el) = el.select(&source_sel).next() {
+    if let Some(source_el) = el.select(sel_source()).next() {
         if src.is_empty() {
             src = source_el.value().attr("src").unwrap_or("").to_string();
         }
@@ -946,8 +992,7 @@ fn parse_audio(el: ElementRef, aif_mode: bool) -> Block {
     }
 
     // Caption from <p> child
-    let p_sel = Selector::parse("p").unwrap();
-    if let Some(p_el) = el.select(&p_sel).next() {
+    if let Some(p_el) = el.select(sel_p()).next() {
         let inlines = parse_inlines(p_el, aif_mode);
         if !inlines.is_empty() {
             caption = Some(inlines);
@@ -983,8 +1028,7 @@ fn parse_video(el: ElementRef, aif_mode: bool) -> Block {
     let mut caption = None;
 
     // Caption from <p> child
-    let p_sel = Selector::parse("p").unwrap();
-    if let Some(p_el) = el.select(&p_sel).next() {
+    if let Some(p_el) = el.select(sel_p()).next() {
         let inlines = parse_inlines(p_el, aif_mode);
         if !inlines.is_empty() {
             caption = Some(inlines);

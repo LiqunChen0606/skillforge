@@ -2,7 +2,7 @@
 source: crates/aif-lml/tests/prose_modes.rs
 expression: out
 ---
-@skill(name="test-skill", version="1.0"):
+@skill(name=test-skill, version=1.0):
 @pre: When debugging fails.
 @step(order=1): Read the error message carefully.
 @step(order=2): Reproduce the issue.

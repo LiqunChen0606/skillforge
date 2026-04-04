@@ -95,13 +95,13 @@ impl EvalPipeline {
                     stage: EvalStage::BehavioralCompliance,
                     passed: false,
                     duration_ms: 0,
-                    details: StageDetails::Skipped,
+                    details: StageDetails::Skipped("previous stage failed".into()),
                 });
                 stages.push(StageResult {
                     stage: EvalStage::EffectivenessEval,
                     passed: false,
                     duration_ms: 0,
-                    details: StageDetails::Skipped,
+                    details: StageDetails::Skipped("previous stage failed".into()),
                 });
             }
             return EvalReport {
@@ -121,7 +121,7 @@ impl EvalPipeline {
                     stage: EvalStage::EffectivenessEval,
                     passed: false,
                     duration_ms: 0,
-                    details: StageDetails::Skipped,
+                    details: StageDetails::Skipped("previous stage failed".into()),
                 });
             }
             return EvalReport {
@@ -148,12 +148,9 @@ impl EvalPipeline {
                     stage: EvalStage::BehavioralCompliance,
                     passed: false,
                     duration_ms: 0,
-                    details: StageDetails::Compliance(vec![ComplianceResult {
-                        check_name: "config".into(),
-                        passed: false,
-                        evidence: "No LLM configured. Run `aif config set llm.api-key <key>`"
-                            .into(),
-                    }]),
+                    details: StageDetails::Skipped(
+                        "no API key configured — run `aif config set llm.api-key <key>`".into(),
+                    ),
                 };
             }
         };
@@ -220,12 +217,9 @@ impl EvalPipeline {
                     stage: EvalStage::EffectivenessEval,
                     passed: false,
                     duration_ms: 0,
-                    details: StageDetails::Effectiveness(vec![ScenarioResult {
-                        name: "config".into(),
-                        passed: false,
-                        evidence: "No LLM configured".into(),
-                        scenario_type: ScenarioType::Scenario,
-                    }]),
+                    details: StageDetails::Skipped(
+                        "no API key configured — run `aif config set llm.api-key <key>`".into(),
+                    ),
                 };
             }
         };

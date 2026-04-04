@@ -28,6 +28,9 @@ That's it. `aif check` imports your SKILL.md, runs 7 structural lint checks, ver
 aif check SKILL.md --format json     # Machine-readable output for CI
 aif skill import SKILL.md -f json    # Convert to typed AIF format
 aif skill export my-skill.aif -o SKILL.md   # Export back to Markdown for deployment
+aif skill test my-skill.aif --format junit  # CI testing with JUnit output
+aif observe --skill my-skill.aif --output llm-output.txt  # Check if LLM followed your skill
+aif conflict skill-a.aif skill-b.aif # Detect contradictions between skills
 ```
 
 See the [full Quick Start](#quick-start) below for signing, diffing, and versioning.
@@ -195,10 +198,12 @@ SKILL.md ──→ aif skill import ──→ Typed AST ──→ lint / hash / 
                                        │
                                        ├──→ aif skill export ──→ SKILL.md (deploy)
                                        ├──→ aif compile ──→ 12+ output formats
-                                       └──→ aif skill diff ──→ change classification
+                                       ├──→ aif skill diff ──→ change classification
+                                       ├──→ aif observe ──→ LLM output compliance
+                                       └──→ aif conflict ──→ cross-skill contradictions
 ```
 
-13 Rust crates. 590+ tests. Full list: `aif-core`, `aif-parser`, `aif-html`, `aif-markdown`, `aif-lml`, `aif-binary`, `aif-skill`, `aif-pdf`, `aif-eval`, `aif-migrate`, `aif-lsp`, `aif-python`, `aif-cli`.
+15 Rust crates. 650+ tests. Full list: `aif-core`, `aif-parser`, `aif-html`, `aif-markdown`, `aif-lml`, `aif-binary`, `aif-skill`, `aif-pdf`, `aif-eval`, `aif-migrate`, `aif-observe`, `aif-conflict`, `aif-lsp`, `aif-python`, `aif-cli`.
 
 ## Try It (60 seconds)
 
@@ -210,7 +215,7 @@ bash scripts/demo.sh
 ## Project Structure
 
 ```
-crates/          # 13 Rust crates — the product
+crates/          # 15 Rust crates — the product
 examples/
 ├── skills/      # 10 AI skills + authoring guide
 ├── documents/   # Format conversion demos
@@ -233,10 +238,13 @@ scripts/         # demo.sh, workbook/diagram generators
 - [x] Python bindings (7 functions via PyO3)
 - [x] 12+ output format compiler
 - [x] 7 benchmark suites (126+ LLM-evaluated runs)
+- [x] GitHub Actions for CI skill linting and testing
+- [x] Skill observability — match LLM output against skill blocks
+- [x] Skill conflict detection — find contradictions across skills
+- [x] Skill CI runner with baseline regression detection and JUnit XML
 - [ ] Publish to PyPI and crates.io
 - [ ] LangChain / LlamaIndex integration
 - [ ] Skill registry with signed publishing
-- [ ] GitHub Action for CI skill linting
 
 ## Citation
 
@@ -258,7 +266,7 @@ Built entirely through AI-assisted development using [**ClawTerminal**](https://
 
 [![Download on the App Store](https://img.shields.io/badge/Download-App_Store-black?style=for-the-badge&logo=apple&logoColor=white)](https://apps.apple.com/app/claw-ssh-ai-terminal/id6740686929)
 
-150+ commits, 13 crates, 30K lines Rust, 590+ tests — authored and shipped from an iPhone.
+175+ commits, 15 crates, 34K lines Rust, 678 tests — authored and shipped from an iPhone.
 
 ## License
 

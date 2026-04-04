@@ -35,7 +35,7 @@ pub enum RemoteError {
 impl std::fmt::Display for RemoteError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            RemoteError::NotConfigured => write!(f, "Remote registry not configured"),
+            RemoteError::NotConfigured => write!(f, "Remote registry not implemented — HTTP client not included. Use local registry instead."),
             RemoteError::ConnectionFailed(msg) => write!(f, "Connection failed: {}", msg),
             RemoteError::NotFound(name) => write!(f, "Not found: {}", name),
             RemoteError::Unauthorized => write!(f, "Unauthorized — run `aif auth login` first"),
@@ -89,7 +89,10 @@ impl RemoteRegistry {
         Self { config }
     }
 
-    /// Build the full URL for an API endpoint
+    /// Build the full URL for an API endpoint.
+    /// Currently unused in production (no HTTP client), but tested and ready for when
+    /// the `remote-http` feature is implemented.
+    #[allow(dead_code)]
     fn api_url(&self, path: &str) -> String {
         format!("{}/v1{}", self.config.url.trim_end_matches('/'), path)
     }
@@ -97,49 +100,34 @@ impl RemoteRegistry {
     /// Search for skills matching a query.
     /// Note: Actual HTTP calls require the `remote-http` feature (reqwest).
     /// Without it, this returns NotConfigured — suitable for local-only usage.
-    pub fn search(&self, query: &str, tags: &[&str]) -> Result<SearchResponse, RemoteError> {
-        let _url = if tags.is_empty() {
-            self.api_url(&format!("/skills?q={}", query))
-        } else {
-            self.api_url(&format!("/skills?q={}&tags={}", query, tags.join(",")))
-        };
-
-        // Without reqwest, we can't make HTTP calls
+    pub fn search(&self, _query: &str, _tags: &[&str]) -> Result<SearchResponse, RemoteError> {
         Err(RemoteError::NotConfigured)
     }
 
     /// Fetch metadata for a specific skill
     pub fn fetch_metadata(
         &self,
-        name: &str,
-        version: Option<&str>,
+        _name: &str,
+        _version: Option<&str>,
     ) -> Result<RemoteEntry, RemoteError> {
-        let _url = match version {
-            Some(v) => self.api_url(&format!("/skills/{}/{}", name, v)),
-            None => self.api_url(&format!("/skills/{}", name)),
-        };
-
         Err(RemoteError::NotConfigured)
     }
 
     /// Download a skill file
-    pub fn download(&self, name: &str, version: &str) -> Result<Vec<u8>, RemoteError> {
-        let _url = self.api_url(&format!("/skills/{}/{}/download", name, version));
+    pub fn download(&self, _name: &str, _version: &str) -> Result<Vec<u8>, RemoteError> {
         Err(RemoteError::NotConfigured)
     }
 
     /// Publish a skill to the remote registry
-    pub fn publish(&self, name: &str, version: &str, _data: &[u8]) -> Result<(), RemoteError> {
+    pub fn publish(&self, _name: &str, _version: &str, _data: &[u8]) -> Result<(), RemoteError> {
         if self.config.token.is_none() {
             return Err(RemoteError::Unauthorized);
         }
-        let _url = self.api_url(&format!("/skills/{}/{}", name, version));
         Err(RemoteError::NotConfigured)
     }
 
     /// List all versions of a skill
-    pub fn list_versions(&self, name: &str) -> Result<Vec<String>, RemoteError> {
-        let _url = self.api_url(&format!("/skills/{}/versions", name));
+    pub fn list_versions(&self, _name: &str) -> Result<Vec<String>, RemoteError> {
         Err(RemoteError::NotConfigured)
     }
 }

@@ -139,7 +139,7 @@ impl MigrationEngine {
                 }
             }
 
-            let status = match repair_state.outcome() {
+            let mut status = match repair_state.outcome() {
                 RepairOutcome::Fixed => ChunkStatus::Success,
                 RepairOutcome::Exhausted => {
                     unresolved.push(format!("Chunk '{}' exhausted repair loop", chunk.chunk_id));
@@ -160,12 +160,54 @@ impl MigrationEngine {
             // Write output if we have migrated code and not dry-run
             if let Some(ref code) = migrated_code {
                 if !self.config.dry_run {
-                    for (path, _) in &chunk.files {
+                    if chunk.files.len() > 1 {
+                        // Multi-file chunk: LLM returns a single response for concatenated
+                        // input, so we can only reliably write to the first file.
+                        let (first_path, _) = &chunk.files[0];
+                        let out_path = self.config.output_dir.join(first_path);
+                        if let Some(parent) = out_path.parent() {
+                            if let Err(e) = std::fs::create_dir_all(parent) {
+                                notes.push(format!(
+                                    "Failed to create directory '{}': {}",
+                                    parent.display(), e
+                                ));
+                                status = ChunkStatus::Failed;
+                            }
+                        }
+                        if let Err(e) = std::fs::write(&out_path, code) {
+                            notes.push(format!(
+                                "Failed to write '{}': {}",
+                                out_path.display(), e
+                            ));
+                            status = ChunkStatus::Failed;
+                        }
+                        let skipped: Vec<_> = chunk.files[1..].iter()
+                            .map(|(p, _)| p.display().to_string())
+                            .collect();
+                        notes.push(format!(
+                            "Multi-file chunk: wrote combined output to '{}'; \
+                             skipped writing to: {}",
+                            first_path.display(),
+                            skipped.join(", ")
+                        ));
+                    } else if let Some((path, _)) = chunk.files.first() {
                         let out_path = self.config.output_dir.join(path);
                         if let Some(parent) = out_path.parent() {
-                            let _ = std::fs::create_dir_all(parent);
+                            if let Err(e) = std::fs::create_dir_all(parent) {
+                                notes.push(format!(
+                                    "Failed to create directory '{}': {}",
+                                    parent.display(), e
+                                ));
+                                status = ChunkStatus::Failed;
+                            }
                         }
-                        let _ = std::fs::write(&out_path, code);
+                        if let Err(e) = std::fs::write(&out_path, code) {
+                            notes.push(format!(
+                                "Failed to write '{}': {}",
+                                out_path.display(), e
+                            ));
+                            status = ChunkStatus::Failed;
+                        }
                     }
                 }
             }

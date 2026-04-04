@@ -31,16 +31,6 @@ impl LanguageServer for AifLanguageServer {
                 text_document_sync: Some(TextDocumentSyncCapability::Kind(
                     TextDocumentSyncKind::FULL,
                 )),
-                semantic_tokens_provider: Some(
-                    SemanticTokensOptions {
-                        legend: semantic_tokens::legend(),
-                        full: Some(SemanticTokensFullOptions::Bool(true)),
-                        range: None,
-                        work_done_progress_options: WorkDoneProgressOptions::default(),
-                    }
-                    .into(),
-                ),
-                definition_provider: Some(OneOf::Left(true)),
                 ..Default::default()
             },
             server_info: Some(ServerInfo {
@@ -71,28 +61,6 @@ impl LanguageServer for AifLanguageServer {
         }
     }
 
-    async fn semantic_tokens_full(
-        &self,
-        params: SemanticTokensParams,
-    ) -> Result<Option<SemanticTokensResult>> {
-        // We need the document text but tower-lsp doesn't store it for us.
-        // In a full implementation we'd maintain a document store.
-        // For now, return empty tokens — diagnostics work on didOpen/didChange.
-        let _ = params;
-        Ok(Some(SemanticTokensResult::Tokens(SemanticTokens {
-            result_id: None,
-            data: vec![],
-        })))
-    }
-
-    async fn goto_definition(
-        &self,
-        params: GotoDefinitionParams,
-    ) -> Result<Option<GotoDefinitionResponse>> {
-        // Requires document store to resolve references. Placeholder for now.
-        let _ = params;
-        Ok(None)
-    }
 }
 
 #[tokio::main]
