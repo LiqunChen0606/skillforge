@@ -1,0 +1,47 @@
+{
+  "name": "skillforge-aif",
+  "displayName": "SkillForge AIF",
+  "description": "Language support for AIF semantic documents — diagnostics, syntax highlighting, go-to-definition",
+  "version": "0.1.0",
+  "publisher": "liqunchen",
+  "license": "Apache-2.0 OR MIT",
+  "repository": "https://github.com/LiqunChen0606/skillforge",
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["Programming Languages", "Linters"],
+  "activationEvents": ["onLanguage:aif"],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [{
+      "id": "aif",
+      "aliases": ["AIF", "AI-native Interchange Format"],
+      "extensions": [".aif"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "aif",
+      "scopeName": "source.aif",
+      "path": "./syntaxes/aif.tmLanguage.json"
+    }],
+    "configuration": {
+      "title": "SkillForge AIF",
+      "properties": {
+        "skillforge.lspPath": {
+          "type": "string",
+          "default": "aif-lsp",
+          "description": "Path to the aif-lsp binary"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.0"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.3.0"
+  }
+}
