@@ -4,7 +4,6 @@
 //! Returns structured results for CI consumption.
 
 use aif_core::ast::*;
-use aif_core::span::Span;
 use aif_skill::eval::ScenarioResult;
 use aif_skill::lint::{self, LintResult, LintSeverity};
 

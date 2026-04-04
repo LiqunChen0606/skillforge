@@ -89,6 +89,15 @@ enum Commands {
         /// Input SKILL.md or .aif file
         input: PathBuf,
     },
+    /// Detect conflicts between multiple skill files
+    Conflict {
+        /// Skill files to analyze (at least 2)
+        #[arg(required = true, num_args = 2..)]
+        files: Vec<PathBuf>,
+        /// Output format: text (default) or json
+        #[arg(long, default_value = "text")]
+        format: String,
+    },
 }
 
 #[derive(Subcommand)]
@@ -210,6 +219,23 @@ enum SkillAction {
         /// Base64-encoded public key (or path to key file)
         #[arg(long)]
         pubkey: String,
+    },
+    /// Run skill CI tests: lint + scenarios with baseline regression detection
+    Test {
+        /// Input .aif skill file
+        input: PathBuf,
+        /// Output format: text (default), json, or junit
+        #[arg(long, default_value = "text")]
+        format: String,
+        /// Path to baseline file for regression detection
+        #[arg(long)]
+        baseline: Option<PathBuf>,
+        /// Save current results as a new baseline
+        #[arg(long)]
+        save_baseline: Option<PathBuf>,
+        /// Output file (defaults to stdout)
+        #[arg(short, long)]
+        output: Option<PathBuf>,
     },
 }
 
@@ -1046,7 +1072,201 @@ fn handle_skill(action: SkillAction) {
                 }
             }
         }
+        SkillAction::Test {
+            input,
+            format,
+            baseline,
+            save_baseline,
+            output,
+        } => {
+            let source = read_source(&input);
+            let doc = parse_aif(&source);
+
+            let skill_block = find_skill_block(&doc.blocks).unwrap_or_else(|| {
+                eprintln!("No @skill block found in {}", input.display());
+                std::process::exit(1);
+            });
+
+            // Run CI (lint + scenarios with mock/no-LLM for now)
+            let ci_result = aif_eval::ci_runner::run_ci(skill_block, |spec| {
+                // Without LLM config, scenarios get a placeholder result
+                let config_path = dirs_or_default().join("config.toml");
+                let config = aif_core::config::AifConfig::load_with_env(&config_path);
+                let llm = config.llm;
+
+                if llm.api_key.is_none() || llm.api_key.as_deref() == Some("") {
+                    return aif_skill::eval::ScenarioResult {
+                        name: spec.name.clone(),
+                        passed: false,
+                        evidence: "No LLM configured — cannot evaluate scenario. Run `aif config set llm.api-key <key>`".into(),
+                        scenario_type: aif_skill::eval::ScenarioType::Scenario,
+                    };
+                }
+
+                let client = match aif_eval::anthropic::AnthropicClient::new(
+                    llm.api_key.as_deref().unwrap_or(""),
+                    &llm.resolved_model(),
+                    llm.base_url.as_deref(),
+                ) {
+                    Ok(c) => c,
+                    Err(e) => {
+                        return aif_skill::eval::ScenarioResult {
+                            name: spec.name.clone(),
+                            passed: false,
+                            evidence: format!("LLM client error: {}", e),
+                            scenario_type: aif_skill::eval::ScenarioType::Scenario,
+                        };
+                    }
+                };
+
+                let runner = aif_eval::scenario::ScenarioRunner::new(2048);
+                let rt = tokio::runtime::Runtime::new().unwrap();
+                match rt.block_on(runner.evaluate_one(&client, &source, spec)) {
+                    Ok(r) => r,
+                    Err(e) => aif_skill::eval::ScenarioResult {
+                        name: spec.name.clone(),
+                        passed: false,
+                        evidence: format!("LLM API error: {}", e),
+                        scenario_type: aif_skill::eval::ScenarioType::Scenario,
+                    },
+                }
+            });
+
+            // Extract scenario results for output formatting
+            let (exit_code, scenario_results) = match &ci_result {
+                aif_eval::ci_runner::CiResult::LintFailed(lint_results) => {
+                    let text_output = format_lint_failed(lint_results);
+                    write_output(&text_output, output.as_ref());
+                    std::process::exit(1);
+                }
+                aif_eval::ci_runner::CiResult::Completed(results) => {
+                    let code = if results.iter().all(|r| r.passed) {
+                        0
+                    } else {
+                        1
+                    };
+                    (code, results.clone())
+                }
+            };
+
+            // Compare against baseline if provided
+            let mut regressions = Vec::new();
+            let mut final_exit_code = exit_code;
+            if let Some(baseline_path) = &baseline {
+                match aif_eval::baseline::load_baseline(baseline_path) {
+                    Ok(bl) => {
+                        regressions =
+                            aif_eval::baseline::detect_regressions(&bl, &scenario_results);
+                        if !regressions.is_empty() {
+                            final_exit_code = 2; // regressions detected
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("Warning: could not load baseline: {}", e);
+                    }
+                }
+            }
+
+            // Save baseline if requested
+            if let Some(save_path) = &save_baseline {
+                let skill_name = if let aif_core::ast::BlockKind::SkillBlock { attrs, .. } =
+                    &skill_block.kind
+                {
+                    attrs.get("name").unwrap_or("(unnamed)").to_string()
+                } else {
+                    "(unnamed)".to_string()
+                };
+
+                let bl = aif_eval::baseline::Baseline {
+                    skill_name,
+                    model: "unknown".into(),
+                    timestamp: "now".into(),
+                    results: scenario_results.clone(),
+                };
+                if let Err(e) = aif_eval::baseline::save_baseline(&bl, save_path) {
+                    eprintln!("Warning: could not save baseline: {}", e);
+                } else {
+                    eprintln!("Baseline saved to {}", save_path.display());
+                }
+            }
+
+            // Format output
+            let result_text = match format.as_str() {
+                "junit" => {
+                    let skill_name =
+                        if let aif_core::ast::BlockKind::SkillBlock { attrs, .. } =
+                            &skill_block.kind
+                        {
+                            attrs.get("name").unwrap_or("(unnamed)").to_string()
+                        } else {
+                            "(unnamed)".to_string()
+                        };
+                    aif_eval::junit::generate_junit_xml(&skill_name, &scenario_results)
+                }
+                "json" => {
+                    let json = serde_json::json!({
+                        "passed": exit_code == 0,
+                        "scenarios": scenario_results,
+                        "regressions": regressions.iter().map(|r| serde_json::json!({
+                            "scenario_name": r.scenario_name,
+                            "baseline_passed": r.baseline_passed,
+                            "current_passed": r.current_passed,
+                            "score_delta": r.score_delta,
+                        })).collect::<Vec<_>>(),
+                    });
+                    serde_json::to_string_pretty(&json).unwrap()
+                }
+                _ => {
+                    // text format
+                    let mut out = String::new();
+                    for r in &scenario_results {
+                        let mark = if r.passed { "PASS" } else { "FAIL" };
+                        out.push_str(&format!("[{}] {}: {}\n", mark, r.name, r.evidence));
+                    }
+                    if !regressions.is_empty() {
+                        out.push_str("\nREGRESSIONS:\n");
+                        for r in &regressions {
+                            out.push_str(&format!(
+                                "  {} — was {}, now {} (delta: {:.2})\n",
+                                r.scenario_name,
+                                if r.baseline_passed {
+                                    "passing"
+                                } else {
+                                    "failing"
+                                },
+                                if r.current_passed {
+                                    "passing"
+                                } else {
+                                    "failing"
+                                },
+                                r.score_delta,
+                            ));
+                        }
+                    }
+                    let passed = scenario_results.iter().filter(|r| r.passed).count();
+                    out.push_str(&format!(
+                        "\n{} of {} scenarios passed.",
+                        passed,
+                        scenario_results.len()
+                    ));
+                    out
+                }
+            };
+
+            write_output(&result_text, output.as_ref());
+            std::process::exit(final_exit_code);
+        }
     }
+}
+
+fn format_lint_failed(results: &[aif_skill::lint::LintResult]) -> String {
+    let mut out = String::from("LINT FAILED:\n");
+    for r in results {
+        if !r.passed {
+            out.push_str(&format!("  x {:?}: {}\n", r.check, r.message));
+        }
+    }
+    out
 }
 
 fn print_eval_report_text(report: &aif_skill::eval::EvalReport) {
@@ -1509,6 +1729,115 @@ fn main() {
                 std::process::exit(1);
             }
         }
+        Commands::Conflict { files, format } => {
+            let docs: Vec<_> = files
+                .iter()
+                .map(|f| {
+                    let source = read_source(f);
+                    parse_aif(&source)
+                })
+                .collect();
+            let doc_refs: Vec<&aif_core::ast::Document> = docs.iter().collect();
+            let report = aif_conflict::analyze::analyze_skills(&doc_refs);
+
+            if format == "json" {
+                println!("{}", serde_json::to_string_pretty(&report).unwrap());
+            } else {
+                println!("Skill Conflict Analysis");
+                println!("{}", "=".repeat(60));
+                println!(
+                    "Skills analyzed: {}  |  Directives extracted: {}",
+                    report.skills_analyzed, report.directives_extracted
+                );
+                println!();
+
+                if report.conflicts.is_empty() {
+                    println!("No conflicts detected.");
+                } else {
+                    let (critical, high, medium, low) = report.severity_counts();
+                    println!(
+                        "Conflicts found: {} (Critical: {}, High: {}, Medium: {}, Low: {})",
+                        report.conflicts.len(),
+                        critical,
+                        high,
+                        medium,
+                        low
+                    );
+                    println!();
+
+                    for (i, conflict) in report.conflicts.iter().enumerate() {
+                        let sev = match conflict.severity {
+                            aif_conflict::types::ConflictSeverity::Critical => "CRITICAL",
+                            aif_conflict::types::ConflictSeverity::High => "HIGH",
+                            aif_conflict::types::ConflictSeverity::Medium => "MEDIUM",
+                            aif_conflict::types::ConflictSeverity::Low => "LOW",
+                        };
+                        let ctype = match conflict.conflict_type {
+                            aif_conflict::types::ConflictType::DirectContradiction => {
+                                "Direct Contradiction"
+                            }
+                            aif_conflict::types::ConflictType::OrderContradiction => {
+                                "Order Contradiction"
+                            }
+                            aif_conflict::types::ConflictType::PrecedenceAmbiguity => {
+                                "Precedence Ambiguity"
+                            }
+                            aif_conflict::types::ConflictType::ConstraintIncompatible => {
+                                "Constraint Incompatible"
+                            }
+                        };
+                        println!("  {}. [{}] {}", i + 1, sev, ctype);
+                        println!("     {}", conflict.explanation);
+                        println!(
+                            "     Skill A: {} ({})",
+                            conflict.directive_a.source_skill,
+                            format!("{:?}", conflict.directive_a.block_type)
+                        );
+                        println!("       \"{}\"", truncate_text(&conflict.directive_a.text, 80));
+                        println!(
+                            "     Skill B: {} ({})",
+                            conflict.directive_b.source_skill,
+                            format!("{:?}", conflict.directive_b.block_type)
+                        );
+                        println!("       \"{}\"", truncate_text(&conflict.directive_b.text, 80));
+                        if !conflict.shared_keywords.is_empty() {
+                            println!(
+                                "     Shared keywords: {}",
+                                conflict.shared_keywords.join(", ")
+                            );
+                        }
+                        println!();
+                    }
+                }
+
+                println!("{}", "-".repeat(60));
+                if report.has_critical() {
+                    println!("CRITICAL conflicts found — these skills should not be used together.");
+                    std::process::exit(1);
+                } else if !report.conflicts.is_empty() {
+                    println!(
+                        "WARNING: {} conflict(s) found. Review before combining these skills.",
+                        report.conflicts.len()
+                    );
+                } else {
+                    println!("PASS — no conflicts detected between the provided skills.");
+                }
+            }
+
+            // Exit 1 if critical conflicts found (for both text and json)
+            if report.has_critical() {
+                std::process::exit(1);
+            }
+        }
+    }
+}
+
+fn truncate_text(text: &str, max_len: usize) -> String {
+    let text = text.replace('\n', " ");
+    if text.len() <= max_len {
+        text
+    } else {
+        format!("{}...", &text[..max_len])
     }
 }
 
