@@ -360,6 +360,12 @@ fn skill_block_class(st: &SkillBlockType) -> &'static str {
         SkillBlockType::Binding => "aif-binding",
         SkillBlockType::Generate => "aif-generate",
         SkillBlockType::Export => "aif-export",
+        SkillBlockType::ArtifactSkill => "aif-artifact-skill",
+        SkillBlockType::InputSchema => "aif-input-schema",
+        SkillBlockType::Template => "aif-template",
+        SkillBlockType::Binding => "aif-binding",
+        SkillBlockType::Generate => "aif-generate",
+        SkillBlockType::Export => "aif-export",
     }
 }
 

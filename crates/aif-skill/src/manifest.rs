@@ -40,6 +40,12 @@ fn skill_type_tag(st: &SkillBlockType) -> &'static str {
         SkillBlockType::Binding => "binding",
         SkillBlockType::Generate => "generate",
         SkillBlockType::Export => "export",
+        SkillBlockType::ArtifactSkill => "artifact_skill",
+        SkillBlockType::InputSchema => "input_schema",
+        SkillBlockType::Template => "template",
+        SkillBlockType::Binding => "binding",
+        SkillBlockType::Generate => "generate",
+        SkillBlockType::Export => "export",
     }
 }
 

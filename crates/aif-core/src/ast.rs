@@ -131,6 +131,13 @@ pub enum SkillBlockType {
     RedFlag,
     Example,
     Scenario,
+    // Artifact skill block types
+    ArtifactSkill,
+    InputSchema,
+    Template,
+    Binding,
+    Generate,
+    Export,
 }
 
 /// Shared metadata for media blocks (Figure, Audio, Video).

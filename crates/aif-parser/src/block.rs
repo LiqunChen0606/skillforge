@@ -43,6 +43,13 @@ fn is_skill_block_type(directive: &str) -> Option<SkillBlockType> {
         "red_flag" => Some(SkillBlockType::RedFlag),
         "example" => Some(SkillBlockType::Example),
         "scenario" => Some(SkillBlockType::Scenario),
+        // Artifact skill block types
+        "artifact_skill" => Some(SkillBlockType::ArtifactSkill),
+        "input_schema" => Some(SkillBlockType::InputSchema),
+        "template" => Some(SkillBlockType::Template),
+        "binding" => Some(SkillBlockType::Binding),
+        "generate" => Some(SkillBlockType::Generate),
+        "export" => Some(SkillBlockType::Export),
         _ => None,
     }
 }
