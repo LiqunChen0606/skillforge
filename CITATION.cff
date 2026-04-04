@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 message: "If you use SkillForge in your research or workflows, please cite it as below."
 type: software
-title: "SkillForge: Semantic Document Compiler and AI Skill Toolkit"
+title: "SkillForge: Quality Layer for Agent Skills"
 authors:
   - family-names: Chen
     given-names: Liqun
@@ -11,14 +11,13 @@ license: Apache-2.0
 version: 0.1.0
 date-released: "2026-04-02"
 abstract: >-
-  SkillForge is a semantic document compiler and AI skill toolkit built
-  on the AIF (AI-native Interchange Format). Compiles typed documents to
-  12+ formats with the best structure-per-token ratio: full semantic types
-  at 22% fewer tokens than Markdown. Skills in LML format improve LLM
-  compliance by 10 percentage points vs raw Markdown. Includes document
-  cleaning/normalization for HTML, PDF, and Markdown; typed skill authoring
-  with versioning and eval pipelines; and a codebase migration engine with
-  LLM-powered verification and repair.
+  SkillForge is the quality layer for Agent Skills (agentskills.io).
+  Adds lint (10 structural checks), SHA-256 hashing, Ed25519 signing,
+  semantic versioning, structural diff, and a 3-stage eval pipeline to
+  SKILL.md files. Bidirectional SKILL.md to AIF conversion. Also includes
+  a document cleaning pipeline (HTML/PDF/MD to typed semantic IR) and a
+  12+ format compiler. Compatible with Claude, Codex, Copilot, Gemini,
+  and 30+ platforms that adopted the Agent Skills standard.
 keywords:
   - llm
   - semantic-format

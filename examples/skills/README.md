@@ -1,8 +1,8 @@
-# AIF Skills & Plugins
+# SkillForge Skills
 
-Example skills and Claude Code plugins in AIF format — demonstrating how typed semantic blocks create more rigorous, verifiable, and LLM-effective skills than plain SKILL.md files.
+Example skills compatible with the [Agent Skills standard](https://agentskills.io) — written in AIF format with typed blocks, then exportable to SKILL.md for deployment to Claude, Codex, Copilot, Gemini, and 30+ other platforms.
 
-**Benchmark result:** LLMs follow AIF LML skills **10 percentage points better** than raw Markdown (0.97 vs 0.87 overall compliance) at 5% fewer tokens. See [skill execution benchmark](../../benchmarks/skill-execution/results.json).
+**Why AIF over plain SKILL.md?** AIF adds lint (10 checks), SHA-256 hashing, Ed25519 signing, semantic versioning, and a 3-stage eval pipeline. Plain SKILL.md has none of these. Benchmark: LML Aggressive scores +4pp overall (0.88 vs 0.84) on LLM skill compliance across 126 runs. See [full results](../../benchmarks/RESULTS.md).
 
 ## Why AIF for Skills?
 
@@ -15,7 +15,7 @@ Example skills and Claude Code plugins in AIF format — demonstrating how typed
 | Quality checks | No | 7 structural lint checks + 3-stage eval pipeline |
 | Multi-format output | Markdown only | HTML, LML (5 modes), JSON, binary, PDF |
 | Bidirectional | One-way | AIF ↔ Markdown roundtrip |
-| LLM compliance | Baseline | +10 percentage points (benchmark verified) |
+| LLM compliance | Baseline | +4pp overall, +18pp constraint resistance (benchmark verified) |
 
 ## Skills Included
 

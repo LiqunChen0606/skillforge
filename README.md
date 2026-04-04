@@ -1,223 +1,230 @@
 # SkillForge
 
-### Typed Semantic Documents for LLMs
+### Quality layer for [Agent Skills](https://agentskills.io)
 
-> **SkillForge** is a Rust toolchain that compiles typed, structured documents into 12+ output formats. Import HTML, PDF, or Markdown. Author verifiable skills for Claude, Codex, and Gemini. Clean documents for LLM consumption with 22% fewer tokens than Markdown.
+> Your SKILL.md files are plain Markdown — no integrity checks, no versioning, no structural validation. **SkillForge** adds lint, SHA-256 hashing, Ed25519 signing, semantic versioning, structural diff, and a 3-stage eval pipeline — then exports back to SKILL.md for deployment to Claude, Codex, Copilot, Gemini, and 30+ other platforms.
 
 ![Language](https://img.shields.io/badge/Language-Rust-orange)
 ![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Linux%20%7C%20Windows-blue)
-![Formats](https://img.shields.io/badge/Output_Formats-12+-green)
+![Agent Skills](https://img.shields.io/badge/Compatible-agentskills.io-blueviolet)
 ![License](https://img.shields.io/badge/License-Apache--2.0%20%7C%20MIT-lightgrey)
-![Skills](https://img.shields.io/badge/Skills-Claude%20%7C%20Codex%20%7C%20Gemini-blueviolet)
 
 ---
 
-## What SkillForge Does
+## The Problem
 
-### 1. Clean documents for LLMs
+The [Agent Skills standard](https://agentskills.io) is adopted by 30+ platforms. But SKILL.md is plain Markdown — you can't:
 
-Import messy HTML, PDF, and Markdown into a typed semantic IR — then compile to the most token-efficient format that preserves structure.
+- **Lint** — is the skill well-formed? Are required sections missing?
+- **Verify** — has someone tampered with this skill since it was reviewed?
+- **Version** — what changed between v1.2 and v1.3? Breaking or additive?
+- **Evaluate** — does this skill actually work? Does the LLM follow it?
+- **Sign** — who authored this skill? Can I trust it in my agent pipeline?
 
-```bash
-aif import page.html --strip-chrome       # Strip chrome, keep content
-aif import paper.pdf                      # PDF → structured blocks
-aif import doc.md --infer-semantics       # Auto-detect claims, evidence, definitions
-aif compile doc.aif --format lml-aggressive  # Compile to LLM-optimal format
-aif lint doc.aif                          # 10 structural quality checks
-```
+SkillForge answers all five.
 
-**Token comparison (10 Wikipedia articles, Anthropic API token counting):**
-
-| Format | Tokens | Structure | Use case |
-|--------|--------|-----------|----------|
-| Cleaned HTML text | 544K | None | Cheapest — no structure |
-| Raw PDF text | 561K | None | Cheapest — no structure |
-| **AIF LML Aggressive** | **981K** | **Typed semantic blocks** | **Best structure-per-token** |
-| Raw Markdown | 1,263K | Basic (headings, lists) | General documents |
-| Raw HTML | 5,500K | Full + presentational bloat | Browser rendering |
-
-LML Aggressive is **22% cheaper than Markdown** with typed claims, evidence, definitions, tables. It costs 80% more than flat text extraction — that's the price of structure.
-
-### 2. Author verifiable AI skills
-
-Write skills with typed blocks (`@step`, `@verify`, `@red_flag`) that are lintable, hashable, signable, and versionable.
-
-```aif
-@skill[name="code-review", version="1.0"]
-  @precondition
-    PR has passing CI and at least one approval.
-  @end
-
-  @step[order=1]
-    Understand the PR context before reviewing code.
-  @end
-
-  @verify
-    Every blocking issue includes a concrete fix suggestion.
-  @end
-
-  @red_flag
-    Don't bikeshed on style while missing logic bugs.
-  @end
-@end
-```
-
-**Skill lifecycle:** `import` (MD→AIF) → `lint` (10 structural checks) → `verify` (SHA-256 hash) → `sign` (Ed25519) → `eval` (3-stage pipeline) → `diff` (semantic diff) → `bump` (auto-version) → `export` (AIF→MD) → deploy.
-
-### 3. Migrate codebases with typed skills
-
-```bash
-aif migrate run --skill nextjs-13-to-15.aif --source ./src --output ./migrated
-```
-
-Pipeline: validate → chunk source → apply per-chunk (LLM) → verify (regex + semantic) → repair loop → report. Three production examples: Next.js 13→15, ESLint flat config, TypeScript strict mode.
-
----
-
-## Try It (60 seconds)
+## Quick Start
 
 ```bash
 # Install
 cargo install --path crates/aif-cli
 
-# Run the demo
-bash scripts/demo.sh
+# Import your existing SKILL.md
+aif skill import SKILL.md -f json -o skill.json
+
+# Lint (10 structural checks)
+aif skill eval my-skill.aif --stage 1
+
+# Verify integrity hash
+aif skill verify my-skill.aif
+
+# Sign with Ed25519
+aif skill keygen                                    # Generate keypair
+aif skill sign my-skill.aif --key private.key       # Sign
+aif skill verify-signature my-skill.aif --signature <sig> --pubkey public.key
+
+# Semantic diff between versions
+aif skill diff old.aif new.aif --format json
+
+# Auto-bump version based on change classification
+aif skill bump my-skill.aif
+
+# Export back to SKILL.md for deployment
+aif skill export my-skill.aif -o SKILL.md
 ```
 
-The demo creates an AIF document, compiles to 4 formats, lints it, imports Markdown with semantic inference, and signs a skill — all in one script.
-
-Or use the Python SDK:
+Or use Python:
 
 ```python
 import skillforge
 
-# Clean HTML for an LLM
-ir = skillforge.clean_html("<html><body><nav>skip</nav><p>Content</p></body></html>")
+# Lint a skill
+results = skillforge.lint(open("skill.aif").read())
 
-# Compile AIF to LML
-lml = skillforge.compile("@claim\nThis is a claim.\n", "lml-aggressive")
-
-# Lint a document
-results = skillforge.lint("#title: Test\n\n@claim\nHello.\n")
+# Convert between formats
+ir = skillforge.import_markdown(open("SKILL.md").read())
+html = skillforge.compile(open("skill.aif").read(), "html")
 ```
+
+## What SkillForge Checks
+
+### 10 Structural Lint Checks
+
+| Check | What it catches |
+|-------|----------------|
+| Frontmatter | Missing name or description |
+| RequiredSections | No `@step` or `@verify` block |
+| BlockTypes | Non-skill blocks mixed with skill blocks |
+| VersionHash | Hash doesn't match content (tampered?) |
+| DescriptionLength | Description > 1024 chars |
+| NameFormat | Invalid characters in skill name |
+| NoEmptyBlocks | Empty `@step` or `@verify` (placeholder left in) |
+| ClaimsWithoutEvidence | `@claim` with no supporting `@evidence` |
+| BrokenReferences | `refs=` pointing to nonexistent IDs |
+| UndefinedTerms | Terms in claims not defined in `@definition` blocks |
+
+### Ed25519 Signing
+
+```
+Author signs skill → SHA-256 hash → Ed25519 signature
+Consumer verifies  → re-hash content → check signature against public key
+Tampered skill     → hash mismatch → INVALID
+```
+
+For teams sharing skills via registries, marketplaces, or git repos — signing proves the skill hasn't been modified since it was reviewed. See [security analysis](security/analysis.md).
+
+### 3-Stage Eval Pipeline
+
+| Stage | What it does | LLM needed? |
+|-------|-------------|-------------|
+| 1. Structural lint | 10 deterministic checks (above) | No |
+| 2. Behavioral compliance | LLM simulates agent with skill, checks rules | Yes |
+| 3. Effectiveness | Scenario tests extracted from `@verify` blocks | Yes |
+
+### Semantic Versioning
+
+```bash
+aif skill diff old.aif new.aif
+# Output: { "classification": "Additive", "changes": [...] }
+
+aif skill bump my-skill.aif --dry-run
+# Output: "1.0.0 → 1.1.0 (Additive: new @example block)"
+```
+
+| Change type | Examples | Semver |
+|-------------|----------|--------|
+| Breaking | Removed step, changed precondition | Major |
+| Additive | New step, new example, new fallback | Minor |
+| Cosmetic | Rewording, reordering within block | Patch |
 
 ---
 
-## Benchmark Results
+## Also: Document Cleaning for LLMs
 
-We ran 7 benchmark suites. Here's what we found — honestly.
+SkillForge also cleans and compiles documents — not just skills:
 
-### Skill Execution Quality (126 runs, 6 formats, claude-sonnet-4-6)
+```bash
+# Clean HTML for LLM consumption
+aif import page.html --strip-chrome --infer-semantics
 
-Does the format affect how well the LLM follows a skill?
+# Compile to token-efficient format (22% cheaper than Markdown, full structure)
+aif compile doc.aif --format lml-aggressive
 
-| Format | Tokens | Overall | Multi-Step | Constraints |
-|--------|--------|---------|------------|-------------|
-| **LML Aggressive** | **861** | **0.88** | **0.81** | **0.89** |
-| JSON IR | 3,838 | 0.87 | 0.74 | 0.87 |
-| LML Standard | 928 | 0.86 | 0.74 | 0.88 |
-| Raw Markdown | 901 | 0.84 | 0.72 | 0.86 |
-| HTML | 1,217 | 0.84 | 0.73 | 0.87 |
-| AIF Source | 1,024 | 0.82 | 0.72 | 0.85 |
+# 12+ output formats
+aif compile doc.aif --format html|markdown|pdf|json|lml|lml-aggressive|binary-wire|...
+```
 
-**Findings:** LML Aggressive scores +4pp overall vs Markdown at 4% fewer tokens. The gap is largest on multi-step workflows (+9pp). On easy/standard scenarios, all formats score ~0.95 — format only matters when the task requires judgment. 15 of 21 scenarios were ties.
+| Format | Tokens (10 articles) | Structure |
+|--------|---------------------|-----------|
+| Cleaned HTML text | 544K | None |
+| **LML Aggressive** | **981K** | **Typed semantic blocks** |
+| Raw Markdown | 1,263K | Basic |
 
-**Caveats:** Single run per scenario×format (no confidence intervals). Judge model (Sonnet) may have biases. 21 scenarios is a moderate sample. An adversarial resistance advantage seen in a 3-scenario pilot was NOT reproduced in the full 60-run adversarial benchmark.
+---
 
-### Document Token Efficiency (10 Wikipedia articles, Anthropic API)
+## Benchmark: Does Format Affect Skill Execution?
 
-| Format | Total Tokens | vs Markdown | Structure |
-|--------|-------------|-------------|-----------|
-| Cleaned HTML | 544K | +57% cheaper | None |
-| Raw PDF text | 561K | +56% cheaper | None |
-| **LML Aggressive** | **981K** | **+22% cheaper** | **Full semantic** |
-| Raw Markdown | 1,263K | baseline | Basic |
-| Raw HTML | 5,500K | 4.4× more | Full + chrome |
+126 runs, 21 scenarios, 6 formats (claude-sonnet-4-6):
 
-### Roundtrip Fidelity (40 files × 3 formats)
+| Format | Tokens | Overall Compliance | Multi-Step Workflows |
+|--------|--------|--------------------|---------------------|
+| **LML Aggressive** | **861** | **0.88** | **0.81** |
+| Raw Markdown | 901 | 0.84 | 0.72 |
 
-| Path | Overall | Semantic types preserved |
-|------|---------|------------------------|
-| AIF → JSON → AIF | 1.00 | 100% (lossless) |
-| AIF → Markdown → AIF | 0.84 | 93% |
-| AIF → HTML → AIF | 0.50 | 93% (block types lost in generic mode) |
-
-Full results: [benchmarks/RESULTS.md](benchmarks/RESULTS.md) | [Visual dashboard](benchmarks/index.html)
++4pp overall, +9pp on multi-step workflows. Gap appears only on hard tasks — easy scenarios all score ~0.95. Full results: [benchmarks/RESULTS.md](benchmarks/RESULTS.md)
 
 ---
 
 ## Architecture
 
 ```
-Import (HTML, PDF, MD) ──→ Parser ──→ Typed AST ──→ 12+ output formats
-                                         │
-                               Lint / Infer / Sign / Eval
+SKILL.md ──→ aif skill import ──→ Typed AST ──→ lint / hash / sign / eval
+                                       │
+                                       ├──→ aif skill export ──→ SKILL.md (deploy)
+                                       ├──→ aif compile ──→ 12+ output formats
+                                       └──→ aif skill diff ──→ change classification
 ```
 
-13 Rust crates: `aif-core` (AST, lint, inference), `aif-parser`, `aif-html`, `aif-markdown`, `aif-lml` (5 modes), `aif-binary`, `aif-skill` (hash, sign, version, diff, chain, inherit), `aif-pdf`, `aif-eval`, `aif-migrate`, `aif-lsp`, `aif-python` (PyO3), `aif-cli`.
+13 Rust crates. 590+ tests. Full list: `aif-core`, `aif-parser`, `aif-html`, `aif-markdown`, `aif-lml`, `aif-binary`, `aif-skill`, `aif-pdf`, `aif-eval`, `aif-migrate`, `aif-lsp`, `aif-python`, `aif-cli`.
+
+## Try It (60 seconds)
+
+```bash
+cargo install --path crates/aif-cli
+bash scripts/demo.sh
+```
 
 ## Project Structure
 
 ```
 crates/          # 13 Rust crates
 examples/
-├── documents/   # General AIF documents
 ├── skills/      # 8 AI agent skills with authoring guide
-├── migrations/  # 3 migration skills with detailed guide
-└── rich-content/# Tables, SVG, audio/video metadata, cross-references
-artifacts/       # Artifact generators (Excel workbook, Mermaid diagrams)
-benchmarks/      # 7 suites: execution, adversarial, tokens, chunking, roundtrip, citation
-case-studies/    # 3 superpowers skills converted to AIF
-plugins/         # Claude Code plugin (4 slash commands)
+├── documents/   # General AIF documents
+├── migrations/  # 3 migration skills (Next.js, ESLint, TypeScript)
+└── rich-content/# Tables, SVG, audio/video metadata
+benchmarks/      # 7 suites: execution, adversarial, tokens, chunking, roundtrip
+plugins/         # Claude Code plugin (/lint-skill, /convert-skill, /sign-skill)
 editors/         # VS Code extension (syntax highlighting, LSP)
-security/        # Formal security analysis of skill signing
-scripts/         # Demo script, SDK generators
+artifacts/       # Generators: Excel workbooks, Mermaid diagrams from skills
 ```
 
 ## Roadmap
 
-### Done
-
-- [x] 13 Rust crates — full compiler pipeline with 12+ output formats
-- [x] Skill lifecycle — lint, hash, sign (Ed25519), version, diff, eval, inherit
-- [x] Document cleaning — HTML/PDF/MD import with readability and semantic inference
-- [x] Migration engine — typed skills with LLM apply, verification, repair loops
-- [x] Python bindings — 7 functions via PyO3
-- [x] 7 benchmark suites with 126+ LLM-evaluated runs
-- [x] VS Code extension + Claude Code plugin
-- [x] Artifact skills — workbook and diagram generators
-
-### Next
-
+- [x] Bidirectional SKILL.md ↔ AIF conversion
+- [x] 10 structural lint checks + 3-stage eval pipeline
+- [x] Ed25519 signing with tamper detection
+- [x] Semantic versioning with auto-bump
+- [x] Skill inheritance (`@skill[extends="base"]`)
+- [x] Python bindings (7 functions via PyO3)
+- [x] 12+ output format compiler
+- [x] 7 benchmark suites (126+ LLM-evaluated runs)
 - [ ] Publish to PyPI and crates.io
 - [ ] LangChain / LlamaIndex integration
-- [ ] Multi-run variance analysis with confidence intervals
-- [ ] Artifact skills platform (spreadsheets, decks, diagrams from templates)
+- [ ] Skill registry with signed publishing
+- [ ] GitHub Action for CI skill linting
 
 ## Citation
-
-If you find SkillForge useful in your research or workflows, please cite:
 
 ```bibtex
 @software{skillforge2026,
   author       = {Liqun Chen},
-  title        = {{SkillForge}: Typed Semantic Documents for {LLMs}},
+  title        = {{SkillForge}: Quality Layer for Agent Skills},
   year         = {2026},
   url          = {https://github.com/LiqunChen0606/skillforge},
-  note         = {Semantic document compiler and AI skill toolkit. LML Aggressive format
-                  scores +4pp on LLM skill compliance vs raw Markdown (0.88 vs 0.84,
-                  126 runs). 22\% fewer tokens than Markdown with full semantic types.
+  note         = {Lint, hash, sign, version, and eval for SKILL.md files.
+                  Compatible with the Agent Skills standard (agentskills.io).
                   Built on the AIF (AI-native Interchange Format).}
 }
 ```
 
 ## Built With
 
-This project was built entirely through AI-assisted development using [**ClawTerminal**](https://github.com/LiqunChen0606/clawterminal-docs) — an iOS SSH terminal + AI chatroom that connects your iPhone, iPad, or Apple Watch to Claude, Codex, Gemini, and Aider on remote servers.
+Built entirely through AI-assisted development using [**ClawTerminal**](https://github.com/LiqunChen0606/clawterminal-docs) — an iOS SSH terminal + AI chatroom for Claude, Codex, Gemini, and Aider.
 
 [![Download on the App Store](https://img.shields.io/badge/Download-App_Store-black?style=for-the-badge&logo=apple&logoColor=white)](https://apps.apple.com/app/claw-ssh-ai-terminal/id6740686929)
 
-150+ commits, 13 Rust crates, 30K lines of Rust, 7 benchmark suites, 590+ tests — authored, reviewed, and shipped via ClawTerminal.
+150+ commits, 13 crates, 30K lines Rust, 590+ tests — authored and shipped from an iPhone.
 
 ## License
 
