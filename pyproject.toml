@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "aif-skillforge"
-version = "0.4.0"
+version = "0.4.1"
 description = "SkillForge — quality layer for Agent Skills. Lint, hash, sign, version, eval your SKILL.md files"
 requires-python = ">=3.9"
 license = "Apache-2.0 OR MIT"

@@ -36,6 +36,23 @@ fn import_html(source: &str, strip_chrome: bool) -> PyResult<String> {
         .map_err(|e| PyValueError::new_err(e.to_string()))
 }
 
+/// Render an AIF Document (already-parsed) to a target output format.
+fn render_document(doc: &aif_core::ast::Document, format: &str) -> PyResult<String> {
+    let result = match format {
+        "html" => aif_html::render_html(doc),
+        "markdown" | "md" => aif_markdown::render_markdown(doc),
+        "lml" => aif_lml::render_lml(doc),
+        "lml-aggressive" => aif_lml::render_lml_aggressive(doc),
+        "lml-compact" => aif_lml::render_lml_skill_compact(doc),
+        "lml-conservative" => aif_lml::render_lml_conservative(doc),
+        "lml-moderate" => aif_lml::render_lml_moderate(doc),
+        "json" => serde_json::to_string_pretty(doc)
+            .map_err(|e| PyValueError::new_err(e.to_string()))?,
+        _ => return Err(PyValueError::new_err(format!("Unknown format: {}", format))),
+    };
+    Ok(result)
+}
+
 /// Compile an AIF document to a target format.
 /// Formats: "html", "markdown", "lml", "lml-aggressive", "lml-compact",
 ///          "lml-conservative", "lml-moderate", "json"
@@ -43,19 +60,16 @@ fn import_html(source: &str, strip_chrome: bool) -> PyResult<String> {
 fn compile(source: &str, format: &str) -> PyResult<String> {
     let doc = aif_parser::parse(source)
         .map_err(|e| PyValueError::new_err(format!("Parse error: {:?}", e)))?;
-    let result = match format {
-        "html" => aif_html::render_html(&doc),
-        "markdown" | "md" => aif_markdown::render_markdown(&doc),
-        "lml" => aif_lml::render_lml(&doc),
-        "lml-aggressive" => aif_lml::render_lml_aggressive(&doc),
-        "lml-compact" => aif_lml::render_lml_skill_compact(&doc),
-        "lml-conservative" => aif_lml::render_lml_conservative(&doc),
-        "lml-moderate" => aif_lml::render_lml_moderate(&doc),
-        "json" => return serde_json::to_string_pretty(&doc)
-            .map_err(|e| PyValueError::new_err(e.to_string())),
-        _ => return Err(PyValueError::new_err(format!("Unknown format: {}", format))),
-    };
-    Ok(result)
+    render_document(&doc, format)
+}
+
+/// Render an AIF JSON IR string to a target output format.
+/// Use this when you have JSON IR from `import_html`/`import_markdown`/etc.
+#[pyfunction]
+fn render(json_ir: &str, format: &str) -> PyResult<String> {
+    let doc: aif_core::ast::Document = serde_json::from_str(json_ir)
+        .map_err(|e| PyValueError::new_err(format!("Invalid JSON IR: {}", e)))?;
+    render_document(&doc, format)
 }
 
 /// Lint an AIF document (10 structural checks). Returns JSON array of lint results.
@@ -228,6 +242,7 @@ fn skillforge(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(import_skill_md, m)?)?;
     m.add_function(wrap_pyfunction!(export_skill_md, m)?)?;
     m.add_function(wrap_pyfunction!(compile, m)?)?;
+    m.add_function(wrap_pyfunction!(render, m)?)?;
     m.add_function(wrap_pyfunction!(lint, m)?)?;
     m.add_function(wrap_pyfunction!(scan, m)?)?;
     m.add_function(wrap_pyfunction!(infer, m)?)?;
