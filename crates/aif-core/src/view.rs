@@ -20,6 +20,7 @@ pub enum ViewMode {
 
 impl ViewMode {
     /// Parse a view mode from a string. Returns None for invalid input.
+    #[allow(clippy::should_implement_trait)]
     pub fn from_str(s: &str) -> Option<Self> {
         match s {
             "author" => Some(ViewMode::Author),
@@ -51,17 +52,16 @@ fn filter_llm(doc: &Document) -> Document {
 fn filter_blocks_llm(blocks: &[Block]) -> Vec<Block> {
     blocks
         .iter()
-        .filter_map(|block| filter_block_llm(block))
+        .filter_map(filter_block_llm)
         .collect()
 }
 
 fn filter_block_llm(block: &Block) -> Option<Block> {
     match &block.kind {
-        BlockKind::SkillBlock { skill_type, .. }
-            if matches!(skill_type, SkillBlockType::Example | SkillBlockType::Scenario) =>
-        {
-            None
-        }
+        BlockKind::SkillBlock {
+            skill_type: SkillBlockType::Example | SkillBlockType::Scenario,
+            ..
+        } => None,
         BlockKind::SkillBlock {
             skill_type,
             attrs,
@@ -78,7 +78,7 @@ fn filter_block_llm(block: &Block) -> Option<Block> {
                     content: content.clone(),
                     children: filtered_children,
                 },
-                span: block.span.clone(),
+                span: block.span,
             })
         }
         BlockKind::CodeBlock { lang, attrs, code } => {
@@ -96,7 +96,7 @@ fn filter_block_llm(block: &Block) -> Option<Block> {
                         attrs: attrs.clone(),
                         code: truncated,
                     },
-                    span: block.span.clone(),
+                    span: block.span,
                 })
             } else {
                 Some(block.clone())
@@ -114,14 +114,14 @@ fn filter_block_llm(block: &Block) -> Option<Block> {
                     title: title.clone(),
                     children: filtered_children,
                 },
-                span: block.span.clone(),
+                span: block.span,
             })
         }
         BlockKind::BlockQuote { content } => {
             let filtered = filter_blocks_llm(content);
             Some(Block {
                 kind: BlockKind::BlockQuote { content: filtered },
-                span: block.span.clone(),
+                span: block.span,
             })
         }
         _ => Some(block.clone()),
@@ -139,7 +139,7 @@ fn filter_api(doc: &Document) -> Document {
 fn filter_blocks_api(blocks: &[Block]) -> Vec<Block> {
     blocks
         .iter()
-        .filter_map(|block| filter_block_api(block))
+        .filter_map(filter_block_api)
         .collect()
 }
 
@@ -165,19 +165,15 @@ fn filter_block_api(block: &Block) -> Option<Block> {
                         content: content.clone(),
                         children: filtered_children,
                     },
-                    span: block.span.clone(),
+                    span: block.span,
                 })
             }
         }
         // Keep @tool, @output_contract, @precondition
-        BlockKind::SkillBlock { skill_type, .. }
-            if matches!(
-                skill_type,
-                SkillBlockType::Tool | SkillBlockType::OutputContract | SkillBlockType::Precondition
-            ) =>
-        {
-            Some(block.clone())
-        }
+        BlockKind::SkillBlock {
+            skill_type: SkillBlockType::Tool | SkillBlockType::OutputContract | SkillBlockType::Precondition,
+            ..
+        } => Some(block.clone()),
         // Drop all other skill blocks
         BlockKind::SkillBlock { .. } => None,
         // Keep sections but filter children
@@ -196,19 +192,15 @@ fn filter_block_api(block: &Block) -> Option<Block> {
                         title: title.clone(),
                         children: filtered_children,
                     },
-                    span: block.span.clone(),
+                    span: block.span,
                 })
             }
         }
         // Keep semantic blocks that define API contracts (Definition, Requirement)
-        BlockKind::SemanticBlock { block_type, .. }
-            if matches!(
-                block_type,
-                SemanticBlockType::Definition | SemanticBlockType::Requirement
-            ) =>
-        {
-            Some(block.clone())
-        }
+        BlockKind::SemanticBlock {
+            block_type: SemanticBlockType::Definition | SemanticBlockType::Requirement,
+            ..
+        } => Some(block.clone()),
         // Drop other block types in API view
         _ => None,
     }

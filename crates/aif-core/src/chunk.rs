@@ -133,15 +133,14 @@ impl ChunkGraph {
             }
             // Find links where current is the source and type is ParentContext or Dependency
             for link in &self.links {
-                if &link.source == &current
+                if link.source == current
                     && matches!(
                         link.link_type,
                         LinkType::ParentContext | LinkType::Dependency
                     )
+                    && !visited.contains(&link.target)
                 {
-                    if !visited.contains(&link.target) {
-                        stack.push(link.target.clone());
-                    }
+                    stack.push(link.target.clone());
                 }
             }
             if &current != id {

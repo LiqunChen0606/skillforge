@@ -326,7 +326,7 @@ fn read_source(input: &PathBuf) -> String {
 
 /// Recursively read all files from a directory into a HashMap<PathBuf, String>.
 /// Keys are relative paths from the directory root.
-fn read_source_directory(dir: &PathBuf) -> std::collections::HashMap<PathBuf, String> {
+fn read_source_directory(dir: &std::path::Path) -> std::collections::HashMap<PathBuf, String> {
     let mut files = std::collections::HashMap::new();
     if !dir.is_dir() {
         eprintln!("Error: {} is not a directory", dir.display());
@@ -1788,7 +1788,7 @@ fn handle_migrate(action: MigrateAction) {
                 .ok()
                 .or_else(|| aif_config.llm.api_key.clone());
 
-            let apply_fn: Box<dyn Fn(&[String], &str, Option<&str>) -> Option<String>> = if let Some(key) = api_key {
+            let apply_fn: aif_migrate::llm::ApplyFn = if let Some(key) = api_key {
                 let model = aif_config.llm.model.clone()
                     .unwrap_or_else(|| "claude-sonnet-4-5-20250514".to_string());
                 eprintln!("Using LLM for migration (model: {})", model);

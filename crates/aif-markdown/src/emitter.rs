@@ -300,12 +300,6 @@ fn skill_type_heading(st: &SkillBlockType) -> &'static str {
         SkillBlockType::Binding => "Binding",
         SkillBlockType::Generate => "Generate",
         SkillBlockType::Export => "Export",
-        SkillBlockType::ArtifactSkill => "Artifact Skill",
-        SkillBlockType::InputSchema => "Input Schema",
-        SkillBlockType::Template => "Template",
-        SkillBlockType::Binding => "Binding",
-        SkillBlockType::Generate => "Generate",
-        SkillBlockType::Export => "Export",
     }
 }
 

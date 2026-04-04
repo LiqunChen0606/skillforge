@@ -421,6 +421,7 @@ fn collect_refs_from_attrs(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn collect_block_info(
     blocks: &[Block],
     all_ids: &mut Vec<String>,

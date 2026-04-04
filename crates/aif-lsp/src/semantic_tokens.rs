@@ -30,6 +30,7 @@ pub fn legend() -> SemanticTokensLegend {
 
 /// Map a lexer token type to its semantic token type index.
 /// Returns None for tokens that don't need highlighting (brackets, punctuation).
+#[allow(dead_code)]
 pub fn token_type_index(token: &aif_parser::lexer::Token) -> Option<u32> {
     use aif_parser::lexer::Token;
     match token {

@@ -8,6 +8,7 @@ use std::collections::HashMap;
 
 /// A symbol definition: block ID → byte offset range in source.
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct SymbolLocation {
     pub id: String,
     pub start: usize,
@@ -15,6 +16,7 @@ pub struct SymbolLocation {
 }
 
 /// Collect all block IDs from a document into a lookup table.
+#[allow(dead_code)]
 pub fn collect_symbols(doc: &Document) -> HashMap<String, SymbolLocation> {
     let mut symbols = HashMap::new();
     for block in &doc.blocks {
@@ -24,6 +26,7 @@ pub fn collect_symbols(doc: &Document) -> HashMap<String, SymbolLocation> {
 }
 
 /// Extract the attrs from a block kind, if it has one.
+#[allow(dead_code)]
 fn block_attrs(kind: &BlockKind) -> Option<&Attrs> {
     match kind {
         BlockKind::Section { attrs, .. }
@@ -42,6 +45,7 @@ fn block_attrs(kind: &BlockKind) -> Option<&Attrs> {
     }
 }
 
+#[allow(dead_code)]
 fn collect_block_symbols(block: &Block, symbols: &mut HashMap<String, SymbolLocation>) {
     if let Some(attrs) = block_attrs(&block.kind) {
         if let Some(ref id) = attrs.id {

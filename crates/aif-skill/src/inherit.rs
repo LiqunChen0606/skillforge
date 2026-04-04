@@ -198,7 +198,7 @@ fn merge_skill_blocks(parent: &Block, child: &Block) -> Result<Block, InheritErr
             content: child_content.clone(),
             children: merged_children,
         },
-        span: child.span.clone(),
+        span: child.span,
     })
 }
 

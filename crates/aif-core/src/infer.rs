@@ -105,7 +105,7 @@ fn blocks_to_plain_text(blocks: &[Block]) -> String {
 }
 
 fn count_sentences(text: &str) -> usize {
-    text.matches(|c| c == '.' || c == '!' || c == '?').count().max(1)
+    text.matches(['.', '!', '?']).count().max(1)
 }
 
 // ---------------------------------------------------------------------------
@@ -310,7 +310,7 @@ pub fn annotate_semantics(doc: &mut Document, config: &InferConfig) {
 
 use crate::ast::Document;
 
-fn annotate_blocks(blocks: &mut Vec<Block>, rules: &[Box<dyn InferRule>], config: &InferConfig) {
+fn annotate_blocks(blocks: &mut [Block], rules: &[Box<dyn InferRule>], config: &InferConfig) {
     for block in blocks.iter_mut() {
         // First recurse into children
         match &mut block.kind {
@@ -335,10 +335,10 @@ fn annotate_blocks(blocks: &mut Vec<Block>, rules: &[Box<dyn InferRule>], config
         let mut best: Option<(SemanticBlockType, f64, &str)> = None;
         for rule in rules {
             if let Some((stype, conf)) = rule.try_infer(block) {
-                if conf >= config.min_confidence {
-                    if best.as_ref().map_or(true, |b| conf > b.1) {
-                        best = Some((stype, conf, rule.name()));
-                    }
+                if conf >= config.min_confidence
+                    && best.as_ref().is_none_or(|b| conf > b.1)
+                {
+                    best = Some((stype, conf, rule.name()));
                 }
             }
         }
@@ -391,6 +391,7 @@ fn extract_content(kind: &BlockKind) -> Vec<Inline> {
 // ---------------------------------------------------------------------------
 
 /// Extract plain text from a block for LLM classification.
+#[allow(dead_code)]
 fn block_text(block: &Block) -> String {
     match &block.kind {
         BlockKind::Paragraph { content } => inlines_to_text(content, TextMode::Plain),
@@ -464,6 +465,7 @@ pub fn parse_classification_response(
 
 /// Collect blocks that were not already upgraded by pattern rules.
 /// Returns (block_index, text_content) pairs for top-level blocks only.
+#[allow(dead_code)]
 fn collect_unmatched_blocks(doc: &Document) -> Vec<(usize, String)> {
     let mut unmatched = Vec::new();
     for (i, block) in doc.blocks.iter().enumerate() {
@@ -483,6 +485,7 @@ fn collect_unmatched_blocks(doc: &Document) -> Vec<(usize, String)> {
 }
 
 /// Apply LLM classifications back into the document.
+#[allow(dead_code)]
 fn apply_llm_classifications(
     doc: &mut Document,
     classifications: &[(usize, Option<SemanticBlockType>, f64)],

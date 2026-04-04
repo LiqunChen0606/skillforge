@@ -5,6 +5,9 @@
 
 use crate::apply::{build_migration_prompt, parse_migration_response};
 
+/// Closure type for the migration apply function.
+pub type ApplyFn = Box<dyn Fn(&[String], &str, Option<&str>) -> Option<String>>;
+
 /// Create a closure suitable for `MigrationEngine::run()` that calls the Anthropic API.
 ///
 /// Returns a closure with signature `Fn(&[String], &str, Option<&str>) -> Option<String>`.
@@ -12,7 +15,7 @@ use crate::apply::{build_migration_prompt, parse_migration_response};
 pub fn make_llm_apply_fn(
     api_key: String,
     model: String,
-) -> Box<dyn Fn(&[String], &str, Option<&str>) -> Option<String>> {
+) -> ApplyFn {
     Box::new(move |steps: &[String], source: &str, repair_ctx: Option<&str>| {
         let prompt = build_migration_prompt(steps, source, repair_ctx);
         let rt = tokio::runtime::Runtime::new().ok()?;
