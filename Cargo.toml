@@ -14,6 +14,7 @@ members = [
     "crates/aif-migrate",
     "crates/aif-lsp",
     "crates/aif-python",
+    "crates/aif-observe",
 ]
 
 [workspace.package]
@@ -36,5 +37,6 @@ aif-binary = { path = "crates/aif-binary", version = "0.1.0" }
 aif-pdf = { path = "crates/aif-pdf", version = "0.1.0" }
 aif-eval = { path = "crates/aif-eval", version = "0.1.0" }
 aif-migrate = { path = "crates/aif-migrate", version = "0.1.0" }
+aif-observe = { path = "crates/aif-observe", version = "0.1.0" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
