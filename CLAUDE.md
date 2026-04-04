@@ -291,7 +291,7 @@ All importers now set `_aif_source_format` ("html", "markdown", "pdf") and `_aif
 `lint_chunk_graph()` in `aif-core::lint` — 3 structural checks on chunk graphs: OrphanedChunks (isolated nodes in multi-chunk docs), MissingContinuation (sequential chunks without Continuation link), DependencyCycle (circular Dependency/ParentContext links via 3-color DFS). CLI: `aif chunk lint graph.json [--format text|json]`.
 
 ### Skill Execution Quality Benchmark
-`benchmarks/skill-execution/benchmark.py` — Measures whether LLMs follow skills better in AIF LML vs raw Markdown. 3 scenarios (SQL injection review, clean code approval, eval detection) x 4 formats. Judge LLM scores step coverage, constraint respect, output contract adherence. Results: LML Aggressive 0.97 overall vs Raw Markdown 0.87 (+10 percentage points at 5% fewer tokens). Explicit typed tags help LLMs identify instruction blocks.
+`benchmarks/skill-execution/benchmark.py` — Measures whether LLMs follow skills better in AIF LML vs raw Markdown. 21 scenarios (5 skills × 5 scenario types) × 4 formats (73 completed runs). Judge LLM scores step coverage, constraint respect, output contract adherence. Results: LML Aggressive 0.84 overall vs Raw Markdown 0.80 (+4pp); +18pp on constraint resistance (0.86 vs 0.68), +11pp on hard scenarios (0.76 vs 0.65). Typed tags help LLMs hold their ground when pressured to skip steps.
 
 ### AIF Skills & Plugins
 `examples/skills/` — 7 AIF skills including 6 claude-code plugins: code-review, security-guidance, feature-dev, frontend-design, commit-commands, claude-opus-4-5-migration. Comprehensive authoring guide with bidirectional AIF↔Markdown conversion, validation workflows, and deployment instructions for Claude Code / Codex.
@@ -318,6 +318,35 @@ All importers now set `_aif_source_format` ("html", "markdown", "pdf") and `_aif
 
 ### crates.io Publishing Prep
 All 11 crates have description, dual license (`Apache-2.0 OR MIT`), repository, homepage, keywords, categories. Inter-crate deps include `version = "0.1.0"`. `aif-eval` and `aif-migrate` marked `publish = false` (heavy async deps).
+
+## Phase 10 Features (Impact Tier)
+
+### Python Bindings (PyO3)
+`crates/aif-python/` — PyO3 cdylib exposing 7 functions: `parse`, `compile`, `lint`, `infer`, `import_markdown`, `import_html`, `clean_html`. Build with `maturin develop`. All functions tested. `pyproject.toml` at root for `pip install skillforge`.
+
+### Ed25519 Skill Signing
+`crates/aif-skill/src/sign.rs` — `generate_keypair()` (Ed25519, base64-encoded), `sign_skill(block, private_key)` → signature, `verify_skill(block, signature, public_key)` → bool. Tamper detection: modified skills fail verification. CLI: `aif skill keygen`, `aif skill sign --key`, `aif skill verify-signature --signature --pubkey`. 4 tests: roundtrip, tamper, wrong key, key gen.
+
+### Adversarial Constraint Resistance Benchmark
+`benchmarks/adversarial/` — 15 scenarios across 3 adversarial categories: skip_pressure (user rushes), constraint_override (user contradicts @red_flag), social_engineering (authority/urgency). Tests whether typed blocks help LLMs resist pressure to skip steps. Benchmark runner, analysis module, detailed README.
+
+### Claude Code SkillForge Plugin
+`plugins/skillforge/` — 4 slash commands: `/lint-skill` (7-point structural lint), `/convert-skill` (bidirectional AIF↔MD), `/sign-skill` (Ed25519 signing), `/verify-skill` (hash + signature verification). Plugin manifest + README.
+
+### VS Code Extension
+`editors/vscode/` — TextMate grammar for `.aif` files (block keywords, metadata, inline formatting, code blocks, tables), language configuration with `@block...@end` folding markers, LSP client connecting to `aif-lsp` server. Extension manifest, TypeScript source, README.
+
+### Real-World Case Study
+`case-studies/superpowers-skills/` — 3 production Claude Code skills (systematic-debugging, test-driven-development, writing-plans) converted from Markdown to AIF. Analysis: 25% fewer tokens, 52 typed blocks (vs 0 in Markdown), all pass 7-point lint. README with reproduction instructions.
+
+### Benchmark Format Arms
+Skill execution benchmark expanded from 4 to 6 formats: added AIF Source syntax (raw `.aif` with `@end` closing tags) and LML Standard (`[STEP]...[/STEP]`). Tests whether closing-tag styles affect LLM compliance differently from LML Aggressive.
+
+### Multi-Run Variance Analysis
+`benchmarks/skill-execution/multi_run.py` — Runs each scenario×format N times (default 5), computes mean, stddev, 95% confidence interval (t-distribution), pairwise significance via non-overlapping CIs. `--analyze` mode for saved results.
+
+### Formal Security Analysis
+`security/analysis.md` — Threat model (registry tampering, supply chain, silent modification), 3 attack scenarios with/without signing, comparison to GPG/TLS alternatives, limitations (no revocation, no rollback protection, single signer), recommendations for skill authors and consumers.
 
 ## Known Limitations
 

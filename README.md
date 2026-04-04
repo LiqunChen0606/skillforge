@@ -22,16 +22,16 @@ LLMs treat all text as flat content. When you send raw Markdown or HTML, the mod
 
 ## The Evidence
 
-We benchmarked the same skill, same task, same model across 4 formats:
+We benchmarked 5 skills × 21 scenarios × 4 formats (73 runs, claude-sonnet-4-6):
 
-| Format | Tokens | LLM Compliance |
-|--------|--------|----------------|
-| **AIF LML Aggressive** | **1,012** | **0.97** |
-| JSON IR | 4,732 | 0.95 |
-| HTML | 1,485 | 0.91 |
-| Raw Markdown | 1,067 | **0.87** |
+| Format | Tokens | LLM Compliance | Hard Scenarios |
+|--------|--------|----------------|----------------|
+| **AIF LML Aggressive** | **869** | **0.84** | **0.76** |
+| JSON IR | 3,838 | 0.81 | 0.70 |
+| HTML | 1,217 | 0.81 | 0.71 |
+| Raw Markdown | 908 | 0.80 | **0.65** |
 
-**+10 percentage points** over raw Markdown at 5% fewer tokens. Explicit typed tags (`@step:`, `@verify:`, `@red_flag:`) help the LLM identify and follow each instruction block. See [full benchmark](benchmarks/skill-execution/).
+The overall gap is **+4pp** — but the advantage concentrates where it matters most. On **constraint resistance** scenarios (user pressures model to skip steps), LML scores **0.86 vs 0.68** for Markdown (+18pp). On **hard scenarios** overall, +11pp. On easy/standard scenarios, all formats perform equally (~0.95). Explicit typed tags (`@step:`, `@verify:`, `@red_flag:`) help LLMs hold their ground when pressured. See [full benchmark](benchmarks/skill-execution/).
 
 ---
 
@@ -122,7 +122,7 @@ aif lint doc.aif
   @end
 
   @evidence[id=e1]
-    Benchmark: 0.97 compliance (LML) vs 0.87 (raw Markdown), same model.
+    Benchmark: 0.84 compliance (LML) vs 0.80 (raw Markdown), +18pp on constraint resistance.
   @end
 
   @definition[id=d1]
@@ -183,7 +183,7 @@ Import sources           Semantic IR              Output formats
 
 | Benchmark | Key Finding |
 |-----------|-------------|
-| [Skill execution](benchmarks/skill-execution/) | LML 0.97 vs Markdown 0.87 compliance (+10pp, same model) |
+| [Skill execution](benchmarks/skill-execution/) | LML 0.84 vs Markdown 0.80 overall (+4pp); +18pp on constraint resistance, +11pp on hard scenarios |
 | [Document tokens](benchmarks/document-tokens/) | LML Aggressive: full semantic types at 22% fewer tokens than Markdown |
 | [Skill tokens](benchmarks/skill-tokens/) | 100% semantic compliance, TNO 1.05 for Markdown roundtrip |
 | [Chunking quality](benchmarks/chunking/) | 4 strategies: self-containment, size variance, budget compliance |
@@ -204,14 +204,29 @@ examples/
 
 ## Roadmap
 
-All planned features for v0.1.0 are complete:
+### Done (v0.1.0)
 
+- [x] 12 Rust crates — parser, compilers (HTML, MD, LML×5, JSON, binary×2, PDF), skill toolkit, eval, migration
 - [x] Multi-view compilation — `aif compile --view author|llm|api`
-- [x] Undefined terms lint — detect terms in claims not defined in `@definition` blocks
+- [x] Undefined terms lint + 10 document-level checks + evidence linkage
 - [x] Skill inheritance — `@skill[extends="base-debugging"]`
-- [x] Citation precision benchmark — chunked retrieval accuracy
-- [x] LSP server — syntax highlighting, diagnostics, semantic tokens
-- [x] crates.io publish prep — all 12 crates with metadata
+- [x] Ed25519 skill signing — `aif skill keygen`, `sign`, `verify-signature`
+- [x] Python bindings — `pip install skillforge` (7 functions via PyO3)
+- [x] Semantic inference — 8 pattern rules + LLM-assisted classification
+- [x] 6 benchmark suites — document tokens, skill tokens, skill execution, adversarial, chunking, roundtrip
+- [x] VS Code extension — TextMate grammar, LSP client, folding
+- [x] Claude Code plugin — `/lint-skill`, `/convert-skill`, `/sign-skill`, `/verify-skill`
+- [x] Case study — 3 superpowers skills converted (25% fewer tokens, 52 typed blocks)
+- [x] Security analysis — threat model, attack scenarios, signing comparison
+
+### Next
+
+- [ ] Run adversarial benchmark + multi-run variance analysis (requires API credits)
+- [ ] PyPI publish — `pip install skillforge` from the registry
+- [ ] crates.io publish — `cargo install skillforge`
+- [ ] VS Code marketplace publish
+- [ ] Key revocation + timestamping for skill signatures
+- [ ] Multi-sig threshold signing for production skill registries
 
 ## Citation
 
@@ -223,8 +238,8 @@ If you find SkillForge useful in your research or workflows, please cite:
   title        = {{SkillForge}: Typed Semantic Documents for {LLMs}},
   year         = {2026},
   url          = {https://github.com/LiqunChen0606/skillforge},
-  note         = {Typed semantic blocks improve LLM compliance by 10 percentage points
-                  vs raw Markdown (0.97 vs 0.87). 12 output formats with full roundtrip.
+  note         = {Typed semantic blocks improve LLM constraint resistance by 18 percentage points
+                  vs raw Markdown (0.86 vs 0.68). 12 output formats with full roundtrip.
                   Built on the AIF (AI-native Interchange Format).}
 }
 ```
@@ -235,7 +250,7 @@ This project was built almost entirely through AI-assisted development using [**
 
 [![Download on the App Store](https://img.shields.io/badge/Download-App_Store-black?style=for-the-badge&logo=apple&logoColor=white)](https://apps.apple.com/app/claw-ssh-ai-terminal/id6740686929)
 
-From initial design through 9 implementation phases, 120+ commits, 12 Rust crates, 6 benchmark suites, and 220+ tests — all authored, reviewed, and shipped from an iPhone via ClawTerminal's AI agent integration.
+From initial design through 10 implementation phases, 140+ commits, 13 Rust crates, 7 benchmark suites, and 590+ tests — all authored, reviewed, and shipped from an iPhone via ClawTerminal's AI agent integration.
 
 ## License
 
