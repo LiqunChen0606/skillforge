@@ -1,0 +1,18 @@
+[package]
+name = "skillforge"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "skillforge"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.22", features = ["extension-module"] }
+aif-core = { path = "../aif-core" }
+aif-parser = { path = "../aif-parser" }
+aif-html = { path = "../aif-html" }
+aif-markdown = { path = "../aif-markdown" }
+aif-lml = { path = "../aif-lml" }
+aif-skill = { path = "../aif-skill" }
+serde_json = "1"

@@ -1,0 +1,19 @@
+[build-system]
+requires = ["maturin>=1.0,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "skillforge"
+version = "0.1.0"
+description = "Semantic document compiler & AI skill toolkit for LLMs"
+requires-python = ">=3.9"
+license = "Apache-2.0 OR MIT"
+keywords = ["llm", "semantic", "document", "skill", "token-efficient"]
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+]
+
+[tool.maturin]
+manifest-path = "crates/aif-python/Cargo.toml"
+features = ["pyo3/extension-module"]
