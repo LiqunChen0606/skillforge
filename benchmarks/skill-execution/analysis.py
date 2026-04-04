@@ -132,6 +132,37 @@ def compute_pairwise_wins(results: dict) -> dict:
     return {"wins": wins, "ties": ties, "total_scenarios": len(by_scenario)}
 
 
+def compute_type_breakdown(results: dict) -> dict:
+    """Break down results by scenario type (standard, constraint_resistance, etc.)."""
+    scenarios = results["scenarios"]
+    by_type = {}
+    for s in scenarios:
+        stype = s.get("scenario_type", "standard")
+        if stype not in by_type:
+            by_type[stype] = {}
+        key = s["format_key"]
+        if key not in by_type[stype]:
+            by_type[stype][key] = {"label": s["format"], "results": []}
+        by_type[stype][key]["results"].append(s)
+
+    breakdown = {}
+    for stype, formats in by_type.items():
+        breakdown[stype] = []
+        for key, data in formats.items():
+            rs = data["results"]
+            n = len(rs)
+            breakdown[stype].append({
+                "format": data["label"],
+                "avg_overall": sum(r["overall"] for r in rs) / n,
+                "avg_step_coverage": sum(r["step_coverage"] for r in rs) / n,
+                "avg_constraint_respect": sum(r["constraint_respect"] for r in rs) / n,
+                "avg_output_contract": sum(r["output_contract_met"] for r in rs) / n,
+                "count": n,
+            })
+        breakdown[stype].sort(key=lambda x: -x["avg_overall"])
+    return breakdown
+
+
 def compute_token_efficiency(results: dict) -> list[dict]:
     """Compute compliance-per-token ratio for each format."""
     summaries = compute_format_summary(results)
@@ -197,8 +228,29 @@ def print_full_report(results: dict):
         for f in formats:
             print(f"    {f['format']:20s}  overall={f['avg_overall']:.2f}  (n={f['count']})")
 
-    # 5. Pairwise Wins
-    print("\n5. PAIRWISE WINS (which format scored highest per scenario)")
+    # 5. Scenario Type Breakdown
+    print("\n5. SCENARIO TYPE BREAKDOWN")
+    print("-" * 80)
+    by_type = compute_type_breakdown(results)
+    type_labels = {
+        "standard": "Standard (find the bug / apply the skill)",
+        "constraint_resistance": "Constraint Resistance (user pressures to skip steps)",
+        "multi_step": "Multi-Step (ordered workflow compliance)",
+        "conflicting_instructions": "Conflicting Instructions (user contradicts skill)",
+        "edge_case": "Edge Cases (unusual inputs, safe code, out-of-scope)",
+    }
+    for stype, formats in sorted(by_type.items()):
+        label = type_labels.get(stype, stype)
+        print(f"\n  [{label}]")
+        for f in formats:
+            print(f"    {f['format']:20s}  overall={f['avg_overall']:.2f}  "
+                  f"steps={f['avg_step_coverage']:.2f}  "
+                  f"constr={f['avg_constraint_respect']:.2f}  "
+                  f"contract={f['avg_output_contract']:.2f}  "
+                  f"(n={f['count']})")
+
+    # 6. Pairwise Wins
+    print("\n6. PAIRWISE WINS (which format scored highest per scenario)")
     print("-" * 80)
     pw = compute_pairwise_wins(results)
     for fmt, count in sorted(pw["wins"].items(), key=lambda x: -x[1]):
@@ -206,8 +258,8 @@ def print_full_report(results: dict):
     print(f"  {'(ties)':20s}  {pw['ties']}")
     print(f"  Total scenarios: {pw['total_scenarios']}")
 
-    # 6. Key Finding
-    print("\n6. KEY FINDINGS")
+    # 7. Key Finding
+    print("\n7. KEY FINDINGS")
     print("-" * 80)
     best = summaries[0]
     worst = summaries[-1]

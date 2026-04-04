@@ -2,6 +2,9 @@
 name = "skillforge"
 version = "0.1.0"
 edition = "2021"
+description = "SkillForge Python bindings — lint, hash, sign, compile your Agent Skills"
+license = "Apache-2.0 OR MIT"
+publish = false
 
 [lib]
 name = "skillforge"

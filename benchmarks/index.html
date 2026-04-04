@@ -228,18 +228,18 @@
 <!-- Skill Execution Quality -->
 <h2>Skill Execution Quality: Does the LLM Actually Follow Better?</h2>
 <div class="card">
-  <p>3 test scenarios &times; 4 formats. An executor LLM follows each skill, a judge LLM scores compliance.</p>
+  <p>21 scenarios &times; 4 formats (73 completed runs, claude-sonnet-4-6). An executor LLM follows each skill, a judge LLM scores compliance.</p>
   <table>
-    <thead><tr><th style="text-align:left">Format</th><th>Tokens</th><th>Step Coverage</th><th>Constraints</th><th>Output Contract</th><th>Overall</th></tr></thead>
+    <thead><tr><th style="text-align:left">Format</th><th>Tokens</th><th>Step Coverage</th><th>Constraints</th><th>Output Contract</th><th>Overall</th><th>Hard</th></tr></thead>
     <tbody>
-      <tr style="background:#e8f5e9"><td style="text-align:left"><strong>LML Aggressive</strong></td><td><strong>1,012</strong></td><td><strong>1.00</strong></td><td><strong>0.95</strong></td><td><strong>0.97</strong></td><td><strong>0.97</strong></td></tr>
-      <tr><td style="text-align:left">JSON IR</td><td>4,732</td><td>1.00</td><td>0.92</td><td>0.97</td><td>0.95</td></tr>
-      <tr><td style="text-align:left">HTML</td><td>1,485</td><td>0.95</td><td>0.88</td><td>0.93</td><td>0.91</td></tr>
-      <tr><td style="text-align:left">Raw Markdown</td><td>1,067</td><td>0.97</td><td>0.85</td><td>0.87</td><td>0.87</td></tr>
+      <tr style="background:#e8f5e9"><td style="text-align:left"><strong>LML Aggressive</strong></td><td><strong>869</strong></td><td><strong>0.86</strong></td><td><strong>0.85</strong></td><td><strong>0.84</strong></td><td><strong>0.84</strong></td><td><strong>0.76</strong></td></tr>
+      <tr><td style="text-align:left">JSON IR</td><td>3,838</td><td>0.85</td><td>0.79</td><td>0.80</td><td>0.81</td><td>0.70</td></tr>
+      <tr><td style="text-align:left">HTML</td><td>1,217</td><td>0.83</td><td>0.80</td><td>0.80</td><td>0.81</td><td>0.71</td></tr>
+      <tr><td style="text-align:left">Raw Markdown</td><td>908</td><td>0.82</td><td>0.82</td><td>0.80</td><td>0.80</td><td>0.65</td></tr>
     </tbody>
   </table>
   <div class="note">
-    <strong>Key finding:</strong> LML Aggressive scores <strong>10 percentage points higher</strong> than raw Markdown (0.97 vs 0.87) at 5% fewer tokens. The explicit typed tags (<code>@step:</code>, <code>@verify:</code>, <code>@red_flag:</code>) help the LLM identify and follow each instruction block &mdash; especially for constraint respect and output contract adherence.
+    <strong>Key finding:</strong> LML Aggressive scores <strong>+4pp overall</strong> (0.84 vs 0.80) with the advantage concentrating on <strong>constraint resistance (+18pp: 0.86 vs 0.68)</strong> and <strong>hard scenarios (+11pp: 0.76 vs 0.65)</strong>. On easy/standard scenarios, all formats perform equally (~0.95). Typed tags (<code>@step:</code>, <code>@verify:</code>, <code>@red_flag:</code>) help LLMs hold their ground when pressured to skip steps.
   </div>
 </div>
 

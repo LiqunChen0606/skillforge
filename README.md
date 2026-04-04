@@ -187,16 +187,17 @@ bash scripts/demo.sh
 ## Project Structure
 
 ```
-crates/          # 13 Rust crates
+crates/          # 13 Rust crates — the product
 examples/
-├── skills/      # 8 AI agent skills with authoring guide
-├── documents/   # General AIF documents
-├── migrations/  # 3 migration skills (Next.js, ESLint, TypeScript)
-└── rich-content/# Tables, SVG, audio/video metadata
-benchmarks/      # 7 suites: execution, adversarial, tokens, chunking, roundtrip
-plugins/         # Claude Code plugin (/lint-skill, /convert-skill, /sign-skill)
-editors/         # VS Code extension (syntax highlighting, LSP)
-artifacts/       # Generators: Excel workbooks, Mermaid diagrams from skills
+├── skills/      # 10 AI skills + authoring guide
+├── documents/   # Format conversion demos
+├── migrations/  # 3 migration skills + reports
+├── rich-content/# Tables, SVG, media metadata
+└── case-studies/# Superpowers skills converted to AIF
+benchmarks/      # 7 suites + consolidated RESULTS.md
+plugins/         # Claude Code plugin (/lint-skill, /sign-skill)
+editors/         # VS Code extension (LSP, syntax highlighting)
+scripts/         # demo.sh, workbook/diagram generators
 ```
 
 ## Roadmap
