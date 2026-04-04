@@ -8,6 +8,7 @@
 ![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Linux%20%7C%20Windows-blue)
 ![Agent Skills](https://img.shields.io/badge/Compatible-agentskills.io-blueviolet)
 ![License](https://img.shields.io/badge/License-Apache--2.0%20%7C%20MIT-lightgrey)
+[![PyPI](https://img.shields.io/pypi/v/aif-skillforge?label=PyPI&color=blue)](https://pypi.org/project/aif-skillforge/)
 
 ---
 
@@ -51,7 +52,7 @@ aif skill bump my-skill.aif
 aif skill export my-skill.aif -o SKILL.md
 ```
 
-Or use Python:
+Or use Python — [`pip install aif-skillforge`](https://pypi.org/project/aif-skillforge/):
 
 ```python
 import skillforge
