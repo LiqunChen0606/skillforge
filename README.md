@@ -152,6 +152,26 @@ Pipeline: validate skill → chunk source files → apply per-chunk (LLM) → ve
 
 ---
 
+## Artifact Skills
+
+Generate structured business artifacts — spreadsheets, diagrams, reports — from typed inputs:
+
+```bash
+# Generate Excel workbook from benchmark results
+pip install openpyxl
+python artifacts/benchmark-workbook/generate.py
+
+# Generate Mermaid flowchart from any AIF skill
+python artifacts/skill-diagram/generate.py examples/skills/code_review.aif
+
+# Generate SVG (requires mermaid-cli)
+python artifacts/skill-diagram/generate.py examples/skills/code_review.aif --format svg
+```
+
+Define artifact skills in AIF with `@artifact_skill`, `@input_schema`, `@template`, `@binding`, `@generate`, `@verify`, `@export` blocks. See [artifacts/](artifacts/) for examples and the artifact skill pattern.
+
+---
+
 ## Architecture
 
 ```
@@ -162,7 +182,7 @@ Import sources           Semantic IR              Output formats
                           View filtering
 ```
 
-12 Rust crates:
+13 Rust crates:
 
 | Crate | Purpose |
 |-------|---------|
@@ -198,8 +218,15 @@ Open [benchmarks/index.html](benchmarks/index.html) for the visual dashboard.
 examples/
 ├── documents/       # General documents and format conversions
 ├── skills/          # AI agent skills + Claude Code plugins (with authoring guide)
-├── migrations/      # Codebase migration skills + reports
+├── migrations/      # Codebase migration skills + reports (with detailed guide)
 └── rich-content/    # Tables, SVG figures, audio/video metadata, cross-references
+
+artifacts/
+├── benchmark-workbook/  # Excel workbook generator from benchmark JSON
+└── skill-diagram/       # Mermaid flowchart generator from AIF skills
+
+case-studies/
+└── superpowers-skills/  # 3 production skills converted (25% fewer tokens, 52 typed blocks)
 ```
 
 ## Roadmap
