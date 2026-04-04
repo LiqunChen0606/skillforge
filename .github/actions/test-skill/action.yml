@@ -1,0 +1,80 @@
+name: 'Test Skill'
+description: 'Run SkillForge CI tests on an AIF skill file — lint, scenarios, regression detection, JUnit output'
+inputs:
+  skill-file:
+    description: 'Path to the .aif skill file'
+    required: true
+  format:
+    description: 'Output format: text, json, or junit'
+    required: false
+    default: 'junit'
+  baseline:
+    description: 'Path to baseline file for regression detection'
+    required: false
+    default: ''
+  save-baseline:
+    description: 'Path to save current results as new baseline'
+    required: false
+    default: ''
+  anthropic-api-key:
+    description: 'Anthropic API key for scenario evaluation (optional — lint runs without it)'
+    required: false
+    default: ''
+outputs:
+  exit-code:
+    description: '0=pass, 1=failures, 2=regressions'
+  result-file:
+    description: 'Path to the generated result file'
+runs:
+  using: 'composite'
+  steps:
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Cache cargo build
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-test-skill-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Build aif CLI
+      shell: bash
+      run: cargo build --release -p aif-cli
+
+    - name: Run skill test
+      shell: bash
+      env:
+        AIF_LLM_API_KEY: ${{ inputs.anthropic-api-key }}
+        AIF_LLM_PROVIDER: anthropic
+      run: |
+        set +e
+        ARGS="--format ${{ inputs.format }}"
+
+        if [ -n "${{ inputs.baseline }}" ]; then
+          ARGS="$ARGS --baseline ${{ inputs.baseline }}"
+        fi
+
+        if [ -n "${{ inputs.save-baseline }}" ]; then
+          ARGS="$ARGS --save-baseline ${{ inputs.save-baseline }}"
+        fi
+
+        RESULT_FILE="${{ runner.temp }}/skill-test-results.${{ inputs.format == 'junit' && 'xml' || inputs.format == 'json' && 'json' || 'txt' }}"
+        ARGS="$ARGS -o $RESULT_FILE"
+
+        ./target/release/aif skill test ${{ inputs.skill-file }} $ARGS
+        EXIT_CODE=$?
+
+        echo "exit-code=$EXIT_CODE" >> $GITHUB_OUTPUT
+        echo "result-file=$RESULT_FILE" >> $GITHUB_OUTPUT
+
+        exit $EXIT_CODE
+
+    - name: Upload JUnit results
+      if: always() && inputs.format == 'junit'
+      uses: mikepenz/action-junit-report@v4
+      with:
+        report_paths: ${{ runner.temp }}/skill-test-results.xml
+        check_name: 'Skill Test Results'
