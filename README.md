@@ -85,10 +85,19 @@ import skillforge
 # Lint a skill
 results = skillforge.lint(open("skill.aif").read())
 
+# Security scan (OWASP AST10)
+findings = skillforge.scan(open("skill.aif").read())
+
+# Ed25519 signing
+priv, pub = skillforge.generate_keypair()
+sig = skillforge.sign_skill(open("skill.aif").read(), priv)
+
 # Convert between formats
 ir = skillforge.import_markdown(open("SKILL.md").read())
 html = skillforge.compile(open("skill.aif").read(), "html")
 ```
+
+See [`tutorial/skillforge_tutorial.ipynb`](tutorial/skillforge_tutorial.ipynb) for a full walkthrough of all 14 functions.
 
 ## What SkillForge Checks
 
