@@ -4,28 +4,32 @@ Does the format you present a skill in actually affect how well the LLM follows 
 
 ## TL;DR
 
-**LML Aggressive scores 10 percentage points higher than raw Markdown** (0.97 vs 0.87 overall compliance) at 5% fewer tokens. The explicit typed tags (`@step:`, `@verify:`, `@red_flag:`) help the LLM identify and follow each instruction block — especially for constraint respect and output contract adherence.
+**LML Aggressive scores +4pp overall** (0.84 vs 0.80) — but the advantage concentrates on hard scenarios (+11pp) and constraint resistance (+18pp). On easy/standard scenarios, all formats perform equally. 73 runs across 5 skills × 19 scenarios × 4 formats (claude-sonnet-4-6).
 
-| Format | Tokens | Steps | Constraints | Contract | **Overall** |
-|--------|--------|-------|-------------|----------|-------------|
-| **LML Aggressive** | **1,012** | **1.00** | **0.95** | **0.97** | **0.97** |
-| JSON IR | 4,732 | 1.00 | 0.92 | 0.97 | 0.95 |
-| HTML | 1,485 | 0.95 | 0.88 | 0.93 | 0.91 |
-| Raw Markdown | 1,067 | 0.97 | 0.85 | 0.87 | 0.87 |
+| Format | Tokens | Steps | Constraints | Contract | **Overall** | **Hard** |
+|--------|--------|-------|-------------|----------|-------------|----------|
+| **LML Aggressive** | **869** | **0.86** | **0.85** | **0.84** | **0.84** | **0.76** |
+| AIF Source | ~900 | TBD | TBD | TBD | TBD | TBD |
+| LML Standard | ~950 | TBD | TBD | TBD | TBD | TBD |
+| JSON IR | 3,838 | 0.85 | 0.79 | 0.80 | 0.81 | 0.70 |
+| HTML | 1,217 | 0.83 | 0.80 | 0.80 | 0.81 | 0.71 |
+| Raw Markdown | 908 | 0.82 | 0.82 | 0.80 | 0.80 | **0.65** |
+
+**Constraint resistance** (user pressures model to skip steps): LML 0.86 vs Markdown 0.68 (+18pp).
 
 ## How It Works
 
 ```
 ┌─────────────┐     ┌──────────────┐     ┌──────────────┐
 │ Skill (.aif) │────→│  Compile to  │────→│   Executor   │
-│              │     │  4 formats   │     │  (Sonnet)    │
+│              │     │  6 formats   │     │  (Sonnet)    │
 └─────────────┘     │ - Raw MD     │     │              │
-                    │ - LML Aggr.  │     │ "Follow this │
-┌─────────────┐     │ - HTML       │     │  skill on    │
-│  Scenario   │────→│ - JSON IR    │     │  this task"  │
-│  (prompt)   │     └──────────────┘     └──────┬───────┘
-└─────────────┘                                 │
-                                                ▼
+                    │ - AIF Source │     │ "Follow this │
+┌─────────────┐     │ - LML Aggr.  │     │  skill on    │
+│  Scenario   │────→│ - LML Std.   │     │  this task"  │
+│  (prompt)   │     │ - HTML       │     └──────┬───────┘
+└─────────────┘     │ - JSON IR    │            │
+                    └──────────────┘            ▼
                     ┌──────────────┐     ┌──────────────┐
                     │    Scores    │←────│    Judge     │
                     │  per format  │     │  (Sonnet)    │
@@ -40,7 +44,7 @@ Does the format you present a skill in actually affect how well the LLM follows 
 
 ### The Protocol
 
-1. **Compile** the same skill to each format (Markdown, LML, HTML, JSON)
+1. **Compile** the same skill to each format (Markdown, AIF Source, LML Aggressive, LML Standard, HTML, JSON)
 2. **Execute**: Give the executor LLM the skill as a system prompt + a test scenario as user input
 3. **Judge**: A separate judge LLM scores the executor's response against expected behaviors
 4. **Compare**: Same skill, same scenario, same models — only the format changes
@@ -63,20 +67,17 @@ Does the format you present a skill in actually affect how well the LLM follows 
 
 ## Scenarios
 
-### Code Review Skill (3 scenarios)
+21 scenarios across 5 skills and 5 scenario types:
 
-| Scenario | Difficulty | What it tests |
-|----------|-----------|---------------|
-| SQL Injection Bug | Easy | Can the model find an obvious security flaw? |
-| Clean Code (Should Approve) | Hard | Does the model avoid over-flagging good code? |
-| Race Condition in Counter | Medium | Can the model identify a concurrency bug? |
+| Type | Count | What it tests |
+|------|-------|---------------|
+| Standard | 8 | Traditional skill application |
+| Constraint resistance | 3 | User pressures model to skip steps |
+| Multi-step | 3 | Ordered workflow compliance |
+| Conflicting instructions | 3 | User prompt contradicts skill |
+| Edge cases | 4 | Unusual inputs (empty, safe, out-of-scope) |
 
-### Security Guidance Skill (2 scenarios)
-
-| Scenario | Difficulty | What it tests |
-|----------|-----------|---------------|
-| eval() in User Input | Easy | Classic eval injection detection |
-| Shell Injection via Template | Medium | Subtler shell=True vulnerability |
+Skills: code-review, security-guidance, debugging, commit-commands, feature-dev, frontend-design.
 
 ## Key Finding: Format Matters Most on Hard Scenarios
 
@@ -93,18 +94,31 @@ On easy scenarios (SQL injection, eval detection), all formats score ~1.0 — th
 
 **Why LML wins here:** The `@red_flag` block explicitly says "don't bikeshed on style while missing logic." In LML Aggressive, this appears as `@red_flag:` — a visually distinct tag the LLM can latch onto. In raw Markdown, it's buried in prose.
 
+## New Format Arms: AIF Source and LML Standard
+
+Two additional formats were added to test whether closing-tag styles affect LLM compliance:
+
+| Format | Tag Style | Example | Hypothesis |
+|--------|-----------|---------|------------|
+| **AIF Source** | `@block...@end` | `@step[order=1]\n  ...\n@end` | Explicit `@end` closing tags may help LLMs track block boundaries better than LML Aggressive's implicit line-based blocks |
+| **LML Standard** | `[STEP]...[/STEP]` | `[STEP order=1]\n...\n[/STEP]` | XML-like paired tags are familiar from HTML/XML training data and may improve structure recognition |
+
+**AIF Source** reads the raw `.aif` file directly (no compilation). **LML Standard** uses `aif compile --format lml` which produces `[STEP]...[/STEP]` style tags with full semantic markup.
+
+These complement the existing formats to cover the full spectrum of delimiter styles: no delimiters (Markdown), prefix-only (`@step:` in LML Aggressive), paired tags (`[STEP]...[/STEP]` in LML Standard), explicit close (`@end` in AIF Source), and structural markup (HTML, JSON).
+
 ## Token Efficiency
 
 LML Aggressive doesn't just score higher — it uses fewer tokens:
 
 | Format | Tokens | Overall | Compliance per 1K tokens |
 |--------|--------|---------|--------------------------|
-| **LML Aggressive** | **1,012** | **0.97** | **0.959** |
-| Raw Markdown | 1,067 | 0.87 | 0.815 |
-| HTML | 1,485 | 0.91 | 0.613 |
-| JSON IR | 4,732 | 0.95 | 0.201 |
+| **LML Aggressive** | **869** | **0.84** | **0.972** |
+| Raw Markdown | 908 | 0.80 | 0.883 |
+| HTML | 1,217 | 0.81 | 0.662 |
+| JSON IR | 3,838 | 0.81 | 0.211 |
 
-JSON IR achieves high compliance (0.95) but at 4.7x the token cost — terrible efficiency. LML Aggressive delivers the best compliance-per-token ratio by a wide margin.
+JSON IR achieves comparable compliance but at 4.4x the token cost — terrible efficiency. LML Aggressive delivers the best compliance-per-token ratio.
 
 ## Running the Benchmark
 
@@ -124,7 +138,7 @@ pip install anthropic
 ### Run
 
 ```bash
-# Full benchmark (5 scenarios × 4 formats = 20 LLM calls)
+# Full benchmark (21 scenarios × 6 formats = 126 LLM calls)
 python benchmarks/skill-execution/benchmark.py
 
 # Analyze existing results (no API calls)
@@ -176,7 +190,7 @@ benchmarks/skill-execution/
 **Scenario design:** Easy scenarios establish a baseline (all formats should score ~1.0). Hard scenarios reveal format-dependent behavior. If a format scores poorly on easy scenarios, there's a compilation or prompt assembly bug — not a format quality issue.
 
 **Limitations:**
-- 5 scenarios is a small sample — add more for higher confidence
+- 19 scenarios completed (2 remaining due to API credit exhaustion) — larger sample than initial 3-scenario pilot
 - Same judge model for all formats — could introduce systematic bias
 - Single executor run per format×scenario — no variance estimate
 - Scores are relative to the judge's interpretation of "expected" behavior

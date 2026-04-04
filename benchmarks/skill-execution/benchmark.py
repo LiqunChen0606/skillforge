@@ -46,7 +46,9 @@ AIF_CLI = PROJECT_ROOT / "target" / "release" / "aif-cli"
 
 FORMATS = [
     ("raw_md", "Raw Markdown", "export"),
+    ("aif_source", "AIF Source", "aif-source"),
     ("lml_aggressive", "LML Aggressive", "lml-aggressive"),
+    ("lml_standard", "LML Standard", "lml"),
     ("html", "HTML", "html"),
     ("json_ir", "JSON IR", "json"),
 ]
@@ -56,6 +58,13 @@ FORMATS = [
 
 def compile_skill(skill_path: str, fmt: str) -> str:
     """Compile an AIF skill to a target format."""
+    if fmt == "aif-source":
+        # AIF source syntax — read the .aif file directly
+        try:
+            with open(skill_path) as f:
+                return f.read()
+        except Exception as e:
+            return f"[read failed: {e}]"
     if fmt == "export":
         result = subprocess.run(
             [str(AIF_CLI), "skill", "export", skill_path],
@@ -199,6 +208,7 @@ def main():
                 "scenario": scenario["name"],
                 "category": scenario["category"],
                 "difficulty": scenario["difficulty"],
+                "scenario_type": scenario.get("scenario_type", "standard"),
                 "format": fmt_label,
                 "format_key": fmt_key,
                 "skill_tokens": skill_tokens,
