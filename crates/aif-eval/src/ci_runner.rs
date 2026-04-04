@@ -85,6 +85,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use aif_core::span::Span;
     use aif_skill::eval::ScenarioType;
 
     const S: Span = Span { start: 0, end: 0 };

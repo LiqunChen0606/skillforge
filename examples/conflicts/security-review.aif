@@ -1,0 +1,32 @@
+#title: Security Review Checklist
+#author: SkillForge Examples
+
+@skill[name="security-review", version="1.0"]
+  @precondition
+    Changes touching authentication, authorization, or data handling require security review.
+  @end
+
+  @step[order=1]
+    Scan all dependencies for known vulnerabilities using automated tools.
+  @end
+
+  @step[order=2]
+    Review input validation and sanitization for all user-facing endpoints.
+  @end
+
+  @step[order=3]
+    Verify that sensitive data is encrypted at rest and in transit.
+  @end
+
+  @red_flag
+    Hardcoded secrets or credentials in source code are a critical security violation.
+  @end
+
+  @verify
+    No critical or high-severity vulnerabilities should remain unaddressed.
+  @end
+
+  @output_contract
+    Security-reviewed code with all findings documented and critical issues resolved.
+  @end
+@end

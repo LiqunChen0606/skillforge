@@ -1,0 +1,32 @@
+#title: Rapid Prototyping Workflow
+#author: SkillForge Examples
+
+@skill[name="rapid-prototype", version="1.0"]
+  @precondition
+    The goal is to validate ideas quickly with minimal overhead.
+  @end
+
+  @step[order=1]
+    Don't write tests during initial code prototyping phase. Focus on speed.
+  @end
+
+  @step[order=2]
+    Write implementation code first, then iterate based on feedback.
+  @end
+
+  @step[order=3]
+    Skip code review for prototype branches to avoid slowing down iteration.
+  @end
+
+  @red_flag
+    Avoid spending time on test coverage during early prototyping. Tests slow down exploration.
+  @end
+
+  @verify
+    Prototype should demonstrate the core concept within one sprint.
+  @end
+
+  @output_contract
+    A working prototype that validates the hypothesis. Tests are optional.
+  @end
+@end

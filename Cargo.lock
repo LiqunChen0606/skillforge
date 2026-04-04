@@ -49,6 +49,7 @@ name = "aif-cli"
 version = "0.1.0"
 dependencies = [
  "aif-binary",
+ "aif-conflict",
  "aif-core",
  "aif-eval",
  "aif-html",
@@ -61,6 +62,17 @@ dependencies = [
  "clap",
  "serde_json",
  "tokio",
+]
+
+[[package]]
+name = "aif-conflict"
+version = "0.1.0"
+dependencies = [
+ "aif-core",
+ "aif-parser",
+ "regex",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -85,6 +97,7 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
+ "tempfile",
  "tokio",
 ]
 

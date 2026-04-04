@@ -1,0 +1,19 @@
+[package]
+name = "aif-conflict"
+description = "Skill conflict detection — finds contradictions, order conflicts, and constraint incompatibilities across AIF skills"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords = ["llm", "skill", "conflict", "detection", "lint"]
+categories = ["text-processing"]
+
+[dependencies]
+aif-core = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+regex = "1"
+
+[dev-dependencies]
+aif-parser = { workspace = true }

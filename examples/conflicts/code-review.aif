@@ -1,0 +1,32 @@
+#title: Code Review Standards
+#author: SkillForge Examples
+
+@skill[name="code-review", version="1.0"]
+  @precondition
+    All pull requests require review before merge to the main branch.
+  @end
+
+  @step[order=1]
+    Review each pull request for correctness, readability, and maintainability.
+  @end
+
+  @step[order=2]
+    Check that the code follows project style guidelines and conventions.
+  @end
+
+  @step[order=3]
+    Verify that documentation is updated for any public API changes.
+  @end
+
+  @red_flag
+    Merging without review approval is a process violation.
+  @end
+
+  @verify
+    Every pull request should have at least one approval from a team member.
+  @end
+
+  @output_contract
+    Reviewed and approved code with comments addressed before merge.
+  @end
+@end
