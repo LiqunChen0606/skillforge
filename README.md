@@ -1,8 +1,8 @@
 # SkillForge
 
-### Quality layer for [Agent Skills](https://agentskills.io)
+### Quality layer for [Agent Skills](https://agentskills.io) + Structured document format for LLMs
 
-> Your SKILL.md files are plain Markdown — no integrity checks, no versioning, no structural validation. **SkillForge** adds lint, SHA-256 hashing, Ed25519 signing, semantic versioning, structural diff, and a 3-stage eval pipeline — then exports back to SKILL.md for deployment to Claude, Codex, Copilot, Gemini, and 30+ other platforms.
+> **SkillForge** does two things: (1) adds lint, hashing, signing, versioning, and eval to your SKILL.md files — then exports back to Markdown for deployment to 30+ platforms; (2) provides a **typed semantic format (AIF)** that LLMs follow better than plain Markdown — typed `@step`, `@verify`, `@red_flag` blocks that survive compilation to 12+ output formats including an LLM-optimized mode 22% cheaper than Markdown.
 
 ![Language](https://img.shields.io/badge/Language-Rust-orange)
 ![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Linux%20%7C%20Windows-blue)
@@ -11,17 +11,15 @@
 
 ---
 
-## The Problem
+## Two Problems
 
-The [Agent Skills standard](https://agentskills.io) is adopted by 30+ platforms. But SKILL.md is plain Markdown — you can't:
+### Problem 1: SKILL.md has no quality tooling
 
-- **Lint** — is the skill well-formed? Are required sections missing?
-- **Verify** — has someone tampered with this skill since it was reviewed?
-- **Version** — what changed between v1.2 and v1.3? Breaking or additive?
-- **Evaluate** — does this skill actually work? Does the LLM follow it?
-- **Sign** — who authored this skill? Can I trust it in my agent pipeline?
+The [Agent Skills standard](https://agentskills.io) is adopted by 30+ platforms. But SKILL.md is plain Markdown — you can't lint it, hash it, sign it, version it, or evaluate whether the LLM actually follows it. SkillForge adds all five.
 
-SkillForge answers all five.
+### Problem 2: Markdown is structurally flat
+
+When you send a skill or document as Markdown, the LLM can't distinguish a `@step` from a `@red_flag`, a `@claim` from `@evidence`. Everything is just paragraphs and headings. AIF's typed blocks give the LLM explicit structure — and our benchmark shows LLMs follow typed formats **+4pp better** overall (+9pp on multi-step workflows) at **4% fewer tokens**.
 
 ## Quick Start
 
@@ -119,9 +117,21 @@ aif skill bump my-skill.aif --dry-run
 
 ---
 
-## Also: Document Cleaning for LLMs
+## The Format Advantage: Why Typed Blocks Beat Markdown
 
-SkillForge also cleans and compiles documents — not just skills:
+SkillForge isn't just quality tooling — it's also a **better format** for LLM consumption. AIF typed blocks (`@step`, `@verify`, `@claim`, `@evidence`) compile to 12+ output formats, including LML Aggressive which is 22% cheaper than Markdown with full semantic structure.
+
+### For skills: LLMs follow typed blocks better
+
+| What the LLM sees | Markdown | AIF LML Aggressive |
+|-------------------|----------|-------------------|
+| Step instructions | `## Step 1` (heading) | `@step:` (typed tag) |
+| Constraints | Buried in prose | `@red_flag:` (explicit) |
+| Verification | Just a paragraph | `@verify:` (typed) |
+| **LLM compliance** | **0.84** | **0.88 (+4pp)** |
+| **Multi-step workflows** | **0.72** | **0.81 (+9pp)** |
+
+### For documents: Clean structure at fewer tokens
 
 ```bash
 # Clean HTML for LLM consumption
