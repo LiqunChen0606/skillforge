@@ -294,6 +294,12 @@ fn skill_type_heading(st: &SkillBlockType) -> &'static str {
         SkillBlockType::RedFlag => "Anti-patterns",
         SkillBlockType::Example => "Examples",
         SkillBlockType::Scenario => "Scenario",
+        SkillBlockType::ArtifactSkill => "Artifact Skill",
+        SkillBlockType::InputSchema => "Input Schema",
+        SkillBlockType::Template => "Template",
+        SkillBlockType::Binding => "Binding",
+        SkillBlockType::Generate => "Generate",
+        SkillBlockType::Export => "Export",
     }
 }
 

@@ -141,6 +141,12 @@ fn skill_prefix(st: &SkillBlockType) -> &'static str {
         SkillBlockType::RedFlag => "@redflag",
         SkillBlockType::Example => "@example",
         SkillBlockType::Scenario => "@scenario",
+        SkillBlockType::ArtifactSkill => "@artifact-skill",
+        SkillBlockType::InputSchema => "@input-schema",
+        SkillBlockType::Template => "@template",
+        SkillBlockType::Binding => "@binding",
+        SkillBlockType::Generate => "@generate",
+        SkillBlockType::Export => "@export",
     }
 }
 

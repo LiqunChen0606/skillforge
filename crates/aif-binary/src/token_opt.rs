@@ -300,6 +300,12 @@ fn skill_type_id(st: &SkillBlockType) -> u8 {
         SkillBlockType::RedFlag => SK_RED_FLAG,
         SkillBlockType::Example => SK_EXAMPLE,
         SkillBlockType::Scenario => SK_SCENARIO,
+        SkillBlockType::ArtifactSkill => SK_ARTIFACT_SKILL,
+        SkillBlockType::InputSchema => SK_INPUT_SCHEMA,
+        SkillBlockType::Template => SK_TEMPLATE,
+        SkillBlockType::Binding => SK_BINDING,
+        SkillBlockType::Generate => SK_GENERATE,
+        SkillBlockType::Export => SK_EXPORT,
     }
 }
 
@@ -828,6 +834,12 @@ fn decode_skill_type(byte: u8) -> SkillBlockType {
         SK_RED_FLAG => SkillBlockType::RedFlag,
         SK_EXAMPLE => SkillBlockType::Example,
         SK_SCENARIO => SkillBlockType::Scenario,
+        SK_ARTIFACT_SKILL => SkillBlockType::ArtifactSkill,
+        SK_INPUT_SCHEMA => SkillBlockType::InputSchema,
+        SK_TEMPLATE => SkillBlockType::Template,
+        SK_BINDING => SkillBlockType::Binding,
+        SK_GENERATE => SkillBlockType::Generate,
+        SK_EXPORT => SkillBlockType::Export,
         _ => SkillBlockType::Skill, // fallback
     }
 }

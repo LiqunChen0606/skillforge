@@ -34,6 +34,12 @@ fn skill_type_tag(st: &SkillBlockType) -> &'static str {
         SkillBlockType::RedFlag => "red_flag",
         SkillBlockType::Example => "example",
         SkillBlockType::Scenario => "scenario",
+        SkillBlockType::ArtifactSkill => "artifact_skill",
+        SkillBlockType::InputSchema => "input_schema",
+        SkillBlockType::Template => "template",
+        SkillBlockType::Binding => "binding",
+        SkillBlockType::Generate => "generate",
+        SkillBlockType::Export => "export",
     }
 }
 

@@ -513,6 +513,12 @@ pub fn skill_block_prefix_aggressive(st: &SkillBlockType) -> &'static str {
         SkillBlockType::RedFlag => "@redflag",
         SkillBlockType::Example => "@example",
         SkillBlockType::Scenario => "@scenario",
+        SkillBlockType::ArtifactSkill => "@artifact-skill",
+        SkillBlockType::InputSchema => "@input-schema",
+        SkillBlockType::Template => "@template",
+        SkillBlockType::Binding => "@binding",
+        SkillBlockType::Generate => "@generate",
+        SkillBlockType::Export => "@export",
     }
 }
 
@@ -719,6 +725,12 @@ fn skill_block_tag(st: &SkillBlockType) -> &'static str {
         SkillBlockType::RedFlag => "RED_FLAG",
         SkillBlockType::Example => "EXAMPLE",
         SkillBlockType::Scenario => "SCENARIO",
+        SkillBlockType::ArtifactSkill => "ARTIFACT_SKILL",
+        SkillBlockType::InputSchema => "INPUT_SCHEMA",
+        SkillBlockType::Template => "TEMPLATE",
+        SkillBlockType::Binding => "BINDING",
+        SkillBlockType::Generate => "GENERATE",
+        SkillBlockType::Export => "EXPORT",
     }
 }
 
@@ -760,6 +772,12 @@ fn skill_block_tag_short(st: &SkillBlockType) -> &'static str {
         SkillBlockType::RedFlag => "RF",
         SkillBlockType::Example => "EX",
         SkillBlockType::Scenario => "SCN",
+        SkillBlockType::ArtifactSkill => "AS",
+        SkillBlockType::InputSchema => "IS",
+        SkillBlockType::Template => "TPL",
+        SkillBlockType::Binding => "BND",
+        SkillBlockType::Generate => "GEN",
+        SkillBlockType::Export => "EXP",
     }
 }
 

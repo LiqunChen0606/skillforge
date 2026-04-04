@@ -1,0 +1,34 @@
+#title: Skill Diagram Generator
+#summary: Generate Mermaid flowcharts from AIF skill files
+
+@skill[name="skill-diagram", version="1.0", profile="artifact"]
+
+  @precondition
+    An AIF skill file with @step blocks exists.
+    Python 3.9+ available. Optional: mermaid-cli (mmdc) for SVG output.
+  @end
+
+  @step[order=1]
+    Parse the AIF skill file using `aif dump-ir` to extract the typed AST.
+  @end
+
+  @step[order=2]
+    Extract skill blocks: @precondition, @step (ordered), @verify, @red_flag, @output_contract.
+  @end
+
+  @step[order=3]
+    Generate Mermaid flowchart: precondition → ordered steps → verification → output contract. Red flags shown as warning annotations.
+  @end
+
+  @verify
+    - Diagram includes all @step blocks in correct order
+    - Precondition node is present if skill has @precondition
+    - Verification node is present if skill has @verify
+    - Mermaid syntax is valid (renders without errors)
+  @end
+
+  @output_contract
+    Mermaid flowchart code (stdout or file) showing the skill's workflow structure. Optionally SVG via mermaid-cli.
+  @end
+
+@end
