@@ -12,6 +12,28 @@
 
 ---
 
+## 2-Minute Quick Start
+
+```bash
+pip install aif-skillforge      # Install from PyPI (prebuilt wheels for macOS/Linux)
+
+aif check SKILL.md              # Lint + hash check your existing skill
+```
+
+That's it. `aif check` imports your SKILL.md, runs 7 structural lint checks, verifies the integrity hash, and reports pass/fail. Add `--format json` for CI integration.
+
+**What next?**
+
+```bash
+aif check SKILL.md --format json     # Machine-readable output for CI
+aif skill import SKILL.md -f json    # Convert to typed AIF format
+aif skill export my-skill.aif -o SKILL.md   # Export back to Markdown for deployment
+```
+
+See the [full Quick Start](#quick-start) below for signing, diffing, and versioning.
+
+---
+
 ## Two Problems
 
 ### Problem 1: SKILL.md has no quality tooling
