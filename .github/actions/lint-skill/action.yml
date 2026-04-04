@@ -1,0 +1,35 @@
+name: "SkillForge Lint"
+description: "Lint SKILL.md and .aif files using SkillForge quality checks"
+branding:
+  icon: "check-circle"
+  color: "purple"
+
+inputs:
+  path:
+    description: "Path to scan for .aif and SKILL.md files (default: repo root)"
+    required: false
+    default: "."
+  format:
+    description: "Output format: text or json"
+    required: false
+    default: "text"
+  fail-on-error:
+    description: "Fail the action if any lint check fails"
+    required: false
+    default: "true"
+
+outputs:
+  results:
+    description: "JSON lint results (when format=json)"
+  passed:
+    description: "Number of files that passed all checks"
+  failed:
+    description: "Number of files with lint failures"
+
+runs:
+  using: "docker"
+  image: "Dockerfile"
+  args:
+    - ${{ inputs.path }}
+    - ${{ inputs.format }}
+    - ${{ inputs.fail-on-error }}

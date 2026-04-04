@@ -1,0 +1,27 @@
+# Example workflow: lint all SKILL.md and .aif files on every push/PR
+# Copy this file to .github/workflows/lint-skills.yml to enable
+
+name: Lint Skills
+
+on:
+  push:
+    paths:
+      - "**/*.aif"
+      - "**/SKILL.md"
+  pull_request:
+    paths:
+      - "**/*.aif"
+      - "**/SKILL.md"
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Lint skill files
+        uses: ./.github/actions/lint-skill
+        with:
+          path: "."
+          format: "text"
+          fail-on-error: "true"
