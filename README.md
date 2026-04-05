@@ -66,7 +66,7 @@ Add to `.pre-commit-config.yaml`:
 ```yaml
 repos:
   - repo: https://github.com/LiqunChen0606/skillforge
-    rev: v0.4.2
+    rev: v0.5.0
     hooks:
       - id: aif-check
 ```
@@ -84,7 +84,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: LiqunChen0606/skillforge/.github/actions/lint-skill@v0.4.2
+      - uses: LiqunChen0606/skillforge@v0.5.0
         with:
           path: ./skills
 ```
