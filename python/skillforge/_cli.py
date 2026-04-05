@@ -13,6 +13,7 @@ import sys
 from pathlib import Path
 
 import skillforge
+from skillforge import _score
 
 
 EXIT_OK = 0
@@ -158,6 +159,60 @@ def cmd_scan(args: argparse.Namespace) -> int:
     return EXIT_OK if not high else EXIT_LINT_FAIL
 
 
+def cmd_score(args: argparse.Namespace) -> int:
+    """Compute a single letter-grade score for a skill + optionally emit
+    a shareable badge (text / JSON / Shields.io endpoint / SVG)."""
+    source = _read(args.input)
+    aif_src = _as_aif(source, args.input)
+
+    parse_failed = False
+    try:
+        skillforge.parse(aif_src)
+    except ValueError:
+        parse_failed = True
+
+    lint_results: list = []
+    scan_findings: list = []
+    if not parse_failed:
+        try:
+            lint_results = json.loads(skillforge.lint(aif_src))
+        except ValueError:
+            lint_results = []
+        try:
+            scan_findings = json.loads(skillforge.scan(aif_src))
+        except ValueError:
+            scan_findings = []
+
+    score = _score.compute_score(lint_results, scan_findings, parse_failed=parse_failed)
+
+    rendered = {
+        "json": json.dumps(score.to_dict(), indent=2),
+        "shields": _score.format_shields(score),
+        "svg": _score.format_svg(score),
+        "text": _score.format_text(score, args.input),
+    }.get(args.format, _score.format_text(score, args.input))
+
+    if args.output:
+        Path(args.output).write_text(rendered, encoding="utf-8")
+        # Print a short confirmation to stderr so the user knows it worked
+        print(
+            f"Score: {score.numeric}/100 ({score.grade}) -> {args.output}",
+            file=sys.stderr,
+        )
+    else:
+        if args.format == "svg":
+            sys.stdout.write(rendered)
+        else:
+            print(rendered)
+
+    # Exit 0 if grade is C or better, else 1 — configurable via --min-grade.
+    min_grade = args.min_grade or "F"
+    grade_order = ["F", "D", "C-", "C", "C+", "B-", "B", "B+", "A-", "A", "A+"]
+    if grade_order.index(score.grade) >= grade_order.index(min_grade):
+        return EXIT_OK
+    return EXIT_LINT_FAIL
+
+
 def cmd_migrate_syntax(args: argparse.Namespace) -> int:
     path = Path(args.path)
     if not path.exists():
@@ -209,6 +264,21 @@ def main(argv: list[str] | None = None) -> int:
     p_scan.add_argument("input", help="SKILL.md or .aif file")
     p_scan.add_argument("--format", default="text", choices=["text", "json"])
     p_scan.set_defaults(func=cmd_scan)
+
+    p_score = sub.add_parser("score", help="Grade a skill A+..F + emit a badge")
+    p_score.add_argument("input", help="SKILL.md or .aif file")
+    p_score.add_argument(
+        "--format", default="text",
+        choices=["text", "json", "shields", "svg"],
+        help="Output: text summary, JSON, Shields.io endpoint JSON, or inline SVG",
+    )
+    p_score.add_argument("-o", "--output", help="Write output to file instead of stdout")
+    p_score.add_argument(
+        "--min-grade", default="F",
+        choices=["F", "D", "C-", "C", "C+", "B-", "B", "B+", "A-", "A", "A+"],
+        help="Fail (exit 1) if grade is below this threshold",
+    )
+    p_score.set_defaults(func=cmd_score)
 
     p_mig = sub.add_parser("migrate-syntax", help="Migrate legacy @end to @/name")
     p_mig.add_argument("path", help=".aif file or directory")

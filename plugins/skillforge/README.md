@@ -35,6 +35,7 @@
 | Command | What it does |
 |---|---|
 | `/lint-skill <path>` | One-command quality check: 10 structural lint + 6 security checks |
+| `/score-skill <path>` | Grade the skill A+..F + generate a shareable badge |
 | `/scan-skill <path>` | Security-only scan (OWASP Agentic Skills Top 10 aligned) |
 | `/sign-skill <path>` | Sign a skill with Ed25519 so consumers can detect tampering |
 | `/verify-skill <path>` | Verify integrity hash + Ed25519 signature |

@@ -14,7 +14,8 @@
 
 ```bash
 pip install aif-skillforge
-aif check SKILL.md
+aif check SKILL.md       # lint + security scan
+aif score SKILL.md       # letter grade (A+..F) with shareable badge
 ```
 
 That's it. Output:
@@ -56,6 +57,42 @@ PASS — SKILL.md is clean
 | data-exfiltration | Credential-harvesting patterns |
 
 Run `aif scan SKILL.md` for security-only output.
+
+## Grade your skill with a shareable badge
+
+```bash
+aif score my-skill.md
+```
+
+Output:
+
+```
+SkillForge Score: my-skill.md
+============================================================
+  Score:  100/100  (A+)
+  Lint:   0 errors, 0 warnings
+  Security: 0 critical, 0 high, 0 medium, 0 low
+------------------------------------------------------------
+Grade: A+
+```
+
+Add a badge to your skill's README:
+
+```bash
+# Generate a Shields.io endpoint file, commit it to your repo
+aif score my-skill.md --format shields -o badge.json
+git add badge.json && git commit -m "add skillforge badge"
+```
+
+Then in your README:
+
+```markdown
+![SkillForge](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/USER/REPO/main/badge.json)
+```
+
+The badge auto-updates when you re-run `aif score` and re-commit the JSON. Grade mapping: A+ (97-100), A (93-96), A- (90-92), B+ (87-89), B (83-86), B- (80-82), C+ (77-79), C (73-76), C- (70-72), D (60-69), F (<60). An A+ means all 10 lint checks pass and zero security findings; an F means a critical security finding or multiple lint errors.
+
+Also available: `--format svg` for a standalone SVG badge, `--format json` for CI integration, and `--min-grade C` to fail the command if the grade drops below a threshold.
 
 ## Install it once, run it everywhere
 

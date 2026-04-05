@@ -29,3 +29,16 @@
   additional_dependencies:
     - aif-skillforge>=0.5.0
   minimum_pre_commit_version: "2.9.0"
+
+- id: aif-score
+  name: SkillForge grade check
+  description: >
+    Compute a letter grade (A+..F) for each skill file and fail if below
+    a minimum grade. Configure via args, e.g. [--min-grade, B].
+  entry: aif score
+  args: [--min-grade, C]
+  language: python
+  files: '(SKILL\.md|\.aif)$'
+  additional_dependencies:
+    - aif-skillforge>=0.6.0
+  minimum_pre_commit_version: "2.9.0"
