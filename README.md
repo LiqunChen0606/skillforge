@@ -164,6 +164,37 @@ Then from any Claude Code session:
 /verify-skill my-skill.md
 ```
 
+## Autofix
+
+```bash
+aif fix SKILL.md --write     # fix and overwrite the file
+aif fix SKILL.md --check     # dry-run: show what would change, exit 1 if fixes needed
+aif fix SKILL.md --diff      # print unified diff of proposed fixes
+```
+
+Fixes: NameFormat (kebab-case), missing frontmatter (scaffold name/description), DescriptionLength (truncate), RequiredSections (add stub `## Steps` / `## Verification`), NoEmptyBlocks (insert TODO placeholders).
+
+## MCP server (Claude Desktop / Cursor)
+
+Add to your `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "skillforge": {
+      "command": "aif",
+      "args": ["mcp-server"]
+    }
+  }
+}
+```
+
+Exposes 4 tools: `check_skill`, `score_skill`, `scan_skill`, `fix_skill`. Any MCP-compatible client can invoke them natively during a conversation.
+
+## [Leaderboard](leaderboard/LEADERBOARD.md)
+
+Weekly scan of public SKILL.md files on GitHub, graded by `aif score`, ranked top 25. Any public repo with a SKILL.md is automatically included.
+
 ## Sign skills for tamper detection
 
 When you publish a skill, sign it. Consumers verify.

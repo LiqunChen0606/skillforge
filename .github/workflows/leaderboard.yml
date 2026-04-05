@@ -1,0 +1,38 @@
+name: Update leaderboard
+
+on:
+  schedule:
+    - cron: "0 12 * * MON"  # weekly, Mondays 12:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install aif-skillforge
+        run: pip install aif-skillforge
+
+      - name: Build leaderboard
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/build_leaderboard.py
+
+      - name: Commit updated leaderboard
+        run: |
+          git config user.name "skillforge-bot"
+          git config user.email "noreply@github.com"
+          git add leaderboard/
+          if git diff --cached --quiet; then
+            echo "No changes to leaderboard"
+            exit 0
+          fi
+          git commit -m "chore(leaderboard): weekly update"
+          git push

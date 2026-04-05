@@ -1,0 +1,97 @@
+{
+  "generated_at": "2026-04-05 23:11 UTC",
+  "total_graded": 7,
+  "skills": [
+    {
+      "repo": "jackwener/xhs-cli",
+      "path": "SKILL.md",
+      "url": "https://github.com/jackwener/xhs-cli/blob/3ce71415dc0816ebb4c3f547baf6c08fb3d5cb5a/SKILL.md",
+      "score": 97,
+      "grade": "A+",
+      "color": "brightgreen",
+      "lint_errors": 0,
+      "lint_warnings": 1,
+      "security_findings": 0,
+      "description": "\u5c0f\u7ea2\u4e66\u547d\u4ee4\u884c\u5de5\u5177 \u2014 \u641c\u7d22\u3001\u9605\u8bfb\u3001\u70b9\u8d5e\u3001\u6536\u85cf\u3001\u8bc4\u8bba\uff0c\u5168\u5728\u7ec8\u7aef\u5b8c\u6210 | Xiaohongshu CLI",
+      "stars": 435
+    },
+    {
+      "repo": "openbiox/Bizard",
+      "path": "skill.md",
+      "url": "https://github.com/openbiox/Bizard/blob/f888e8b8a5f0f7c299ea89e2aafb37a97632fc4b/skill.md",
+      "score": 97,
+      "grade": "A+",
+      "color": "brightgreen",
+      "lint_errors": 0,
+      "lint_warnings": 1,
+      "security_findings": 0,
+      "description": "Bizard: A Biomedical Visualization Atlas. https://openbiox.github.io/Bizard/",
+      "stars": 40
+    },
+    {
+      "repo": "chihpao/dinner-picker",
+      "path": "Skill.MD",
+      "url": "https://github.com/chihpao/dinner-picker/blob/0217c599fe68ca0eb43e638039f622e8f8869684/Skill.MD",
+      "score": 97,
+      "grade": "A+",
+      "color": "brightgreen",
+      "lint_errors": 0,
+      "lint_warnings": 1,
+      "security_findings": 0,
+      "description": "\u5b5c\u4fdd\u8a02\u665a\u9910\u7528",
+      "stars": 0
+    },
+    {
+      "repo": "1055373165/Better-Prompt",
+      "path": "prompt-engineering-skill.md",
+      "url": "https://github.com/1055373165/Better-Prompt/blob/e51543bf96c2bdfe2d94c243fdf455ac1140c676/prompt-engineering-skill.md",
+      "score": 97,
+      "grade": "A+",
+      "color": "brightgreen",
+      "lint_errors": 0,
+      "lint_warnings": 1,
+      "security_findings": 0,
+      "description": "Write the best prompts for LLM",
+      "stars": 0
+    },
+    {
+      "repo": "onimisim2204430/church-digital-engagement-platform",
+      "path": "Skill.md",
+      "url": "https://github.com/onimisim2204430/church-digital-engagement-platform/blob/f703d456d4a2fda6db6dcd4f8a3641493f7a3553/Skill.md",
+      "score": 95,
+      "grade": "A",
+      "color": "brightgreen",
+      "lint_errors": 0,
+      "lint_warnings": 1,
+      "security_findings": 2,
+      "description": null,
+      "stars": 0
+    },
+    {
+      "repo": "Jeffreyxdev/zola-ai",
+      "path": "SKILL.MD",
+      "url": "https://github.com/Jeffreyxdev/zola-ai/blob/de06c7b74491a9d21a9ae5e0ea278ab007f106f3/SKILL.MD",
+      "score": 91,
+      "grade": "A-",
+      "color": "green",
+      "lint_errors": 0,
+      "lint_warnings": 1,
+      "security_findings": 2,
+      "description": "An autonomous Solana wallet agent that executes payments via Twitter mentions and an in-app dashboard, powered by Claude.",
+      "stars": 3
+    },
+    {
+      "repo": "udayanwalvekar/clearshot",
+      "path": "SKILL.md",
+      "url": "https://github.com/udayanwalvekar/clearshot/blob/6305f3e41cd7129a4129beb4f57c58cae08ec5fb/SKILL.md",
+      "score": 76,
+      "grade": "C",
+      "color": "yellow",
+      "lint_errors": 0,
+      "lint_warnings": 1,
+      "security_findings": 3,
+      "description": "\ud83d\udcf8 Structured screenshot intelligence for AI coding tools. Give your AI X-ray vision for UI screenshots.",
+      "stars": 124
+    }
+  ]
+}

@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 
 import skillforge
-from skillforge import _score
+from skillforge import _fix, _score  # noqa: F401 — lazy-imported elsewhere
 
 
 EXIT_OK = 0
@@ -213,6 +213,52 @@ def cmd_score(args: argparse.Namespace) -> int:
     return EXIT_LINT_FAIL
 
 
+def cmd_fix(args: argparse.Namespace) -> int:
+    """Autofix deterministic lint issues in a SKILL.md file."""
+    source = _read(args.input)
+    fixed, applied = _fix.fix_skill_md(source)
+
+    if not applied:
+        if not args.check:
+            print(f"No fixes needed: {args.input}", file=sys.stderr)
+        return EXIT_OK
+
+    if args.format == "json":
+        print(json.dumps({
+            "file": args.input,
+            "fixes": [{"rule": f.rule, "description": f.description} for f in applied],
+            "would_change": fixed != source,
+        }, indent=2))
+    elif args.diff:
+        print(_fix.diff_fixes(source, fixed))
+    elif args.check:
+        print(f"Would apply {len(applied)} fix(es) to {args.input}:")
+        for f in applied:
+            print(f"  [{f.rule}] {f.description}")
+    else:
+        # --write mode (default when not --check)
+        if args.write or not sys.stdout.isatty():
+            Path(args.input).write_text(fixed, encoding="utf-8")
+            print(f"Applied {len(applied)} fix(es) to {args.input}:", file=sys.stderr)
+            for f in applied:
+                print(f"  [{f.rule}] {f.description}", file=sys.stderr)
+        else:
+            # No --write and stdout is a terminal → print fixed content
+            print(fixed, end="")
+
+    # --check returns 1 when fixes would be applied (CI friendly)
+    if args.check:
+        return EXIT_LINT_FAIL if applied else EXIT_OK
+    return EXIT_OK
+
+
+def cmd_mcp_server(args: argparse.Namespace) -> int:
+    """Run the MCP server over stdio."""
+    from skillforge import _mcp
+    _mcp.run_server()
+    return EXIT_OK
+
+
 def cmd_migrate_syntax(args: argparse.Namespace) -> int:
     path = Path(args.path)
     if not path.exists():
@@ -279,6 +325,23 @@ def main(argv: list[str] | None = None) -> int:
         help="Fail (exit 1) if grade is below this threshold",
     )
     p_score.set_defaults(func=cmd_score)
+
+    p_fix = sub.add_parser("fix", help="Autofix mechanical lint issues in SKILL.md")
+    p_fix.add_argument("input", help="SKILL.md file")
+    p_fix.add_argument("--write", "-w", action="store_true",
+                       help="Write changes back to the file (default when piped)")
+    p_fix.add_argument("--check", action="store_true",
+                       help="Dry-run: show what would change, exit 1 if fixes needed")
+    p_fix.add_argument("--diff", action="store_true",
+                       help="Print a unified diff of the proposed fixes")
+    p_fix.add_argument("--format", default="text", choices=["text", "json"])
+    p_fix.set_defaults(func=cmd_fix)
+
+    p_mcp = sub.add_parser(
+        "mcp-server",
+        help="Run the MCP server over stdio (for Claude Desktop / Cursor integration)",
+    )
+    p_mcp.set_defaults(func=cmd_mcp_server)
 
     p_mig = sub.add_parser("migrate-syntax", help="Migrate legacy @end to @/name")
     p_mig.add_argument("path", help=".aif file or directory")
