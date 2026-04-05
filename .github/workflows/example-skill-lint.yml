@@ -15,6 +15,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: SkillForge check
-        uses: LiqunChen0606/skillforge@v0.6.2
+        uses: LiqunChen0606/skillforge@v0.6.4
         with:
           path: ./skills   # scope to skill files only
