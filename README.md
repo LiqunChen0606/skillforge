@@ -93,16 +93,36 @@ PRs that break skill quality fail CI before merge.
 
 ### Claude Code plugin
 
-Add the plugin:
+Add to your `~/.claude/settings.json`:
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "skillforge-marketplace": {
+      "source": {
+        "source": "url",
+        "url": "https://github.com/LiqunChen0606/skillforge.git"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "skillforge@skillforge-marketplace": true
+  }
+}
+```
+
+Or via slash commands (if your Claude Code version supports them):
 
 ```
-/plugin install LiqunChen0606/skillforge
+/plugin marketplace add LiqunChen0606/skillforge
+/plugin install skillforge@skillforge-marketplace
 ```
 
 Then from any Claude Code session:
 
 ```
 /lint-skill my-skill.md
+/scan-skill my-skill.md
 /sign-skill my-skill.md
 /verify-skill my-skill.md
 ```

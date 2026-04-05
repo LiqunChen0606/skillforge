@@ -8,9 +8,26 @@
    ```bash
    pip install aif-skillforge
    ```
-2. Install this plugin:
+2. Add to your `~/.claude/settings.json`:
+   ```json
+   {
+     "extraKnownMarketplaces": {
+       "skillforge-marketplace": {
+         "source": {
+           "source": "url",
+           "url": "https://github.com/LiqunChen0606/skillforge.git"
+         }
+       }
+     },
+     "enabledPlugins": {
+       "skillforge@skillforge-marketplace": true
+     }
+   }
    ```
-   /plugin install LiqunChen0606/skillforge
+   Or via slash commands (Claude Code 1.x+):
+   ```
+   /plugin marketplace add LiqunChen0606/skillforge
+   /plugin install skillforge@skillforge-marketplace
    ```
 
 ## Commands

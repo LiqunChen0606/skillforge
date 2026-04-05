@@ -88,7 +88,7 @@ aif check SKILL.md
 
 10 structural lint checks (frontmatter, required sections, empty blocks, hash verification), plus 6 security checks aligned with the OWASP Agentic Skills Top 10 (prompt injection, hidden Unicode, dangerous tools, external fetches, privilege escalation, data exfiltration).
 
-Drops into pre-commit hooks, GitHub Actions (`LiqunChen0606/skillforge@v0.5.0`), and Claude Code (`/plugin install LiqunChen0606/skillforge`). Ed25519 signing included for skill integrity verification.
+Drops into pre-commit hooks, GitHub Actions (`LiqunChen0606/skillforge@v0.5.0`), and Claude Code (`/plugin marketplace add LiqunChen0606/skillforge`). Ed25519 signing included for skill integrity verification.
 
 It's early — I'm the only author, shipped last week. If you're writing skills professionally, I'd love your feedback.
 

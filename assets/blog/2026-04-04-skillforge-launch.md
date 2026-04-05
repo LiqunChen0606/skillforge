@@ -16,7 +16,7 @@ It catches the things a human reviewer would reject — missing sections, empty 
 - **PyPI:** https://pypi.org/project/aif-skillforge/
 - **Repo:** https://github.com/LiqunChen0606/skillforge
 - **GitHub Action:** `LiqunChen0606/skillforge@v0.5.0`
-- **Claude Code plugin:** `/plugin install LiqunChen0606/skillforge`
+- **Claude Code plugin:** `/plugin marketplace add LiqunChen0606/skillforge` then `/plugin install skillforge@skillforge-marketplace`
 
 The rest of this post is why the problem matters and what `aif check` actually looks at.
 
@@ -162,7 +162,8 @@ PRs that break skill quality fail before merge. Standard `::error file=…` anno
 From any Claude Code session:
 
 ```
-/plugin install LiqunChen0606/skillforge
+/plugin marketplace add LiqunChen0606/skillforge
+/plugin install skillforge@skillforge-marketplace
 /lint-skill my-skill.md
 ```
 
