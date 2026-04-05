@@ -1,16 +1,12 @@
 # Example workflow showing how downstream repos can use the SkillForge action.
 # Copy this file to your own repo at .github/workflows/skill-lint.yml
-name: Skill Quality Check
+#
+# This workflow is disabled for this repo itself via the manual trigger only
+# (our tests/fixtures/ contains parser test files that intentionally fail).
+name: Skill Quality Check (example)
 
 on:
-  push:
-    paths:
-      - '**/SKILL.md'
-      - '**/*.aif'
-  pull_request:
-    paths:
-      - '**/SKILL.md'
-      - '**/*.aif'
+  workflow_dispatch:
 
 jobs:
   lint-skills:
@@ -19,6 +15,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: SkillForge check
-        uses: LiqunChen0606/skillforge@v0.5.0
+        uses: LiqunChen0606/skillforge@v0.6.2
         with:
-          path: .
+          path: ./skills   # scope to skill files only
