@@ -7,7 +7,7 @@
   language: python
   files: '(SKILL\.md|\.aif)$'
   additional_dependencies:
-    - aif-skillforge>=0.5.0
+    - aif-skillforge>=0.6.1
   minimum_pre_commit_version: "2.9.0"
 
 - id: aif-lint
@@ -17,7 +17,7 @@
   language: python
   files: '(SKILL\.md|\.aif)$'
   additional_dependencies:
-    - aif-skillforge>=0.5.0
+    - aif-skillforge>=0.6.1
   minimum_pre_commit_version: "2.9.0"
 
 - id: aif-scan
@@ -27,7 +27,7 @@
   language: python
   files: '(SKILL\.md|\.aif)$'
   additional_dependencies:
-    - aif-skillforge>=0.5.0
+    - aif-skillforge>=0.6.1
   minimum_pre_commit_version: "2.9.0"
 
 - id: aif-score
@@ -40,5 +40,5 @@
   language: python
   files: '(SKILL\.md|\.aif)$'
   additional_dependencies:
-    - aif-skillforge>=0.6.0
+    - aif-skillforge>=0.6.1
   minimum_pre_commit_version: "2.9.0"

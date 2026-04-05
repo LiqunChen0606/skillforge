@@ -39,6 +39,16 @@ runs:
       with:
         python-version: "3.11"
 
+    - name: Install Rust (sdist fallback)
+      shell: bash
+      run: |
+        # sdist currently requires Rust to compile. Prebuilt wheels for Linux
+        # coming in the next release. This step is a no-op if a wheel matches.
+        if ! command -v cargo >/dev/null 2>&1; then
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+        fi
+
     - name: Install aif-skillforge
       shell: bash
       run: |
