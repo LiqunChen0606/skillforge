@@ -1,0 +1,19 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "skillforge-marketplace",
+  "description": "SkillForge — quality layer for SKILL.md. Lint, security-scan, and sign Agent Skill files.",
+  "owner": {
+    "name": "LiqunChen0606",
+    "url": "https://github.com/LiqunChen0606"
+  },
+  "plugins": [
+    {
+      "name": "skillforge",
+      "description": "Lint, security-scan, and sign SKILL.md / .aif Agent Skill files. Catches missing sections, empty steps, prompt-injection patterns, broken references before deploy. Ed25519 signing for skill integrity.",
+      "source": "./plugins/skillforge",
+      "category": "code-quality",
+      "keywords": ["skill", "skill.md", "agent-skills", "lint", "security", "signing"],
+      "homepage": "https://github.com/LiqunChen0606/skillforge"
+    }
+  ]
+}
