@@ -2,7 +2,7 @@
 # standalone. Build via `maturin develop` — do NOT include in `cargo build --workspace`.
 [package]
 name = "skillforge"
-version = "0.6.3"
+version = "0.6.4"
 edition = "2021"
 description = "SkillForge Python bindings — lint, hash, sign, compile your Agent Skills"
 license = "Apache-2.0 OR MIT"
@@ -15,7 +15,7 @@ crate-type = ["cdylib"]
 [dependencies]
 # abi3-py39 builds a stable-ABI wheel that works on Python 3.9+ (one wheel
 # per platform instead of per Python version, forward-compatible with 3.14+).
-pyo3 = { version = "0.22", features = ["extension-module", "abi3-py39"] }
+pyo3 = { version = "0.22", features = ["extension-module", "abi3-py39", "generate-import-lib"] }
 aif-core = { path = "../aif-core" }
 aif-parser = { path = "../aif-parser" }
 aif-html = { path = "../aif-html" }

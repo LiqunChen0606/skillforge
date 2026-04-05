@@ -35,10 +35,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.target }}
-          # --interpreter 3.9 forces the abi3-tagged wheel on Linux where the
-          # manylinux docker image has Python 3.8 by default (which would
-          # produce a cp38 wheel that then requires-python>=3.9 rejects).
-          args: --release --out dist --interpreter 3.9
+          args: --release --out dist ${{ runner.os == 'Linux' && '--interpreter 3.9' || '' }}
           manylinux: auto
 
       - name: Upload wheel artifact
