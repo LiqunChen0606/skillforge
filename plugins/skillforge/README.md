@@ -1,36 +1,60 @@
 # SkillForge — Claude Code Plugin
 
-Auto-lint, version, and sign AI skills using the AIF toolchain.
+**Quality layer for SKILL.md.** Lint, security-scan, and sign your Agent Skill files from inside Claude Code.
 
-## Prerequisites
+## Install
 
-Install the AIF CLI:
+1. Install the `aif` CLI (Python wheel, no Rust required):
+   ```bash
+   pip install aif-skillforge
+   ```
+2. Install this plugin:
+   ```
+   /plugin install LiqunChen0606/skillforge
+   ```
 
-```bash
-cargo install --path crates/aif-cli
+## Commands
+
+| Command | What it does |
+|---|---|
+| `/lint-skill <path>` | One-command quality check: 10 structural lint + 6 security checks |
+| `/scan-skill <path>` | Security-only scan (OWASP Agentic Skills Top 10 aligned) |
+| `/sign-skill <path>` | Sign a skill with Ed25519 so consumers can detect tampering |
+| `/verify-skill <path>` | Verify integrity hash + Ed25519 signature |
+| `/convert-skill <path> [--to aif\|md]` | Convert SKILL.md ↔ .aif |
+
+## Example
+
+```
+/lint-skill skills/code-review.md
 ```
 
-## Available Commands
-
-| Command | Description |
-|---------|-------------|
-| `/lint-skill <file>` | Run 7-point structural lint on an AIF skill |
-| `/convert-skill <file> [--to aif\|md]` | Convert between AIF and Markdown skill formats |
-| `/sign-skill <file> --key <key>` | Sign a skill with Ed25519 for tamper detection |
-| `/verify-skill <file>` | Verify integrity hash and optional signature |
-
-## Example Usage
+Output:
 
 ```
-/lint-skill examples/skills/code_review.aif
-/convert-skill my-skill.md --to aif
-/sign-skill my-skill.aif --key ~/.aif/keys/private.pem
-/verify-skill my-skill.aif
+SkillForge Quality Check: skills/code-review.md
+============================================================
+  [+] Parsed
+  [+] Lint: 10 checks passed
+  [+] Security: clean
+------------------------------------------------------------
+PASS — skills/code-review.md is clean
 ```
 
-## How It Works
+When a skill has issues, Claude Code will explain each one and suggest a concrete fix.
 
-- **Lint** runs the Stage 1 eval pipeline (7 deterministic structural checks, no LLM required)
-- **Convert** uses `aif skill import` and `aif skill export` for bidirectional Markdown/AIF conversion
-- **Sign** generates Ed25519 signatures for tamper detection on published skills
-- **Verify** checks content hashes and optional cryptographic signatures
+## What it catches
+
+**Structural lint (10 checks):** Missing frontmatter, missing `## Steps` / `## Verification`, invalid name format, overlong descriptions, empty placeholder blocks, mixed block types, hash mismatches, claims without evidence, broken references, undefined terms.
+
+**Security scan (6 rules, OWASP AST10 aligned):** Prompt injection ("ignore previous instructions"), hidden Unicode (zero-width chars), dangerous tools (`eval`, `rm -rf`), external fetches (`curl url | bash`), privilege escalation (sudo / admin requests), data exfiltration (credential harvesting).
+
+## Why
+
+The [Agent Skills standard](https://agentskills.io) is adopted by 30+ platforms. SKILL.md has no native quality tooling — broken skills fail silently at runtime, quietly misbehaving. SkillForge adds `eslint`-level rigor.
+
+## Links
+
+- Repo: https://github.com/LiqunChen0606/skillforge
+- PyPI: https://pypi.org/project/aif-skillforge/
+- Pre-commit hook + GitHub Action also available

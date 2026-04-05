@@ -1,0 +1,31 @@
+- id: aif-check
+  name: SkillForge quality check (lint + security scan)
+  description: >
+    One-command quality check for SKILL.md and .aif Agent Skill files.
+    Runs 10 structural lint checks and an OWASP-aligned security scan.
+  entry: aif check
+  language: python
+  files: '(SKILL\.md|\.aif)$'
+  additional_dependencies:
+    - aif-skillforge>=0.5.0
+  minimum_pre_commit_version: "2.9.0"
+
+- id: aif-lint
+  name: SkillForge structural lint
+  description: Run structural lint checks only (no security scan)
+  entry: aif lint
+  language: python
+  files: '(SKILL\.md|\.aif)$'
+  additional_dependencies:
+    - aif-skillforge>=0.5.0
+  minimum_pre_commit_version: "2.9.0"
+
+- id: aif-scan
+  name: SkillForge security scan
+  description: Security scan only (OWASP AST10 aligned) for SKILL.md and .aif files
+  entry: aif scan
+  language: python
+  files: '(SKILL\.md|\.aif)$'
+  additional_dependencies:
+    - aif-skillforge>=0.5.0
+  minimum_pre_commit_version: "2.9.0"

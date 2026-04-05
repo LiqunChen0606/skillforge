@@ -1,0 +1,95 @@
+name: "SkillForge — SKILL.md quality check"
+description: "Lint, security-scan, and validate your SKILL.md / .aif Agent Skill files"
+author: "LiqunChen0606"
+branding:
+  icon: "check-circle"
+  color: "purple"
+
+inputs:
+  path:
+    description: "Path to scan for SKILL.md and .aif files (default: repo root)"
+    required: false
+    default: "."
+  format:
+    description: "Output format: text or json"
+    required: false
+    default: "text"
+  fail-on-warning:
+    description: "Also fail the action on security warnings (default: only fail on errors)"
+    required: false
+    default: "false"
+  version:
+    description: "aif-skillforge version to install (default: latest)"
+    required: false
+    default: ""
+
+outputs:
+  passed:
+    description: "Number of files that passed all checks"
+    value: ${{ steps.check.outputs.passed }}
+  failed:
+    description: "Number of files with check failures"
+    value: ${{ steps.check.outputs.failed }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+
+    - name: Install aif-skillforge
+      shell: bash
+      run: |
+        if [ -n "${{ inputs.version }}" ]; then
+          pip install "aif-skillforge==${{ inputs.version }}"
+        else
+          pip install aif-skillforge
+        fi
+        aif --help > /dev/null
+
+    - name: Run aif check on all skills
+      id: check
+      shell: bash
+      run: |
+        PASSED=0
+        FAILED=0
+        EXIT_CODE=0
+
+        # Find all SKILL.md and .aif files under the given path
+        mapfile -t FILES < <(find "${{ inputs.path }}" -type f \( -name "SKILL.md" -o -name "*.aif" \) 2>/dev/null | sort)
+
+        if [ ${#FILES[@]} -eq 0 ]; then
+          echo "::notice::No SKILL.md or .aif files found in ${{ inputs.path }}"
+          echo "passed=0" >> "$GITHUB_OUTPUT"
+          echo "failed=0" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+
+        echo "Found ${#FILES[@]} skill file(s):"
+        for f in "${FILES[@]}"; do echo "  - $f"; done
+        echo ""
+
+        for FILE in "${FILES[@]}"; do
+          echo "::group::aif check $FILE"
+          if aif check "$FILE" --format "${{ inputs.format }}"; then
+            PASSED=$((PASSED + 1))
+          else
+            FAILED=$((FAILED + 1))
+            echo "::error file=$FILE::SkillForge quality check failed"
+            EXIT_CODE=1
+          fi
+          echo "::endgroup::"
+        done
+
+        echo ""
+        echo "===== Summary ====="
+        echo "Passed: $PASSED"
+        echo "Failed: $FAILED"
+        echo "Total:  $((PASSED + FAILED))"
+
+        echo "passed=$PASSED" >> "$GITHUB_OUTPUT"
+        echo "failed=$FAILED" >> "$GITHUB_OUTPUT"
+
+        exit $EXIT_CODE

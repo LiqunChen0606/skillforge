@@ -4,16 +4,29 @@ build-backend = "maturin"
 
 [project]
 name = "aif-skillforge"
-version = "0.4.2"
-description = "SkillForge — quality layer for Agent Skills. Lint, hash, sign, version, eval your SKILL.md files"
+version = "0.5.0"
+description = "SkillForge — quality layer for Agent Skills. Lint, sign, test your SKILL.md files."
 requires-python = ">=3.9"
 license = "Apache-2.0 OR MIT"
-keywords = ["agent-skills", "skillmd", "lint", "signing", "eval"]
+keywords = ["agent-skills", "skillmd", "lint", "signing", "skill-quality", "claude-code"]
 classifiers = [
     "Programming Language :: Rust",
     "Programming Language :: Python :: Implementation :: CPython",
+    "Topic :: Software Development :: Quality Assurance",
+    "Topic :: Security",
+    "Intended Audience :: Developers",
 ]
+
+[project.urls]
+Homepage = "https://github.com/LiqunChen0606/skillforge"
+Repository = "https://github.com/LiqunChen0606/skillforge"
+Issues = "https://github.com/LiqunChen0606/skillforge/issues"
+
+[project.scripts]
+aif = "skillforge._cli:main"
 
 [tool.maturin]
 manifest-path = "crates/aif-python/Cargo.toml"
 features = ["pyo3/extension-module"]
+python-source = "python"
+module-name = "skillforge"

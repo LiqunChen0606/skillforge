@@ -1,27 +1,44 @@
 ---
-description: Lint a SKILL.md or .aif file for structural quality
-argument-hint: <path-to-file>
+description: Run SkillForge quality check (lint + security scan) on a SKILL.md or .aif file
+argument-hint: <path-to-skill-file>
 allowed-tools:
   - Bash
   - Read
 ---
 
-Run SkillForge's structural quality check on the specified skill file.
+Run SkillForge's one-command quality check on the specified skill file.
+
+## Setup (first run only)
+
+If `aif` is not installed, install it:
+
+```bash
+pip install aif-skillforge
+```
 
 ## Steps
 
-1. Run the check command:
-   ```
-   aif check $ARGUMENTS --format text
+1. Run the check:
+   ```bash
+   aif check $ARGUMENTS
    ```
 
-2. If the command exits with a non-zero status, lint failures were found. Present the results clearly and suggest specific fixes for each failing check:
-   - **Frontmatter**: Add `name` and `description` to the skill header
-   - **RequiredSections**: Add `@step` and `@verify` blocks (or `## Steps` / `## Verification` sections in Markdown)
-   - **BlockTypes**: Remove non-skill blocks from inside the `@skill` block
-   - **VersionHash**: Run `aif skill rehash <file>` to recompute the hash
-   - **DescriptionLength**: Shorten the description to under 1024 characters
-   - **NameFormat**: Use only lowercase alphanumeric characters and hyphens in the skill name
-   - **NoEmptyBlocks**: Fill in placeholder `@step` or `@verify` blocks with content
+2. If the command exits non-zero, it failed either lint or security. Present the output clearly and suggest concrete fixes based on which checks failed:
 
-3. If all checks pass, confirm the file is clean.
+   **Lint failures:**
+   - **Frontmatter** → Add `name` and `description` YAML frontmatter
+   - **RequiredSections** → Add `## Steps` / `## Verification` sections (or `@step` / `@verify` blocks)
+   - **NameFormat** → Use only lowercase alphanumeric + hyphens in the skill name
+   - **DescriptionLength** → Shorten description to ≤1024 chars
+   - **NoEmptyBlocks** → Fill in placeholder step/verify content
+   - **BlockTypes** → Remove non-skill blocks from inside the skill body
+
+   **Security findings (OWASP AST10):**
+   - **prompt-injection** → Remove phrases like "ignore previous instructions"
+   - **hidden-unicode** → Strip zero-width chars / direction overrides
+   - **dangerous-tool** → Replace `eval`, unrestricted shell with safe alternatives
+   - **external-fetch** → Remove `curl URL | bash` patterns
+   - **privilege-escalation** → Remove sudo / admin requests
+   - **data-exfiltration** → Remove credential-harvesting patterns
+
+3. If all checks pass, confirm the file is clean and ready to deploy.

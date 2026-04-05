@@ -1,0 +1,27 @@
+name: Self-check skills
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check-examples:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install local wheel
+        run: |
+          pip install maturin
+          pip install .
+      - name: Check all example skills
+        run: |
+          for f in examples/skills/*.aif; do
+            echo "::group::$f"
+            aif check "$f" || exit 1
+            echo "::endgroup::"
+          done
