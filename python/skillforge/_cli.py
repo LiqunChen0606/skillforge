@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 
 import skillforge
-from skillforge import _fix, _score  # noqa: F401 — lazy-imported elsewhere
+from skillforge import _fix, _score, _doctor, _generate  # noqa: F401 — lazy-imported elsewhere
 
 
 EXIT_OK = 0
@@ -252,11 +252,84 @@ def cmd_fix(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+def cmd_doctor(args: argparse.Namespace) -> int:
+    """Repo-wide skill health report."""
+    report = _doctor.run_doctor(args.path)
+
+    if args.format == "json":
+        print(json.dumps(report.to_dict(), indent=2))
+    else:
+        print(_doctor.format_text(report))
+
+    # Exit 1 if any skill is below deploy-ready threshold.
+    if report.total > 0 and report.deploy_ready < report.total:
+        return EXIT_LINT_FAIL
+    return EXIT_OK
+
+
 def cmd_mcp_server(args: argparse.Namespace) -> int:
     """Run the MCP server over stdio."""
     from skillforge import _mcp
     _mcp.run_server()
     return EXIT_OK
+
+
+def cmd_generate(args: argparse.Namespace) -> int:
+    """Generate a SKILL.md from a plain-English description using an LLM."""
+    try:
+        skill_md = _generate.generate_skill(
+            prompt=args.description,
+            provider=args.provider,
+            model=args.model or None,
+            api_key=args.api_key or None,
+        )
+    except ImportError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return EXIT_USAGE
+    except ValueError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return EXIT_LINT_FAIL
+
+    if args.output:
+        try:
+            Path(args.output).write_text(skill_md, encoding="utf-8")
+        except OSError as e:
+            print(f"error: cannot write {args.output}: {e}", file=sys.stderr)
+            return EXIT_IO
+        # Grade and report to stderr
+        aif_src = _as_aif(skill_md, args.output)
+        parse_failed = False
+        try:
+            skillforge.parse(aif_src)
+        except ValueError:
+            parse_failed = True
+        lint_results: list = []
+        scan_findings: list = []
+        if not parse_failed:
+            try:
+                lint_results = json.loads(skillforge.lint(aif_src))
+            except ValueError:
+                lint_results = []
+            try:
+                scan_findings = json.loads(skillforge.scan(aif_src))
+            except ValueError:
+                scan_findings = []
+        score = _score.compute_score(lint_results, scan_findings, parse_failed=parse_failed)
+        print(
+            f"Generated: {args.output}  (score: {score.numeric}/100, grade: {score.grade})",
+            file=sys.stderr,
+        )
+    else:
+        print(skill_md, end="")
+
+    return EXIT_OK
+
+
+def cmd_watch(args: argparse.Namespace) -> int:
+    """Live grade display — updates on every file save."""
+    from skillforge import _watch
+    _watch.watch_file(args.input)
+    return EXIT_OK  # reached only if watch_file returns (normally exits on Ctrl+C)
 
 
 def cmd_migrate_syntax(args: argparse.Namespace) -> int:
@@ -342,6 +415,57 @@ def main(argv: list[str] | None = None) -> int:
         help="Run the MCP server over stdio (for Claude Desktop / Cursor integration)",
     )
     p_mcp.set_defaults(func=cmd_mcp_server)
+
+    p_doctor = sub.add_parser(
+        "doctor",
+        help="Repo-wide skill health report (scans a directory for SKILL.md / .aif)",
+    )
+    p_doctor.add_argument(
+        "path",
+        nargs="?",
+        default=".",
+        help="Directory to scan (default: current directory)",
+    )
+    p_doctor.add_argument("--format", default="text", choices=["text", "json"])
+    p_doctor.set_defaults(func=cmd_doctor)
+
+    p_gen = sub.add_parser(
+        "generate",
+        help="Generate a SKILL.md from a plain-English description (LLM-powered)",
+    )
+    p_gen.add_argument(
+        "description",
+        help='Plain-English description of the skill, e.g. "code review skill for React PRs"',
+    )
+    p_gen.add_argument(
+        "-o", "--output",
+        help="Write generated SKILL.md to this file (default: stdout)",
+    )
+    p_gen.add_argument(
+        "--provider",
+        default="anthropic",
+        choices=["anthropic"],
+        help="LLM provider (default: anthropic)",
+    )
+    p_gen.add_argument(
+        "--model",
+        default="",
+        help="Model identifier (default: claude-sonnet-4-20250514)",
+    )
+    p_gen.add_argument(
+        "--api-key",
+        default="",
+        dest="api_key",
+        help="API key (default: ANTHROPIC_API_KEY env var)",
+    )
+    p_gen.set_defaults(func=cmd_generate)
+
+    p_watch = sub.add_parser(
+        "watch",
+        help="Live grade display — updates on every file save (Ctrl+C to stop)",
+    )
+    p_watch.add_argument("input", help="SKILL.md or .aif file to watch")
+    p_watch.set_defaults(func=cmd_watch)
 
     p_mig = sub.add_parser("migrate-syntax", help="Migrate legacy @end to @/name")
     p_mig.add_argument("path", help=".aif file or directory")
